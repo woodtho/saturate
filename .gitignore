@@ -1,0 +1,16 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# DuckDB project files (data, not source)
+*.duckdb
+*.duckdb.wal
+
+# devtools / check artefacts
+/*.tar.gz
+/*.Rcheck/
+
+# macOS
+.DS_Store
