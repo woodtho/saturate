@@ -126,51 +126,56 @@ qc_reassign_coding <- function(project, coding_id, new_code_id) {
 
 # Build highlighted HTML from document content and a codings tibble.
 # Used by the Shiny coding panel.
+#
+# Builds the output as a raw HTML string rather than an htmltools tag tree so
+# that no inter-node whitespace is injected between text runs and <mark>
+# elements. That preserves the document's original line breaks and spacing
+# exactly as stored.
 build_highlighted_html <- function(content, codings) {
   n <- nchar(content)
-  if (nrow(codings) == 0L || n == 0L) {
-    return(htmltools::div(
-      content,
+
+  make_div <- function(inner_html) {
+    htmltools::div(
       class = "qc-text-display",
-      style = .text_display_style()
-    ))
+      style = .text_display_style(),
+      htmltools::HTML(inner_html)
+    )
   }
 
-  # All segment boundaries: character positions where highlighting changes
+  if (nrow(codings) == 0L || n == 0L) {
+    return(make_div(htmltools::htmlEscape(content)))
+  }
+
   breaks <- sort(unique(c(1L, codings$selfirst, codings$selast + 1L, n + 1L)))
   breaks <- breaks[breaks >= 1L & breaks <= n + 1L]
 
-  parts <- vector("list", length(breaks) - 1L)
-  for (i in seq_along(parts)) {
+  html_parts <- character(length(breaks) - 1L)
+  for (i in seq_along(html_parts)) {
     seg_start <- breaks[i]
     seg_end   <- breaks[i + 1L] - 1L
-    seg_text  <- substr(content, seg_start, seg_end)
+    seg_html  <- htmltools::htmlEscape(substr(content, seg_start, seg_end))
 
     active <- codings[
       codings$selfirst <= seg_start & codings$selast >= seg_start, ]
 
     if (nrow(active) == 0L) {
-      parts[[i]] <- seg_text
+      html_parts[[i]] <- seg_html
     } else {
       col <- active$code_color[[1L]]
-      tip <- paste(active$code_name, collapse = ", ")
-      # Append "55" hex (~33 % opacity) to a 6-digit hex colour
+      tip <- htmltools::htmlEscape(paste(active$code_name, collapse = ", "))
       bg  <- if (grepl("^#[0-9A-Fa-f]{6}$", col)) paste0(col, "55") else col
-      parts[[i]] <- htmltools::tags$mark(
-        seg_text,
-        style = paste0("background-color:", bg, "; cursor:pointer;"),
-        title = tip,
-        `data-selfirst` = seg_start,
-        `data-selast`   = seg_end
+      html_parts[[i]] <- paste0(
+        '<mark style="background-color:', bg, '; cursor:pointer;"',
+        ' title="', tip, '"',
+        ' data-selfirst="', seg_start, '"',
+        ' data-selast="',   seg_end,   '">',
+        seg_html,
+        '</mark>'
       )
     }
   }
 
-  htmltools::div(
-    class = "qc-text-display",
-    style = .text_display_style(),
-    htmltools::tagList(parts)
-  )
+  make_div(paste(html_parts, collapse = ""))
 }
 
 .text_display_style <- function() {
