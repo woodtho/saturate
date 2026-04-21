@@ -43,7 +43,10 @@
       color       VARCHAR NOT NULL DEFAULT '#4E79A7',
       memo        VARCHAR NOT NULL DEFAULT '',
       status      INTEGER NOT NULL DEFAULT 1,
-      created_at  TIMESTAMPTZ DEFAULT now()
+      created_at  TIMESTAMPTZ DEFAULT now(),
+      parent_id   BIGINT,
+      definition  VARCHAR DEFAULT '',
+      criteria    VARCHAR DEFAULT ''
     )
   ",
 
@@ -71,15 +74,18 @@
   # codings — selfirst/selast are 1-based, both inclusive
   tbl_codings = "
     CREATE TABLE IF NOT EXISTS codings (
-      id          BIGINT PRIMARY KEY DEFAULT nextval('codings_id_seq'),
-      source_id   BIGINT NOT NULL,
-      code_id     BIGINT NOT NULL,
-      selfirst    INTEGER NOT NULL,
-      selast      INTEGER NOT NULL,
-      seltext     VARCHAR NOT NULL DEFAULT '',
-      memo        VARCHAR NOT NULL DEFAULT '',
-      status      INTEGER NOT NULL DEFAULT 1,
-      created_at  TIMESTAMPTZ DEFAULT now()
+      id             BIGINT PRIMARY KEY DEFAULT nextval('codings_id_seq'),
+      source_id      BIGINT NOT NULL,
+      code_id        BIGINT NOT NULL,
+      selfirst       INTEGER NOT NULL,
+      selast         INTEGER NOT NULL,
+      seltext        VARCHAR NOT NULL DEFAULT '',
+      memo           VARCHAR NOT NULL DEFAULT '',
+      status         INTEGER NOT NULL DEFAULT 1,
+      created_at     TIMESTAMPTZ DEFAULT now(),
+      coder          VARCHAR DEFAULT 'default',
+      coding_source  VARCHAR DEFAULT 'manual',
+      coding_status  VARCHAR DEFAULT 'validated'
     )
   ",
   idx_codings_src  = "CREATE INDEX IF NOT EXISTS idx_codings_source ON codings(source_id)",
@@ -207,16 +213,14 @@
     DBI::dbExecute(con, sql)
   }
 
-  # Idempotent column additions for projects created before these fields existed
-  .add_column_if_missing(con, "codes",   "parent_id",   "BIGINT")
-  .add_column_if_missing(con, "codes",   "definition",  "VARCHAR NOT NULL DEFAULT ''")
-  .add_column_if_missing(con, "codes",   "criteria",    "VARCHAR NOT NULL DEFAULT ''")
-  .add_column_if_missing(con, "codings", "coder",
-                         "VARCHAR NOT NULL DEFAULT 'default'")
-  .add_column_if_missing(con, "codings", "coding_source",
-                         "VARCHAR NOT NULL DEFAULT 'manual'")
-  .add_column_if_missing(con, "codings", "coding_status",
-                         "VARCHAR NOT NULL DEFAULT 'validated'")
+  # Idempotent column additions for projects created before these fields existed.
+  # DuckDB ALTER TABLE ADD COLUMN does not support NOT NULL constraints.
+  .add_column_if_missing(con, "codes",   "parent_id",      "BIGINT")
+  .add_column_if_missing(con, "codes",   "definition",     "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "codes",   "criteria",       "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "codings", "coder",          "VARCHAR DEFAULT 'default'")
+  .add_column_if_missing(con, "codings", "coding_source",  "VARCHAR DEFAULT 'manual'")
+  .add_column_if_missing(con, "codings", "coding_status",  "VARCHAR DEFAULT 'validated'")
 
   # Seed project_meta if empty
   existing <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM project_meta")$n
@@ -282,6 +286,7 @@ qc_open <- function(path, read_only = FALSE) {
     DBI::dbDisconnect(con, shutdown = TRUE)
     rlang::abort("Not a saturate project (project_meta table missing).")
   }
+  if (!read_only) .bootstrap_schema(con)
   proj <- .make_project(con, path)
   cli::cli_alert_success("Opened project {.file {path}}")
   invisible(proj)
