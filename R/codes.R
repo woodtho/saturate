@@ -32,6 +32,7 @@ qc_add_code <- function(project, name, color = "#4E79A7", memo = "",
                          parent_id = NULL, definition = "", criteria = "") {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   if (!is_string(name))  rlang::abort("`name` must be a single string.")
   if (!is_string(color)) rlang::abort("`color` must be a single string.")
   if (is.null(parent_id)) {
@@ -124,6 +125,7 @@ qc_update_code <- function(project, id,
                             parent_id  = NULL) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   id <- as.integer(id)
 
   current <- .query(project$con,
@@ -187,6 +189,7 @@ qc_update_code <- function(project, id,
 qc_delete_code <- function(project, id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   id <- as.integer(id)
 
   current <- .query(project$con,
@@ -338,6 +341,7 @@ qc_unlink_code_category <- function(project, code_id, category_id) {
 qc_merge_codes <- function(project, from_ids, into_id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   from_ids <- as.integer(from_ids)
   into_id  <- as.integer(into_id)
   if (any(from_ids == into_id))
@@ -397,6 +401,7 @@ qc_split_code <- function(project, code_id, new_names,
                            colors = NULL, memos = NULL) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   code_id   <- as.integer(code_id)
   new_names <- as.character(new_names)
   if (length(new_names) < 2L)

@@ -59,6 +59,18 @@ assert_con <- function(con) {
   invisible(NULL)
 }
 
+# Abort if the project is locked against writes.
+.assert_unlocked <- function(project) {
+  val <- DBI::dbGetQuery(project$con,
+    "SELECT value FROM project_meta WHERE key = 'locked'")$value
+  if (length(val) > 0L && val == "1")
+    rlang::abort(
+      "Project is locked. Call `qc_unlock_project()` to allow edits.",
+      call = NULL
+    )
+  invisible(NULL)
+}
+
 # Build INTERSECT sub-query for AND semantics across code_ids.
 .must_have_clause <- function(ids) {
   if (is.null(ids) || length(ids) == 0L) return("")

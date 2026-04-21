@@ -230,7 +230,14 @@
          ('name',       'Untitled Project'),
          ('owner',      ''),
          ('memo',       ''),
+         ('locked',     '0'),
          ('created_at', CAST(now() AS VARCHAR))"
+    )
+  } else {
+    # Idempotent: add locked key to projects created before this field existed
+    DBI::dbExecute(con,
+      "INSERT INTO project_meta (key, value) VALUES ('locked', '0')
+       ON CONFLICT (key) DO NOTHING"
     )
   }
   invisible(con)
@@ -308,7 +315,7 @@ qc_close <- function(project) {
 #' @param project A `qc_project` object.
 #' @param name,owner,memo Character scalars. Pass non-`NULL` to update.
 #'
-#' @return A one-row tibble: `name`, `owner`, `memo`, `created_at`.
+#' @return A one-row tibble: `name`, `owner`, `memo`, `created_at`, `locked`.
 #' @export
 qc_project_info <- function(project, name = NULL, owner = NULL, memo = NULL) {
   assert_class(project, "qc_project")
@@ -329,8 +336,50 @@ qc_project_info <- function(project, name = NULL, owner = NULL, memo = NULL) {
     name       = raw$value[raw$key == "name"],
     owner      = raw$value[raw$key == "owner"],
     memo       = raw$value[raw$key == "memo"],
-    created_at = raw$value[raw$key == "created_at"]
+    created_at = raw$value[raw$key == "created_at"],
+    locked     = identical(raw$value[raw$key == "locked"], "1")
   )
+}
+
+#' Lock or unlock a project against further edits
+#'
+#' A locked project rejects all write operations (`qc_add_coding`,
+#' `qc_import_document`, `qc_add_code`, etc.). Use this to freeze a dataset
+#' after finalising coding so downstream exports are reproducible.
+#'
+#' @param project A `qc_project` object.
+#'
+#' @return Invisibly `TRUE` (locked) or `FALSE` (unlocked).
+#' @export
+qc_lock_project <- function(project) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .exec(project$con,
+    "UPDATE project_meta SET value = '1' WHERE key = 'locked'")
+  cli::cli_alert_success(
+    "Project locked. No edits permitted until `qc_unlock_project()` is called.")
+  invisible(TRUE)
+}
+
+#' @rdname qc_lock_project
+#' @export
+qc_unlock_project <- function(project) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .exec(project$con,
+    "UPDATE project_meta SET value = '0' WHERE key = 'locked'")
+  cli::cli_alert_info("Project unlocked.")
+  invisible(FALSE)
+}
+
+#' @rdname qc_lock_project
+#' @export
+qc_is_locked <- function(project) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  val <- DBI::dbGetQuery(project$con,
+    "SELECT value FROM project_meta WHERE key = 'locked'")$value
+  identical(val, "1")
 }
 
 .make_project <- function(con, path) {
@@ -347,11 +396,13 @@ print.qc_project <- function(x, ...) {
     "SELECT COUNT(*) AS n FROM sources WHERE status = 1")$n
   n_codes <- DBI::dbGetQuery(x$con,
     "SELECT COUNT(*) AS n FROM codes WHERE status = 1")$n
-  info    <- .query(x$con, "SELECT key, value FROM project_meta WHERE key IN ('name','owner')")
+  info    <- .query(x$con,
+    "SELECT key, value FROM project_meta WHERE key IN ('name','owner','locked')")
   proj_name  <- info$value[info$key == "name"]
   proj_owner <- info$value[info$key == "owner"]
-  cli::cli_text("<qc_project> {.strong {proj_name}} [{proj_owner}]")
+  locked     <- identical(info$value[info$key == "locked"], "1")
+  cli::cli_text("<qc_project> {.strong {proj_name}} [{proj_owner}]{if (locked) ' \u{1F512}' else ''}")
   cli::cli_text("  Path:      {.file {x$path}}")
-  cli::cli_text("  Documents: {n_docs}  |  Codes: {n_codes}")
+  cli::cli_text("  Documents: {n_docs}  |  Codes: {n_codes}{if (locked) '  |  LOCKED' else ''}")
   invisible(x)
 }

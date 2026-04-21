@@ -26,6 +26,7 @@ qc_add_coding <- function(project, source_id, code_id,
                           coding_status = "validated") {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   source_id <- as.integer(source_id)
   code_id   <- as.integer(code_id)
   selfirst  <- as.integer(selfirst)
@@ -96,6 +97,7 @@ qc_list_codings <- function(project, source_id = NULL, code_id = NULL) {
 qc_delete_coding <- function(project, id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   .soft_delete(project$con, "codings", "id", as.integer(id))
   invisible(1L)
 }
@@ -114,6 +116,7 @@ qc_delete_coding <- function(project, id) {
 qc_reassign_coding <- function(project, coding_id, new_code_id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   .exec(project$con,
     "UPDATE codings SET code_id = ? WHERE id = ? AND status = 1",
     list(as.integer(new_code_id), as.integer(coding_id))

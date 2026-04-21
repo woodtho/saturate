@@ -16,6 +16,7 @@ qc_import_document <- function(project,
   assert_class(project, "qc_project")
   assert_con(project$con)
 
+  .assert_unlocked(project)
   if (!is.null(path) && !is.null(content))
     rlang::abort("Supply `path` or `content`, not both.")
   if (is.null(path) && is.null(content))
@@ -115,6 +116,7 @@ qc_update_document_memo <- function(project, id, memo) {
 qc_delete_document <- function(project, id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  .assert_unlocked(project)
   id <- as.integer(id)
   n  <- .exec(project$con,
     "UPDATE codings SET status = 0 WHERE source_id = ? AND status = 1",

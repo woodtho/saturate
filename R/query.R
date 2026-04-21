@@ -17,6 +17,10 @@
 #' @param coder Character or `NULL`. Restrict to codings by this coder.
 #' @param coding_source One of `"manual"`, `"auto"`, or `NULL` for all.
 #' @param coding_status One of `"draft"`, `"validated"`, or `NULL` for all.
+#' @param source_attrs Named list of source-attribute filters, e.g.
+#'   `list(industry = "tech", size = "small")`. Every key-value pair must
+#'   match a row in `source_attributes` for the document to be included (AND
+#'   semantics across pairs).
 #'
 #' @return A tibble: `coding_id`, `source_id`, `source_name`, `code_id`,
 #'   `code_name`, `code_color`, `category_names`, `selfirst`, `selast`,
@@ -32,7 +36,8 @@ qc_get_coded_segments <- function(project,
                                   category_ids  = NULL,
                                   coder         = NULL,
                                   coding_source = NULL,
-                                  coding_status = NULL) {
+                                  coding_status = NULL,
+                                  source_attrs  = NULL) {
   assert_class(project, "qc_project")
   assert_con(project$con)
 
@@ -67,6 +72,25 @@ qc_get_coded_segments <- function(project,
   w_cstat   <- if (!is.null(coding_status))
     paste0("AND cod.coding_status = '", coding_status, "'") else ""
 
+  # Source attribute filters: parameterised EXISTS subquery per key-value pair
+  sa_params  <- list()
+  w_src_attrs <- ""
+  if (!is.null(source_attrs)) {
+    if (!is.list(source_attrs) || is.null(names(source_attrs)))
+      rlang::abort("`source_attrs` must be a named list (e.g. `list(industry = 'tech')`).")
+    clauses <- character(length(source_attrs))
+    for (i in seq_along(source_attrs)) {
+      clauses[[i]] <- paste0(
+        "AND EXISTS (SELECT 1 FROM source_attributes sa",
+        " WHERE sa.source_id = cod.source_id AND sa.status = 1",
+        " AND sa.variable = ? AND sa.value = ?)"
+      )
+      sa_params <- c(sa_params,
+        list(names(source_attrs)[[i]], as.character(source_attrs[[i]])))
+    }
+    w_src_attrs <- paste(clauses, collapse = "\n")
+  }
+
   sql <- paste0("
     SELECT cod.id                                             AS coding_id,
            cod.source_id,
@@ -86,14 +110,14 @@ qc_get_coded_segments <- function(project,
     LEFT   JOIN code_categories     cat ON cat.id = l.category_id AND cat.status = 1
     WHERE  cod.status = 1
     ", w_codes, w_sources, w_must, w_not, w_cats, w_cases,
-       w_coder, w_csrc, w_cstat, "
+       w_coder, w_csrc, w_cstat, w_src_attrs, "
     GROUP  BY cod.id, cod.source_id, s.name, cod.code_id, c.name, c.color,
               cod.selfirst, cod.selast, cod.seltext, cod.memo,
               cod.coder, cod.coding_source, cod.coding_status, cod.created_at
     ORDER  BY s.name, cod.selfirst
   ")
 
-  .query(project$con, sql)
+  .query(project$con, sql, if (length(sa_params) > 0L) sa_params else NULL)
 }
 
 #' Code co-occurrence matrix
