@@ -7,7 +7,11 @@
     "INSERT INTO code_history
        (code_id, operation, field, old_value, new_value)
      VALUES (?, ?, ?, ?, ?)",
-    list(code_id, operation, field, old_value, new_value)
+    list(as.integer(code_id),
+         as.character(operation),
+         field     %||% NA_character_,
+         old_value %||% NA_character_,
+         new_value %||% NA_character_)
   )
 }
 
