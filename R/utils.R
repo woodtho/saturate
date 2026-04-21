@@ -13,7 +13,7 @@ assert_con <- function(con) {
   if (!DBI::dbIsValid(con))
     rlang::abort("Database connection is closed. Re-open with `qc_open()`.")
   if (!DBI::dbExistsTable(con, "project_meta"))
-    rlang::abort("Connection does not point to a qualcoder project database.")
+    rlang::abort("Connection does not point to a saturate project database.")
   invisible(con)
 }
 

@@ -1,4 +1,4 @@
-/* qualcoder — text-selection offset capture
+/* saturate — text-selection offset capture
  *
  * Listens for mouseup on any .qc-text-display element and sends the
  * 1-based character offsets of the user's selection to Shiny.

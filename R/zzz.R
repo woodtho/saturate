@@ -1,6 +1,6 @@
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage(
-    "qualcoder ", utils::packageVersion("qualcoder"),
-    " — use shiny_qualcoder() to launch the GUI"
+    "saturate ", utils::packageVersion("saturate"),
+    " — use shiny_saturate() to launch the GUI"
   )
 }

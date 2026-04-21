@@ -1,4 +1,4 @@
 library(testthat)
-library(qualcoder)
+library(saturate)
 
-test_check("qualcoder")
+test_check("saturate")

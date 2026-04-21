@@ -1,4 +1,4 @@
-Package: qualcoder
+Package: saturate
 Title: Qualitative Text Coding with DuckDB and Shiny
 Version: 0.1.0
 Authors@R:

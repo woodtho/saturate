@@ -1,6 +1,6 @@
 mod_coding_ui <- function(id) {
   ns <- shiny::NS(id)
-  js_file <- system.file("app", "coding.js", package = "qualcoder")
+  js_file <- system.file("app", "coding.js", package = "saturate")
   shiny::tagList(
     shiny::tags$head(shiny::includeScript(js_file)),
     bslib::layout_columns(

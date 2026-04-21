@@ -1,4 +1,4 @@
-#' qualcoder: Qualitative Text Coding with DuckDB and Shiny
+#' saturate: Qualitative Text Coding with DuckDB and Shiny
 #'
 #' @description
 #' A modern replacement for RQDA. Manage coding projects in DuckDB, annotate
@@ -9,13 +9,13 @@
 #' 1. Create or open a project with [qc_new()] / [qc_open()].
 #' 2. Import documents with [qc_import_document()].
 #' 3. Define codes with [qc_add_code()].
-#' 4. Code passages with [qc_add_coding()] or interactively via [shiny_qualcoder()].
+#' 4. Code passages with [qc_add_coding()] or interactively via [shiny_saturate()].
 #' 5. Retrieve results with [qc_get_coded_segments()].
 #' 6. Close the project with [qc_close()].
 #'
 #' @docType package
-#' @name qualcoder-package
-#' @aliases qualcoder
+#' @name saturate-package
+#' @aliases saturate
 "_PACKAGE"
 
 utils::globalVariables(c(

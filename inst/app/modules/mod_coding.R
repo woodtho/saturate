@@ -2,7 +2,7 @@ mod_coding_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::tags$head(
-      shiny::tags$script(src = system.file("app/coding.js", package = "qualcoder"))
+      shiny::tags$script(src = system.file("app/coding.js", package = "saturate"))
     ),
     bslib::layout_columns(
       col_widths = c(8, 4),

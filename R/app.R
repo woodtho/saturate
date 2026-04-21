@@ -1,10 +1,10 @@
 # ── Top-level UI ──────────────────────────────────────────────────────────────
 
-qualcoder_ui <- function() {
+saturate_ui <- function() {
   bslib::page_navbar(
     title = shiny::span(
       shiny::tags$img(src = NULL, height = 0),
-      "qualcoder"
+      "saturate"
     ),
     theme = bslib::bs_theme(version = 5, bootswatch = "flatly"),
     shinyjs::useShinyjs(),
@@ -25,7 +25,7 @@ qualcoder_ui <- function() {
 
 # ── Top-level server ──────────────────────────────────────────────────────────
 
-qualcoder_server <- function(input, output, session, project) {
+saturate_server <- function(input, output, session, project) {
   rv <- shiny::reactiveValues(
     project          = project,
     refresh_docs     = 0L,
@@ -55,7 +55,7 @@ qualcoder_server <- function(input, output, session, project) {
   })
 }
 
-#' Launch the qualcoder Shiny GUI
+#' Launch the saturate Shiny GUI
 #'
 #' Opens an interactive coding interface. Can be launched against an existing
 #' project or will show an error if `project` is `NULL`.
@@ -65,7 +65,7 @@ qualcoder_server <- function(input, output, session, project) {
 #'
 #' @return Called for its side effect; does not return normally.
 #' @export
-shiny_qualcoder <- function(project, ...) {
+shiny_saturate <- function(project, ...) {
   assert_class(project, "qc_project")
   assert_con(project$con)
 
@@ -73,9 +73,9 @@ shiny_qualcoder <- function(project, ...) {
   .env$project  <- project
 
   app <- shiny::shinyApp(
-    ui     = qualcoder_ui(),
+    ui     = saturate_ui(),
     server = function(input, output, session) {
-      qualcoder_server(input, output, session, .env$project)
+      saturate_server(input, output, session, .env$project)
     }
   )
   shiny::runApp(app, ...)

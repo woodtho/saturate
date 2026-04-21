@@ -180,7 +180,7 @@ mod_query_server <- function(id, rv) {
 
     output$btn_csv <- shiny::downloadHandler(
       filename = function() {
-        paste0("qualcoder_export_", format(Sys.Date(), "%Y%m%d"), ".csv")
+        paste0("saturate_export_", format(Sys.Date(), "%Y%m%d"), ".csv")
       },
       content = function(file) {
         utils::write.csv(results(), file, row.names = FALSE)

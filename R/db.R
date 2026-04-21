@@ -232,7 +232,7 @@
   invisible(con)
 }
 
-#' Create a new qualcoder project
+#' Create a new saturate project
 #'
 #' Initialises a DuckDB database at `path` and bootstraps the schema.
 #'
@@ -265,7 +265,7 @@ qc_new <- function(path,
   invisible(proj)
 }
 
-#' Open an existing qualcoder project
+#' Open an existing saturate project
 #'
 #' @param path Character. Path to an existing `.duckdb` file.
 #' @param read_only Logical. Open in read-only mode.
@@ -280,14 +280,14 @@ qc_open <- function(path, read_only = FALSE) {
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = path, read_only = read_only)
   if (!DBI::dbExistsTable(con, "project_meta")) {
     DBI::dbDisconnect(con, shutdown = TRUE)
-    rlang::abort("Not a qualcoder project (project_meta table missing).")
+    rlang::abort("Not a saturate project (project_meta table missing).")
   }
   proj <- .make_project(con, path)
   cli::cli_alert_success("Opened project {.file {path}}")
   invisible(proj)
 }
 
-#' Close a qualcoder project connection
+#' Close a saturate project connection
 #'
 #' @param project A `qc_project` object.
 #' @export
