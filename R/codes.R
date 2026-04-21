@@ -30,14 +30,22 @@ qc_add_code <- function(project, name, color = "#4E79A7", memo = "",
   assert_con(project$con)
   if (!is_string(name))  rlang::abort("`name` must be a single string.")
   if (!is_string(color)) rlang::abort("`color` must be a single string.")
-  pid <- if (!is.null(parent_id)) as.integer(parent_id) else NA_integer_
-  code <- .query(project$con,
-    "INSERT INTO codes (name, color, memo, parent_id, definition, criteria)
-     VALUES (?, ?, ?, ?, ?, ?)
-     RETURNING id, name, color, memo, created_at",
-    list(name, color, memo %||% "", pid,
-         definition %||% "", criteria %||% "")
-  )
+  if (is.null(parent_id)) {
+    code <- .query(project$con,
+      "INSERT INTO codes (name, color, memo, definition, criteria)
+       VALUES (?, ?, ?, ?, ?)
+       RETURNING id, name, color, memo, created_at",
+      list(name, color, memo %||% "", definition %||% "", criteria %||% "")
+    )
+  } else {
+    code <- .query(project$con,
+      "INSERT INTO codes (name, color, memo, parent_id, definition, criteria)
+       VALUES (?, ?, ?, ?, ?, ?)
+       RETURNING id, name, color, memo, created_at",
+      list(name, color, memo %||% "", as.integer(parent_id),
+           definition %||% "", criteria %||% "")
+    )
+  }
   .log_code_history(project$con, code$id, "create",
                     new_value = name)
   code
@@ -142,11 +150,17 @@ qc_update_code <- function(project, id,
   }
 
   if (!is.null(parent_id)) {
-    pid <- if (is.na(parent_id)) NA_integer_ else as.integer(parent_id)
-    .exec(project$con,
-      "UPDATE codes SET parent_id = ? WHERE id = ? AND status = 1",
-      list(pid, id)
-    )
+    if (is.na(parent_id)) {
+      .exec(project$con,
+        "UPDATE codes SET parent_id = NULL WHERE id = ? AND status = 1",
+        list(id)
+      )
+    } else {
+      .exec(project$con,
+        "UPDATE codes SET parent_id = ? WHERE id = ? AND status = 1",
+        list(as.integer(parent_id), id)
+      )
+    }
   }
 
   .query(project$con,
