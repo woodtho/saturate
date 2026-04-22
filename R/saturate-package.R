@@ -67,5 +67,13 @@ utils::globalVariables(c(
   # compare module
   "coder_label", "left_label", "right_label",
   # navigation
-  "start", "end"
+  "start", "end",
+  # saturation curve
+  "doc_index", "doc_name", "new_codes", "cumulative_codes",
+  # triangulation
+  "source_type", "total",
+  # member checks
+  "participant_label", "item_status", "participant_response",
+  "check_id", "n_items", "n_confirmed", "n_disputed",
+  "code_color"
 ))

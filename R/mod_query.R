@@ -81,6 +81,57 @@ mod_query_ui <- function(id) {
         )
       ),
 
+      # ── Saturation curve ─────────────────────────────────────────────────
+      bslib::nav_panel("Saturation",
+        shiny::div(
+          class = "p-3",
+          shiny::p(shiny::tags$small(
+            "Plots cumulative distinct codes per document. ",
+            "A flattening curve indicates theoretical saturation.",
+            class = "text-muted")),
+          shiny::div(
+            class = "d-flex gap-3 align-items-end mb-3",
+            shiny::div(
+              shiny::tags$label("Order documents by", class = "form-label"),
+              shiny::selectInput(ns("sat_order"), NULL,
+                choices = c("Import date"  = "import_order",
+                            "First coding" = "first_coded"),
+                width = "180px")
+            ),
+            shiny::actionButton(ns("btn_saturation"), "Compute",
+                                class = "btn-primary")
+          ),
+          shiny::plotOutput(ns("plt_saturation"), height = "320px"),
+          shiny::br(),
+          DT::dataTableOutput(ns("tbl_saturation"))
+        )
+      ),
+
+      # ── Triangulation ─────────────────────────────────────────────────────
+      bslib::nav_panel("Triangulation",
+        shiny::div(
+          class = "p-3",
+          shiny::p(shiny::tags$small(
+            "Compares code presence across source types ",
+            "(set source type on documents in the Documents tab).",
+            class = "text-muted")),
+          shiny::div(
+            class = "d-flex gap-3 align-items-end mb-3",
+            shiny::div(
+              shiny::tags$label("Count by", class = "form-label"),
+              shiny::selectInput(ns("tri_metric"), NULL,
+                choices = c("Segments" = "segments",
+                            "Documents" = "documents"),
+                width = "160px")
+            ),
+            shiny::actionButton(ns("btn_triangulate"), "Compute",
+                                class = "btn-primary")
+          ),
+          shiny::uiOutput(ns("tri_summary")),
+          DT::dataTableOutput(ns("tbl_triangulate"))
+        )
+      ),
+
       # ── Cross-tabulation ─────────────────────────────────────────────────
       bslib::nav_panel("Cross-tab",
         shiny::div(
@@ -242,6 +293,106 @@ mod_query_server <- function(id, rv) {
           )
         ),
         colnames = c("Code 1 ID", "Code 1", "Code 2 ID", "Code 2", "Count")
+      )
+    })
+
+    # ── Saturation curve ───────────────────────────────────────────────────
+
+    sat_rv <- shiny::eventReactive(input$btn_saturation, {
+      tryCatch(
+        qc_saturation_curve(rv$project, order_by = input$sat_order %||% "import_order",
+                            code_ids = int_or_null(input$filter_codes)),
+        error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error")
+          NULL
+        }
+      )
+    }, ignoreNULL = FALSE)
+
+    output$plt_saturation <- shiny::renderPlot({
+      df <- sat_rv()
+      shiny::req(!is.null(df) && nrow(df) > 0)
+      if (!requireNamespace("ggplot2", quietly = TRUE)) {
+        graphics::plot.new()
+        graphics::text(0.5, 0.5, "Install ggplot2 to see this chart",
+                       cex = 1.2, col = "grey40")
+        return(invisible(NULL))
+      }
+      qc_plot_saturation(rv$project,
+                         order_by = input$sat_order %||% "import_order",
+                         code_ids = int_or_null(input$filter_codes))
+    })
+
+    output$tbl_saturation <- DT::renderDataTable({
+      df <- sat_rv()
+      shiny::req(!is.null(df))
+      if (nrow(df) == 0L) {
+        return(DT::datatable(
+          tibble::tibble(message = "No coded documents found."),
+          rownames = FALSE, options = list(dom = "t")
+        ))
+      }
+      DT::datatable(df,
+        class    = "table table-hover table-sm",
+        rownames = FALSE,
+        colnames = c("#", "Document", "Source type",
+                     "Codings", "New codes", "Cumulative"),
+        options  = list(pageLength = 25, dom = "ftp",
+                        columnDefs = list(
+                          list(targets = 0, width = "40px"),
+                          list(targets = c(3, 4, 5), width = "90px",
+                               className = "text-center")
+                        ))
+      )
+    })
+
+    # ── Triangulation ──────────────────────────────────────────────────────
+
+    tri_rv <- shiny::eventReactive(input$btn_triangulate, {
+      tryCatch(
+        qc_triangulate(rv$project,
+                       code_ids     = int_or_null(input$filter_codes),
+                       category_ids = int_or_null(input$filter_cats),
+                       metric       = input$tri_metric %||% "segments"),
+        error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error")
+          NULL
+        }
+      )
+    }, ignoreNULL = FALSE)
+
+    output$tri_summary <- shiny::renderUI({
+      df <- tri_rv()
+      if (is.null(df) || nrow(df) == 0L) return(NULL)
+      type_cols <- setdiff(names(df), c("code_name", "total"))
+      shiny::div(
+        class = "d-flex flex-wrap gap-2 mb-3",
+        lapply(type_cols, function(tc) {
+          n <- sum(df[[tc]])
+          shiny::tags$span(
+            class = "badge bg-secondary",
+            paste0(tc, ": ", n)
+          )
+        })
+      )
+    })
+
+    output$tbl_triangulate <- DT::renderDataTable({
+      df <- tri_rv()
+      shiny::req(!is.null(df))
+      if (nrow(df) == 0L) {
+        return(DT::datatable(
+          tibble::tibble(
+            message = paste0(
+              "No data. Set source types on documents via Documents tab, ",
+              "then click Compute.")),
+          rownames = FALSE, options = list(dom = "t")
+        ))
+      }
+      DT::datatable(df,
+        class    = "table table-hover",
+        rownames = FALSE,
+        options  = list(pageLength = 25, dom = "ftp", scrollX = TRUE)
       )
     })
 

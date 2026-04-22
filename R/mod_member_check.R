@@ -1,0 +1,299 @@
+mod_member_check_ui <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::div(
+    class = "p-3",
+
+    bslib::layout_columns(
+      col_widths = c(4, 8),
+
+      # ── Create new check ───────────────────────────────────────────────────
+      bslib::card(
+        bslib::card_header("New member check"),
+        bslib::card_body(
+          shiny::selectInput(ns("mc_source_id"), "Document", choices = NULL),
+          shiny::textInput(ns("mc_participant"), "Participant label",
+            placeholder = "e.g. Participant A"),
+          shiny::selectizeInput(ns("mc_code_ids"),
+            "Restrict to codes (optional — blank = all)",
+            choices = NULL, multiple = TRUE,
+            options = list(placeholder = "All codes")),
+          shiny::actionButton(ns("btn_create_mc"), "Create check",
+            class = "btn-primary w-100")
+        )
+      ),
+
+      # ── Existing checks ────────────────────────────────────────────────────
+      bslib::card(
+        bslib::card_header("All member checks"),
+        bslib::card_body(
+          shiny::p(shiny::tags$small(
+            "Click a row to view and record participant responses.",
+            class = "text-muted")),
+          DT::dataTableOutput(ns("tbl_checks"))
+        )
+      )
+    ),
+
+    # ── Selected check detail ─────────────────────────────────────────────────
+    bslib::card(
+      class = "mt-3",
+      bslib::card_header(shiny::textOutput(ns("detail_title"))),
+      bslib::card_body(
+        shiny::div(
+          class = "d-flex gap-2 mb-3",
+          shiny::downloadButton(ns("btn_dl_html"), "Export HTML",
+            class = "btn-sm btn-outline-secondary"),
+          shiny::downloadButton(ns("btn_dl_txt"), "Export TXT",
+            class = "btn-sm btn-outline-secondary")
+        ),
+        shiny::uiOutput(ns("check_items_ui"))
+      )
+    )
+  )
+}
+
+mod_member_check_server <- function(id, rv) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns  <- session$ns
+    lv  <- shiny::reactiveValues(
+      selected_check_id = NULL,
+      refresh_checks    = 0L
+    )
+
+    # ── Populate selects ──────────────────────────────────────────────────────
+
+    shiny::observe({
+      rv$refresh_docs
+      rv$refresh_codes
+      docs  <- qc_list_documents(rv$project)
+      codes <- qc_list_codes(rv$project)
+      shiny::updateSelectInput(session, "mc_source_id",
+        choices = stats::setNames(docs$id, docs$name))
+      shiny::updateSelectizeInput(session, "mc_code_ids",
+        choices = stats::setNames(codes$id, codes$name), server = TRUE)
+    })
+
+    # ── Checks table ──────────────────────────────────────────────────────────
+
+    checks_rv <- shiny::reactive({
+      rv$refresh_docs
+      lv$refresh_checks
+      qc_list_member_checks(rv$project)
+    })
+
+    output$tbl_checks <- DT::renderDataTable({
+      df <- checks_rv()
+      if (nrow(df) == 0L) {
+        return(DT::datatable(
+          tibble::tibble(message = "No member checks yet. Create one above."),
+          rownames = FALSE, options = list(dom = "t")
+        ))
+      }
+      disp <- df
+      disp$sent_at     <- format(df$sent_at, "%Y-%m-%d")
+      disp$response_at <- ifelse(is.na(df$response_at), "—",
+                                 format(df$response_at, "%Y-%m-%d"))
+      DT::datatable(
+        disp[, c("id", "doc_name", "participant_label", "status",
+                 "n_items", "n_confirmed", "n_disputed",
+                 "sent_at", "response_at")],
+        class     = "table table-hover",
+        selection = "single",
+        rownames  = FALSE,
+        colnames  = c("ID", "Document", "Participant", "Status",
+                      "Items", "✓", "✗", "Sent", "Response"),
+        options   = list(
+          pageLength = 15, dom = "ftp",
+          columnDefs = list(
+            list(width = "50px",  targets = 0),
+            list(width = "80px",  targets = c(3, 4, 5, 6)),
+            list(width = "100px", targets = c(7, 8))
+          )
+        )
+      )
+    })
+
+    # ── Create new check ──────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_create_mc, {
+      shiny::req(
+        nchar(trimws(input$mc_participant %||% "")) > 0,
+        input$mc_source_id
+      )
+      code_ids <- if (length(input$mc_code_ids) > 0L)
+        as.integer(input$mc_code_ids) else NULL
+      tryCatch({
+        qc_create_member_check(
+          rv$project,
+          source_id         = as.integer(input$mc_source_id),
+          participant_label = trimws(input$mc_participant),
+          code_ids          = code_ids,
+          created_by        = rv$current_coder %||% Sys.info()[["user"]]
+        )
+        shiny::showNotification("Member check created.", type = "message")
+        shinyjs::reset("mc_participant")
+        lv$refresh_checks <- lv$refresh_checks + 1L
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    # ── Row selection → detail ────────────────────────────────────────────────
+
+    shiny::observeEvent(input$tbl_checks_rows_selected, {
+      row <- input$tbl_checks_rows_selected
+      shiny::req(row)
+      lv$selected_check_id <- checks_rv()$id[[row]]
+    })
+
+    # ── Detail panel title ────────────────────────────────────────────────────
+
+    output$detail_title <- shiny::renderText({
+      id_val <- lv$selected_check_id
+      if (is.null(id_val)) return("Select a check to view details")
+      checks  <- checks_rv()
+      check   <- checks[checks$id == id_val, ]
+      if (nrow(check) == 0L) return("Check not found")
+      paste0("Check #", id_val, " — ",
+             check$participant_label, " | ", check$doc_name,
+             " [", check$status, "]")
+    })
+
+    # ── Download handlers (fixed IDs, driven by lv$selected_check_id) ────────
+
+    output$btn_dl_html <- shiny::downloadHandler(
+      filename = function() {
+        id_val <- shiny::isolate(lv$selected_check_id)
+        paste0("member_check_", id_val %||% "export", ".html")
+      },
+      content = function(file) {
+        id_val <- shiny::isolate(lv$selected_check_id)
+        shiny::req(id_val)
+        html <- qc_export_member_check(rv$project, id_val, format = "html")
+        writeLines(html, file, useBytes = TRUE)
+      }
+    )
+
+    output$btn_dl_txt <- shiny::downloadHandler(
+      filename = function() {
+        id_val <- shiny::isolate(lv$selected_check_id)
+        paste0("member_check_", id_val %||% "export", ".txt")
+      },
+      content = function(file) {
+        id_val <- shiny::isolate(lv$selected_check_id)
+        shiny::req(id_val)
+        txt <- qc_export_member_check(rv$project, id_val, format = "txt")
+        writeLines(txt, file, useBytes = TRUE)
+      }
+    )
+
+    # ── Check items UI ────────────────────────────────────────────────────────
+
+    output$check_items_ui <- shiny::renderUI({
+      id_val <- lv$selected_check_id
+      lv$refresh_checks
+      if (is.null(id_val)) {
+        return(shiny::p(class = "text-muted",
+                        "Select a row in the table above to record responses."))
+      }
+
+      items <- tryCatch(.query(rv$project$con,
+        "SELECT mci.coding_id, mci.item_status, mci.participant_response,
+                cod.seltext, cod.memo, c.name AS code_name, c.color AS code_color
+         FROM   member_check_items mci
+         JOIN   codings cod ON cod.id = mci.coding_id
+         JOIN   codes   c   ON c.id  = cod.code_id
+         WHERE  mci.check_id = ?
+         ORDER  BY cod.selfirst",
+        list(id_val)
+      ), error = function(e) tibble::tibble())
+
+      if (nrow(items) == 0L) {
+        return(shiny::p(class = "text-muted", "No items in this check."))
+      }
+
+      shiny::tagList(
+        shiny::h6(paste0(nrow(items), " item(s) — click Save to record each response")),
+        lapply(seq_len(nrow(items)), function(i) {
+          r          <- items[i, ]
+          col        <- r$code_color %||% "#4E79A7"
+          item_pfx   <- paste0("item_", id_val, "_", r$coding_id, "_")
+          badge_cls  <- switch(r$item_status,
+            confirmed = "badge bg-success",
+            disputed  = "badge bg-danger",
+            "badge bg-secondary"
+          )
+          shiny::div(
+            class = "mb-3 p-2",
+            style = paste0("border-left:3px solid ", col,
+                           ";background:#fafafa;border-radius:4px;"),
+            shiny::div(
+              class = "d-flex justify-content-between align-items-center mb-1",
+              shiny::tags$small(
+                class = "text-muted text-uppercase",
+                style = "letter-spacing:.04em;",
+                r$code_name
+              ),
+              shiny::tags$span(class = badge_cls, r$item_status)
+            ),
+            shiny::p(
+              class = "fst-italic mb-2",
+              style = "font-size:.9rem;",
+              paste0("“", substr(r$seltext, 1L, 250L),
+                     if (nchar(r$seltext) > 250L) "…" else "",
+                     "”")
+            ),
+            shiny::div(
+              class = "d-flex gap-2 align-items-start",
+              shiny::div(
+                style = "min-width:160px;",
+                shiny::selectInput(ns(paste0(item_pfx, "status")), NULL,
+                  choices  = c("Pending" = "pending",
+                               "Confirmed" = "confirmed",
+                               "Disputed"  = "disputed",
+                               "Other"     = "other"),
+                  selected = r$item_status)
+              ),
+              shiny::div(
+                class = "flex-grow-1",
+                shiny::textInput(ns(paste0(item_pfx, "response")), NULL,
+                  value       = r$participant_response %||% "",
+                  placeholder = "Participant comment (optional)")
+              ),
+              shiny::actionButton(
+                ns(paste0(item_pfx, "save")),
+                "Save",
+                class   = "btn-sm btn-outline-primary mt-1",
+                onclick = paste0(
+                  "Shiny.setInputValue('", ns("record_response"), "',",
+                  "{check_id:", id_val, ",coding_id:", r$coding_id,
+                  ",ts:Date.now()},{priority:'event'});"
+                )
+              )
+            )
+          )
+        })
+      )
+    })
+
+    # ── Record response (JS → R bridge) ──────────────────────────────────────
+
+    shiny::observeEvent(input$record_response, {
+      payload   <- input$record_response
+      shiny::req(payload$check_id, payload$coding_id)
+      check_id  <- as.integer(payload$check_id)
+      coding_id <- as.integer(payload$coding_id)
+      pfx       <- paste0("item_", check_id, "_", coding_id, "_")
+      status_v  <- input[[paste0(pfx, "status")]]   %||% "pending"
+      resp_v    <- input[[paste0(pfx, "response")]] %||% ""
+      tryCatch({
+        qc_record_member_response(rv$project, check_id, coding_id,
+                                   response = resp_v, status = status_v)
+        shiny::showNotification("Response recorded.", type = "message")
+        lv$refresh_checks <- lv$refresh_checks + 1L
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+  })
+}

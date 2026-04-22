@@ -16,7 +16,9 @@
   seq_autorules     = "CREATE SEQUENCE IF NOT EXISTS auto_coding_rules_id_seq START 1",
   seq_srcvers       = "CREATE SEQUENCE IF NOT EXISTS source_versions_id_seq START 1",
   seq_code_rels     = "CREATE SEQUENCE IF NOT EXISTS code_relations_id_seq START 1",
-  seq_coding_audit  = "CREATE SEQUENCE IF NOT EXISTS coding_audit_id_seq START 1",
+  seq_coding_audit      = "CREATE SEQUENCE IF NOT EXISTS coding_audit_id_seq START 1",
+  seq_member_checks     = "CREATE SEQUENCE IF NOT EXISTS member_checks_id_seq START 1",
+  seq_member_check_items = "CREATE SEQUENCE IF NOT EXISTS member_check_items_id_seq START 1",
 
   # project_meta — single-row KV store
   tbl_meta = "
@@ -41,7 +43,8 @@
       doc_version   INTEGER DEFAULT 1,
       content_hash  VARCHAR DEFAULT '',
       word_count    INTEGER DEFAULT 0,
-      parent_id     BIGINT
+      parent_id     BIGINT,
+      source_type   VARCHAR DEFAULT ''
     )
   ",
 
@@ -278,7 +281,34 @@
   ",
   idx_coding_audit_coding = "CREATE INDEX IF NOT EXISTS idx_coding_audit_coding ON coding_audit(coding_id)",
   idx_coding_audit_src    = "CREATE INDEX IF NOT EXISTS idx_coding_audit_src    ON coding_audit(source_id)",
-  idx_coding_audit_at     = "CREATE INDEX IF NOT EXISTS idx_coding_audit_at     ON coding_audit(changed_at)"
+  idx_coding_audit_at     = "CREATE INDEX IF NOT EXISTS idx_coding_audit_at     ON coding_audit(changed_at)",
+
+  # member_checks — per-participant review records
+  tbl_member_checks = "
+    CREATE TABLE IF NOT EXISTS member_checks (
+      id                BIGINT PRIMARY KEY DEFAULT nextval('member_checks_id_seq'),
+      source_id         BIGINT NOT NULL,
+      participant_label VARCHAR NOT NULL DEFAULT '',
+      code_ids_filter   VARCHAR NOT NULL DEFAULT '',
+      sent_at           TIMESTAMPTZ DEFAULT now(),
+      response_at       TIMESTAMPTZ,
+      status            VARCHAR NOT NULL DEFAULT 'pending',
+      notes             VARCHAR NOT NULL DEFAULT '',
+      created_by        VARCHAR NOT NULL DEFAULT ''
+    )
+  ",
+  tbl_member_check_items = "
+    CREATE TABLE IF NOT EXISTS member_check_items (
+      id                   BIGINT PRIMARY KEY DEFAULT nextval('member_check_items_id_seq'),
+      check_id             BIGINT NOT NULL,
+      coding_id            BIGINT NOT NULL,
+      participant_response VARCHAR NOT NULL DEFAULT '',
+      item_status          VARCHAR NOT NULL DEFAULT 'pending',
+      response_at          TIMESTAMPTZ
+    )
+  ",
+  idx_mc_source = "CREATE INDEX IF NOT EXISTS idx_mc_source ON member_checks(source_id)",
+  idx_mci_check = "CREATE INDEX IF NOT EXISTS idx_mci_check ON member_check_items(check_id)"
 )
 
 .bootstrap_schema <- function(con) {
@@ -303,6 +333,7 @@
   .add_column_if_missing(con, "sources", "content_hash",   "VARCHAR DEFAULT ''")
   .add_column_if_missing(con, "sources", "word_count",          "INTEGER DEFAULT 0")
   .add_column_if_missing(con, "sources", "parent_id",           "BIGINT")
+  .add_column_if_missing(con, "sources", "source_type",         "VARCHAR DEFAULT ''")
   .add_column_if_missing(con, "codes",   "code_key",            "VARCHAR")
   .add_column_if_missing(con, "codes",   "deprecated",          "INTEGER DEFAULT 0")
   .add_column_if_missing(con, "codes",   "deprecated_reason",   "VARCHAR DEFAULT ''")

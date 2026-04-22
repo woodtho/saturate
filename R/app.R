@@ -16,6 +16,7 @@ saturate_ui <- function() {
     bslib::nav_panel("Codebook",  mod_codebook_ui("codebook")),
     bslib::nav_panel("Query",     mod_query_ui("query")),
     bslib::nav_panel("Graph",     mod_graph_ui("graph")),
+    bslib::nav_panel("Members",   mod_member_check_ui("members")),
     bslib::nav_panel("Audit",     mod_audit_ui("audit")),
 
     bslib::nav_spacer(),
@@ -70,7 +71,8 @@ saturate_server <- function(input, output, session, project) {
   mod_compare_server("compare",    rv)
   mod_query_server("query",        rv)
   mod_graph_server("graph",        rv)
-  mod_audit_server("audit",        rv)
+  mod_member_check_server("members", rv)
+  mod_audit_server("audit",         rv)
 
   shiny::observeEvent(input$btn_project_info, {
     info <- qc_project_info(rv$project)
