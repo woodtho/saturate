@@ -150,14 +150,14 @@ mod_audit_server <- function(id, rv) {
             rows[["code"]] <- tibble::tibble(
               event_type  = "code",
               operation   = ch$operation,
-              field       = ch$field,
-              old_value   = ch$old_value,
-              new_value   = ch$new_value,
+              field       = ch$field       %||% NA_character_,
+              old_value   = ch$old_value   %||% NA_character_,
+              new_value   = ch$new_value   %||% NA_character_,
               document    = NA_character_,
-              code        = ch$name,
+              code        = ch$code_name   %||% NA_character_,
               text        = NA_character_,
               coder       = NA_character_,
-              changed_by  = ch$changed_by,
+              changed_by  = NA_character_,
               changed_at  = ch$changed_at
             )
           }
