@@ -41,10 +41,18 @@ mod_documents_server <- function(id, rv) {
     output$tbl_docs <- DT::renderDataTable({
       DT::datatable(
         dplyr::select(docs(), id, name, n_codings, memo),
+        class     = "table table-hover",
         selection = "single",
         rownames  = FALSE,
-        options   = list(pageLength = 15, dom = "ftp"),
-        colnames  = c("ID", "Name", "Codings", "Memo")
+        options   = list(
+          pageLength = 15, dom = "ftp",
+          columnDefs = list(
+            list(targets = 0, width = "50px"),
+            list(targets = 2, width = "80px", className = "text-center"),
+            list(targets = 3, className = "dt-muted dt-truncate")
+          )
+        ),
+        colnames = c("ID", "Name", "Codings", "Memo")
       )
     })
 

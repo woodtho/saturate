@@ -27,11 +27,9 @@ mod_query_ui <- function(id) {
         choices = c("All" = ""), selected = ""),
       shiny::hr(),
       shiny::actionButton(ns("btn_run"), "Run Query",
-                          class = "btn-primary w-100"),
-      shiny::br(), shiny::br(),
+                          class = "btn-primary w-100 mb-2"),
       shiny::downloadButton(ns("btn_csv"), "Export CSV",
-                            class = "btn-outline-secondary w-100"),
-      shiny::br(), shiny::br(),
+                            class = "btn-outline-secondary w-100 mb-3"),
       shiny::uiOutput(ns("summary_text"))
     ),
 
@@ -171,8 +169,16 @@ mod_query_server <- function(id, rv) {
                       source_name, code_name, category_names,
                       seltext, memo, coder, coding_source,
                       coding_status, selfirst, selast),
+        class    = "table table-hover",
         rownames = FALSE,
-        options  = list(pageLength = 20, dom = "ftp", scrollX = TRUE),
+        options  = list(
+          pageLength = 20, dom = "ftp", scrollX = TRUE,
+          columnDefs = list(
+            list(targets = 3, className = "dt-truncate"),
+            list(targets = 4, className = "dt-muted dt-truncate"),
+            list(targets = c(8, 9), width = "60px", className = "text-center")
+          )
+        ),
         colnames = c("Document", "Code", "Categories", "Passage", "Memo",
                      "Coder", "Source", "Status", "Start", "End")
       )
@@ -203,8 +209,16 @@ mod_query_server <- function(id, rv) {
     output$tbl_search <- DT::renderDataTable({
       DT::datatable(
         search_results(),
+        class    = "table table-hover",
         rownames = FALSE,
-        options  = list(pageLength = 20, dom = "ftp", scrollX = TRUE),
+        options  = list(
+          pageLength = 20, dom = "ftp", scrollX = TRUE,
+          columnDefs = list(
+            list(targets = 0, visible = FALSE),
+            list(targets = 5, className = "dt-truncate"),
+            list(targets = 6, className = "dt-muted")
+          )
+        ),
         colnames = c("Doc ID", "Document", "Match #",
                      "Start", "End", "Match", "Context")
       )
@@ -219,8 +233,14 @@ mod_query_server <- function(id, rv) {
     output$tbl_cooc <- DT::renderDataTable({
       DT::datatable(
         cooc_results(),
+        class    = "table table-hover",
         rownames = FALSE,
-        options  = list(pageLength = 25, dom = "ftp"),
+        options  = list(
+          pageLength = 25, dom = "ftp",
+          columnDefs = list(
+            list(targets = c(0, 2), visible = FALSE)
+          )
+        ),
         colnames = c("Code 1 ID", "Code 1", "Code 2 ID", "Code 2", "Count")
       )
     })
@@ -244,6 +264,7 @@ mod_query_server <- function(id, rv) {
       shiny::req(xtab_results())
       DT::datatable(
         xtab_results(),
+        class    = "table table-hover",
         rownames = FALSE,
         options  = list(pageLength = 25, dom = "ftp", scrollX = TRUE)
       )

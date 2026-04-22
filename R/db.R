@@ -14,6 +14,9 @@
   seq_code_history  = "CREATE SEQUENCE IF NOT EXISTS code_history_id_seq START 1",
   seq_snapshots     = "CREATE SEQUENCE IF NOT EXISTS codebook_snapshots_id_seq START 1",
   seq_autorules     = "CREATE SEQUENCE IF NOT EXISTS auto_coding_rules_id_seq START 1",
+  seq_srcvers       = "CREATE SEQUENCE IF NOT EXISTS source_versions_id_seq START 1",
+  seq_code_rels     = "CREATE SEQUENCE IF NOT EXISTS code_relations_id_seq START 1",
+  seq_coding_audit  = "CREATE SEQUENCE IF NOT EXISTS coding_audit_id_seq START 1",
 
   # project_meta — single-row KV store
   tbl_meta = "
@@ -26,14 +29,36 @@
   # sources
   tbl_sources = "
     CREATE TABLE IF NOT EXISTS sources (
-      id          BIGINT PRIMARY KEY DEFAULT nextval('sources_id_seq'),
-      name        VARCHAR NOT NULL,
-      content     VARCHAR NOT NULL DEFAULT '',
-      memo        VARCHAR NOT NULL DEFAULT '',
-      status      INTEGER NOT NULL DEFAULT 1,
-      created_at  TIMESTAMPTZ DEFAULT now()
+      id            BIGINT PRIMARY KEY DEFAULT nextval('sources_id_seq'),
+      name          VARCHAR NOT NULL,
+      content       VARCHAR NOT NULL DEFAULT '',
+      memo          VARCHAR NOT NULL DEFAULT '',
+      status        INTEGER NOT NULL DEFAULT 1,
+      created_at    TIMESTAMPTZ DEFAULT now(),
+      filename      VARCHAR DEFAULT '',
+      source_system VARCHAR DEFAULT 'manual',
+      language      VARCHAR DEFAULT '',
+      doc_version   INTEGER DEFAULT 1,
+      content_hash  VARCHAR DEFAULT '',
+      word_count    INTEGER DEFAULT 0,
+      parent_id     BIGINT
     )
   ",
+
+  # source_versions — append-only content history
+  tbl_srcvers = "
+    CREATE TABLE IF NOT EXISTS source_versions (
+      id           BIGINT PRIMARY KEY DEFAULT nextval('source_versions_id_seq'),
+      source_id    BIGINT NOT NULL,
+      version      INTEGER NOT NULL,
+      content      VARCHAR NOT NULL,
+      content_hash VARCHAR NOT NULL DEFAULT '',
+      memo         VARCHAR NOT NULL DEFAULT '',
+      imported_at  TIMESTAMPTZ DEFAULT now(),
+      UNIQUE (source_id, version)
+    )
+  ",
+  idx_srcvers = "CREATE INDEX IF NOT EXISTS idx_src_versions_src ON source_versions(source_id)",
 
   # codes
   tbl_codes = "
@@ -44,9 +69,12 @@
       memo        VARCHAR NOT NULL DEFAULT '',
       status      INTEGER NOT NULL DEFAULT 1,
       created_at  TIMESTAMPTZ DEFAULT now(),
-      parent_id   BIGINT,
-      definition  VARCHAR DEFAULT '',
-      criteria    VARCHAR DEFAULT ''
+      parent_id         BIGINT,
+      definition        VARCHAR DEFAULT '',
+      criteria          VARCHAR DEFAULT '',
+      code_key          VARCHAR,
+      deprecated        INTEGER NOT NULL DEFAULT 0,
+      deprecated_reason VARCHAR NOT NULL DEFAULT ''
     )
   ",
 
@@ -85,11 +113,31 @@
       created_at     TIMESTAMPTZ DEFAULT now(),
       coder          VARCHAR DEFAULT 'default',
       coding_source  VARCHAR DEFAULT 'manual',
-      coding_status  VARCHAR DEFAULT 'validated'
+      coding_status  VARCHAR DEFAULT 'validated',
+      confidence     INTEGER
     )
   ",
-  idx_codings_src  = "CREATE INDEX IF NOT EXISTS idx_codings_source ON codings(source_id)",
-  idx_codings_code = "CREATE INDEX IF NOT EXISTS idx_codings_code   ON codings(code_id)",
+
+  # code_relations — non-hierarchical relationships between codes
+  tbl_code_rels = "
+    CREATE TABLE IF NOT EXISTS code_relations (
+      id            BIGINT PRIMARY KEY
+                      DEFAULT nextval('code_relations_id_seq'),
+      code_id_1     BIGINT NOT NULL,
+      code_id_2     BIGINT NOT NULL,
+      relation_type VARCHAR NOT NULL,
+      note          VARCHAR NOT NULL DEFAULT '',
+      status        INTEGER NOT NULL DEFAULT 1,
+      created_at    TIMESTAMPTZ DEFAULT now()
+    )
+  ",
+  idx_codings_src      = "CREATE INDEX IF NOT EXISTS idx_codings_source    ON codings(source_id)",
+  idx_codings_code     = "CREATE INDEX IF NOT EXISTS idx_codings_code      ON codings(code_id)",
+  idx_codings_src_stat = "CREATE INDEX IF NOT EXISTS idx_codings_src_stat  ON codings(source_id, status)",
+  idx_codings_cod_stat = "CREATE INDEX IF NOT EXISTS idx_codings_cod_stat  ON codings(code_id,   status)",
+  idx_codings_cdr_stat = "CREATE INDEX IF NOT EXISTS idx_codings_cdr_stat  ON codings(coder,     status)",
+  idx_codes_status     = "CREATE INDEX IF NOT EXISTS idx_codes_status       ON codes(status)",
+  idx_sources_status   = "CREATE INDEX IF NOT EXISTS idx_sources_status     ON sources(status)",
 
   # document_categories
   tbl_doccats = "
@@ -181,6 +229,7 @@
       changed_at  TIMESTAMPTZ DEFAULT now()
     )
   ",
+  idx_code_hist_code = "CREATE INDEX IF NOT EXISTS idx_code_hist_code ON code_history(code_id)",
 
   # codebook_snapshots — point-in-time codebook JSON snapshots
   tbl_snapshots = "
@@ -205,7 +254,31 @@
       status      INTEGER NOT NULL DEFAULT 1,
       created_at  TIMESTAMPTZ DEFAULT now()
     )
-  "
+  ",
+
+  # coding_audit — append-only log of every coding operation
+  tbl_coding_audit = "
+    CREATE TABLE IF NOT EXISTS coding_audit (
+      id          BIGINT PRIMARY KEY
+                    DEFAULT nextval('coding_audit_id_seq'),
+      coding_id   BIGINT NOT NULL,
+      source_id   BIGINT NOT NULL,
+      code_id     BIGINT NOT NULL,
+      operation   VARCHAR NOT NULL,
+      field       VARCHAR,
+      old_value   VARCHAR,
+      new_value   VARCHAR,
+      selfirst    INTEGER,
+      selast      INTEGER,
+      seltext     VARCHAR,
+      coder       VARCHAR,
+      changed_by  VARCHAR,
+      changed_at  TIMESTAMPTZ DEFAULT now()
+    )
+  ",
+  idx_coding_audit_coding = "CREATE INDEX IF NOT EXISTS idx_coding_audit_coding ON coding_audit(coding_id)",
+  idx_coding_audit_src    = "CREATE INDEX IF NOT EXISTS idx_coding_audit_src    ON coding_audit(source_id)",
+  idx_coding_audit_at     = "CREATE INDEX IF NOT EXISTS idx_coding_audit_at     ON coding_audit(changed_at)"
 )
 
 .bootstrap_schema <- function(con) {
@@ -221,22 +294,36 @@
   .add_column_if_missing(con, "codings", "coder",          "VARCHAR DEFAULT 'default'")
   .add_column_if_missing(con, "codings", "coding_source",  "VARCHAR DEFAULT 'manual'")
   .add_column_if_missing(con, "codings", "coding_status",  "VARCHAR DEFAULT 'validated'")
+  .add_column_if_missing(con, "codings", "confidence",     "INTEGER")
+  .add_column_if_missing(con, "annotations", "coder",      "VARCHAR DEFAULT 'default'")
+  .add_column_if_missing(con, "sources", "filename",       "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "sources", "source_system",  "VARCHAR DEFAULT 'manual'")
+  .add_column_if_missing(con, "sources", "language",       "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "sources", "doc_version",    "INTEGER DEFAULT 1")
+  .add_column_if_missing(con, "sources", "content_hash",   "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "sources", "word_count",          "INTEGER DEFAULT 0")
+  .add_column_if_missing(con, "sources", "parent_id",           "BIGINT")
+  .add_column_if_missing(con, "codes",   "code_key",            "VARCHAR")
+  .add_column_if_missing(con, "codes",   "deprecated",          "INTEGER DEFAULT 0")
+  .add_column_if_missing(con, "codes",   "deprecated_reason",   "VARCHAR DEFAULT ''")
 
   # Seed project_meta if empty
   existing <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM project_meta")$n
   if (existing == 0L) {
     DBI::dbExecute(con,
       "INSERT INTO project_meta (key, value) VALUES
-         ('name',       'Untitled Project'),
-         ('owner',      ''),
-         ('memo',       ''),
-         ('locked',     '0'),
-         ('created_at', CAST(now() AS VARCHAR))"
+         ('name',         'Untitled Project'),
+         ('owner',        ''),
+         ('memo',         ''),
+         ('locked',       '0'),
+         ('blind_coding', '0'),
+         ('created_at',   CAST(now() AS VARCHAR))"
     )
   } else {
     # Idempotent: add locked key to projects created before this field existed
     DBI::dbExecute(con,
-      "INSERT INTO project_meta (key, value) VALUES ('locked', '0')
+      "INSERT INTO project_meta (key, value)
+       VALUES ('locked', '0'), ('blind_coding', '0')
        ON CONFLICT (key) DO NOTHING"
     )
   }
@@ -401,7 +488,7 @@ print.qc_project <- function(x, ...) {
   proj_name  <- info$value[info$key == "name"]
   proj_owner <- info$value[info$key == "owner"]
   locked     <- identical(info$value[info$key == "locked"], "1")
-  cli::cli_text("<qc_project> {.strong {proj_name}} [{proj_owner}]{if (locked) ' \u{1F512}' else ''}")
+  cli::cli_text("<qc_project> {.strong {proj_name}} [{proj_owner}]{if (locked) ' \U0001F512' else ''}")
   cli::cli_text("  Path:      {.file {x$path}}")
   cli::cli_text("  Documents: {n_docs}  |  Codes: {n_codes}{if (locked) '  |  LOCKED' else ''}")
   invisible(x)

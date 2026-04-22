@@ -9,13 +9,10 @@ mod_codebook_ui <- function(id) {
       shiny::div(
         class = "p-2",
         shiny::textInput(ns("code_name"),  "Name"),
-        shiny::textInput(ns("code_color"), "Hex colour", value = "#4E79A7"),
-        shiny::div(
-          style = paste0("display:flex;gap:8px;align-items:center;",
-                         "margin-bottom:8px;"),
-          shiny::uiOutput(ns("color_preview")),
-          shiny::span("Preview", style = "font-size:0.85rem;color:#6c757d;")
-        ),
+        colourpicker::colourInput(ns("code_color"), "Colour",
+                                  value = "#4E79A7", showColour = "both"),
+        shiny::textAreaInput(ns("code_definition"), "Definition", rows = 3),
+        shiny::textAreaInput(ns("code_criteria"),   "Criteria (include/exclude)", rows = 3),
         shiny::textAreaInput(ns("code_memo"), "Memo", rows = 2),
         shiny::uiOutput(ns("action_buttons")),
         shiny::hr(),
@@ -90,18 +87,6 @@ mod_codebook_server <- function(id, rv) {
       else paste0("Edit: ", lv$selected_name)
     })
 
-    # ── Colour swatch preview ─────────────────────────────────────────────
-
-    output$color_preview <- shiny::renderUI({
-      col <- input$code_color
-      if (grepl("^#[0-9A-Fa-f]{6}$", col)) {
-        shiny::div(style = paste0(
-          "width:28px;height:28px;border-radius:4px;",
-          "background:", col, ";border:1px solid #ccc;"
-        ))
-      }
-    })
-
     # ── Context-aware action buttons ──────────────────────────────────────
 
     output$action_buttons <- shiny::renderUI({
@@ -140,12 +125,29 @@ mod_codebook_server <- function(id, rv) {
     # ── Codes table ───────────────────────────────────────────────────────
 
     output$tbl_codes <- DT::renderDataTable({
+      df <- dplyr::select(codes(), id, name, color, n_codings, categories,
+                          definition, criteria, memo)
+      df$color <- sprintf(
+        '<span class="qc-swatch" style="background:%s;" title="%s"></span>',
+        df$color, df$color
+      )
       DT::datatable(
-        dplyr::select(codes(), id, name, color, n_codings, categories, memo),
+        df,
+        class     = "table table-hover",
         selection = "single",
         rownames  = FALSE,
-        options   = list(pageLength = 20, dom = "ftp"),
-        colnames  = c("ID", "Name", "Colour", "Codings", "Categories", "Memo")
+        escape    = which(names(df) != "color"),
+        options   = list(
+          pageLength = 20, dom = "ftp",
+          columnDefs = list(
+            list(targets = 0, width = "50px"),
+            list(targets = 2, width = "44px", className = "text-center"),
+            list(targets = 3, width = "70px", className = "text-center"),
+            list(targets = c(5, 6, 7), className = "dt-muted dt-truncate")
+          )
+        ),
+        colnames = c("ID", "Name", "Color", "Codings", "Categories",
+                     "Definition", "Criteria", "Memo")
       )
     })
 
@@ -163,8 +165,10 @@ mod_codebook_server <- function(id, rv) {
       lv$selected_id   <- d$id[[row]]
       lv$selected_name <- d$name[[row]]
       shiny::updateTextInput(    session, "code_name",  value = d$name[[row]])
-      shiny::updateTextInput(    session, "code_color", value = d$color[[row]])
-      shiny::updateTextAreaInput(session, "code_memo",  value = d$memo[[row]])
+      colourpicker::updateColourInput(session, "code_color", value = d$color[[row]])
+      shiny::updateTextAreaInput(session, "code_definition", value = d$definition[[row]] %||% "")
+      shiny::updateTextAreaInput(session, "code_criteria",   value = d$criteria[[row]]   %||% "")
+      shiny::updateTextAreaInput(session, "code_memo",       value = d$memo[[row]])
     })
 
     # ── Add code ──────────────────────────────────────────────────────────
@@ -173,9 +177,11 @@ mod_codebook_server <- function(id, rv) {
       shiny::req(nchar(trimws(input$code_name)) > 0)
       tryCatch({
         qc_add_code(rv$project,
-                    name  = trimws(input$code_name),
-                    color = input$code_color,
-                    memo  = input$code_memo)
+                    name       = trimws(input$code_name),
+                    color      = input$code_color,
+                    definition = input$code_definition,
+                    criteria   = input$code_criteria,
+                    memo       = input$code_memo)
         rv$refresh_codes <- rv$refresh_codes + 1L
         .reset_form(session)
       }, error = function(e) {
@@ -189,9 +195,11 @@ mod_codebook_server <- function(id, rv) {
       shiny::req(lv$selected_id, nchar(trimws(input$code_name)) > 0)
       tryCatch({
         qc_update_code(rv$project, lv$selected_id,
-                       name  = trimws(input$code_name),
-                       color = input$code_color,
-                       memo  = input$code_memo)
+                       name       = trimws(input$code_name),
+                       color      = input$code_color,
+                       definition = input$code_definition,
+                       criteria   = input$code_criteria,
+                       memo       = input$code_memo)
         rv$refresh_codes <- rv$refresh_codes + 1L
         lv$selected_id   <- NULL
         lv$selected_name <- NULL
@@ -505,7 +513,9 @@ mod_codebook_server <- function(id, rv) {
 
 # Clear all form inputs and return to add-mode defaults
 .reset_form <- function(session) {
-  shiny::updateTextInput(    session, "code_name",  value = "")
-  shiny::updateTextInput(    session, "code_color", value = "#4E79A7")
-  shiny::updateTextAreaInput(session, "code_memo",  value = "")
+  shiny::updateTextInput(session, "code_name", value = "")
+  colourpicker::updateColourInput(session, "code_color", value = "#4E79A7")
+  shiny::updateTextAreaInput(session, "code_definition", value = "")
+  shiny::updateTextAreaInput(session, "code_criteria",   value = "")
+  shiny::updateTextAreaInput(session, "code_memo",       value = "")
 }

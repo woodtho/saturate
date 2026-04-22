@@ -1,3 +1,27 @@
+# Append one row to coding_audit. All arguments after `operation` are optional.
+.log_coding_audit <- function(con, coding_id, source_id, code_id, operation,
+                               field      = NULL, old_value  = NULL,
+                               new_value  = NULL, selfirst   = NULL,
+                               selast     = NULL, seltext    = NULL,
+                               coder      = NULL, changed_by = NULL) {
+  .exec(con,
+    "INSERT INTO coding_audit
+       (coding_id, source_id, code_id, operation, field,
+        old_value, new_value, selfirst, selast, seltext, coder, changed_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    list(as.integer(coding_id), as.integer(source_id), as.integer(code_id),
+         operation,
+         field      %||% NA_character_,
+         old_value  %||% NA_character_,
+         new_value  %||% NA_character_,
+         selfirst   %||% NA_integer_,
+         selast     %||% NA_integer_,
+         seltext    %||% NA_character_,
+         coder      %||% NA_character_,
+         changed_by %||% NA_character_)
+  )
+}
+
 #' Add a coded segment
 #'
 #' Records that the passage from character offset `selfirst` to `selast`
@@ -14,16 +38,19 @@
 #' @param coder Character. Coder identifier (username or label).
 #' @param coding_source One of `"manual"` or `"auto"`.
 #' @param coding_status One of `"draft"` or `"validated"`.
+#' @param confidence Integer 0–100 or `NULL`. Coder's confidence that this
+#'   passage belongs under this code. `NULL` means unrated.
 #'
 #' @return A one-row tibble: `id`, `source_id`, `code_id`, `selfirst`,
 #'   `selast`, `seltext`, `memo`, `coder`, `coding_source`,
-#'   `coding_status`, `created_at`.
+#'   `coding_status`, `confidence`, `created_at`.
 #' @export
 qc_add_coding <- function(project, source_id, code_id,
                           selfirst, selast, memo = "",
                           coder         = "default",
                           coding_source = "manual",
-                          coding_status = "validated") {
+                          coding_status = "validated",
+                          confidence    = NULL) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
@@ -33,35 +60,78 @@ qc_add_coding <- function(project, source_id, code_id,
   selast    <- as.integer(selast)
   if (selfirst < 1L) rlang::abort("`selfirst` must be >= 1.")
   if (selast < selfirst) rlang::abort("`selast` must be >= `selfirst`.")
+  if (!is.null(confidence)) {
+    confidence <- as.integer(confidence)
+    if (confidence < 0L || confidence > 100L)
+      rlang::abort("`confidence` must be between 0 and 100.")
+  }
+
+  dep_row <- .query(project$con,
+    "SELECT deprecated FROM codes WHERE id = ? AND status = 1",
+    list(code_id))
+  if (nrow(dep_row) > 0L && isTRUE(dep_row$deprecated[[1L]] == 1L))
+    rlang::abort(paste0("Code id = ", code_id, " is deprecated and cannot accept new codings."))
 
   doc     <- qc_get_document(project, source_id)
   seltext <- substr(doc$content, selfirst, selast)
 
-  .query(project$con,
-    "INSERT INTO codings
-       (source_id, code_id, selfirst, selast, seltext, memo,
-        coder, coding_source, coding_status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-     RETURNING id, source_id, code_id, selfirst, selast, seltext, memo,
-               coder, coding_source, coding_status, created_at",
-    list(source_id, code_id, selfirst, selast, seltext, memo %||% "",
-         coder %||% "default",
-         coding_source %||% "manual",
-         coding_status %||% "validated")
+  row <- if (is.null(confidence)) {
+    .query(project$con,
+      "INSERT INTO codings
+         (source_id, code_id, selfirst, selast, seltext, memo,
+          coder, coding_source, coding_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       RETURNING id, source_id, code_id, selfirst, selast, seltext, memo,
+                 coder, coding_source, coding_status, confidence, created_at",
+      list(source_id, code_id, selfirst, selast, seltext, memo %||% "",
+           coder %||% "default",
+           coding_source %||% "manual",
+           coding_status %||% "validated")
+    )
+  } else {
+    .query(project$con,
+      "INSERT INTO codings
+         (source_id, code_id, selfirst, selast, seltext, memo,
+          coder, coding_source, coding_status, confidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       RETURNING id, source_id, code_id, selfirst, selast, seltext, memo,
+                 coder, coding_source, coding_status, confidence, created_at",
+      list(source_id, code_id, selfirst, selast, seltext, memo %||% "",
+           coder %||% "default",
+           coding_source %||% "manual",
+           coding_status %||% "validated",
+           confidence)
+    )
+  }
+  .log_coding_audit(project$con,
+    coding_id  = row$id,
+    source_id  = row$source_id,
+    code_id    = row$code_id,
+    operation  = "create",
+    selfirst   = row$selfirst,
+    selast     = row$selast,
+    seltext    = row$seltext,
+    coder      = row$coder,
+    changed_by = row$coder
   )
+  row
 }
 
-#' List codings, optionally filtered by document and/or code
+#' List codings, optionally filtered
 #'
 #' @param project A `qc_project` object.
 #' @param source_id Integer or `NULL`. Restrict to a single document.
 #' @param code_id Integer or `NULL`. Restrict to a single code.
+#' @param coder Character or `NULL`. Restrict to a single coder. Used to
+#'   implement blind coding — pass the current coder's name to hide all
+#'   other coders' annotations.
 #'
 #' @return A tibble: `id`, `source_id`, `code_id`, `code_name`,
-#'   `code_color`, `selfirst`, `selast`, `seltext`, `memo`, `created_at`.
-#'   Ordered by `selfirst`.
+#'   `code_color`, `selfirst`, `selast`, `seltext`, `memo`, `coder`,
+#'   `confidence`, `created_at`. Ordered by `selfirst`.
 #' @export
-qc_list_codings <- function(project, source_id = NULL, code_id = NULL) {
+qc_list_codings <- function(project, source_id = NULL, code_id = NULL,
+                             coder = NULL) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   conds  <- "cod.status = 1"
@@ -74,12 +144,16 @@ qc_list_codings <- function(project, source_id = NULL, code_id = NULL) {
     conds  <- paste0(conds, " AND cod.code_id = ?")
     params <- c(params, list(as.integer(code_id)))
   }
+  if (!is.null(coder)) {
+    conds  <- paste0(conds, " AND cod.coder = ?")
+    params <- c(params, list(as.character(coder)))
+  }
   .query(project$con, paste0("
     SELECT cod.id, cod.source_id, cod.code_id,
            c.name  AS code_name,
            c.color AS code_color,
            cod.selfirst, cod.selast, cod.seltext, cod.memo,
-           cod.created_at
+           cod.coder, cod.coding_status, cod.confidence, cod.created_at
     FROM   codings cod
     JOIN   codes c ON c.id = cod.code_id
     WHERE  ", conds, "
@@ -98,7 +172,23 @@ qc_delete_coding <- function(project, id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
-  .soft_delete(project$con, "codings", "id", as.integer(id))
+  id  <- as.integer(id)
+  row <- .query(project$con,
+    "SELECT id, source_id, code_id, selfirst, selast, seltext, coder
+     FROM   codings WHERE id = ? AND status = 1", list(id))
+  .soft_delete(project$con, "codings", "id", id)
+  if (nrow(row) > 0L)
+    .log_coding_audit(project$con,
+      coding_id  = row$id[[1L]],
+      source_id  = row$source_id[[1L]],
+      code_id    = row$code_id[[1L]],
+      operation  = "delete",
+      selfirst   = row$selfirst[[1L]],
+      selast     = row$selast[[1L]],
+      seltext    = row$seltext[[1L]],
+      coder      = row$coder[[1L]],
+      changed_by = row$coder[[1L]]
+    )
   invisible(1L)
 }
 
@@ -117,11 +207,371 @@ qc_reassign_coding <- function(project, coding_id, new_code_id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
+  coding_id   <- as.integer(coding_id)
+  new_code_id <- as.integer(new_code_id)
+  row <- .query(project$con,
+    "SELECT source_id, code_id, selfirst, selast, seltext, coder
+     FROM   codings WHERE id = ? AND status = 1", list(coding_id))
   .exec(project$con,
     "UPDATE codings SET code_id = ? WHERE id = ? AND status = 1",
-    list(as.integer(new_code_id), as.integer(coding_id))
+    list(new_code_id, coding_id)
   )
+  if (nrow(row) > 0L)
+    .log_coding_audit(project$con,
+      coding_id  = coding_id,
+      source_id  = row$source_id[[1L]],
+      code_id    = new_code_id,
+      operation  = "reassign",
+      field      = "code_id",
+      old_value  = as.character(row$code_id[[1L]]),
+      new_value  = as.character(new_code_id),
+      selfirst   = row$selfirst[[1L]],
+      selast     = row$selast[[1L]],
+      seltext    = row$seltext[[1L]],
+      coder      = row$coder[[1L]],
+      changed_by = row$coder[[1L]]
+    )
   invisible(TRUE)
+}
+
+#' Update the memo on a single coding
+#'
+#' @param project A `qc_project` object.
+#' @param id Integer. Coding id.
+#' @param memo Character. New memo text.
+#'
+#' @return Invisibly `TRUE`.
+#' @export
+qc_update_coding_memo <- function(project, id, memo) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  id  <- as.integer(id)
+  row <- .query(project$con,
+    "SELECT source_id, code_id, memo, coder FROM codings
+     WHERE  id = ? AND status = 1", list(id))
+  .exec(project$con,
+    "UPDATE codings SET memo = ? WHERE id = ? AND status = 1",
+    list(as.character(memo), id)
+  )
+  if (nrow(row) > 0L)
+    .log_coding_audit(project$con,
+      coding_id  = id,
+      source_id  = row$source_id[[1L]],
+      code_id    = row$code_id[[1L]],
+      operation  = "update",
+      field      = "memo",
+      old_value  = row$memo[[1L]] %||% "",
+      new_value  = as.character(memo),
+      coder      = row$coder[[1L]],
+      changed_by = row$coder[[1L]]
+    )
+  invisible(TRUE)
+}
+
+#' Update the confidence score on a single coding
+#'
+#' @param project A `qc_project` object.
+#' @param id Integer. Coding id.
+#' @param confidence Integer 0–100 or `NULL` (unrated).
+#'
+#' @return Invisibly `TRUE`.
+#' @export
+qc_update_coding_confidence <- function(project, id, confidence) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  id  <- as.integer(id)
+  row <- .query(project$con,
+    "SELECT source_id, code_id, confidence, coder FROM codings
+     WHERE  id = ? AND status = 1", list(id))
+  if (is.null(confidence)) {
+    .exec(project$con,
+      "UPDATE codings SET confidence = NULL WHERE id = ? AND status = 1",
+      list(id)
+    )
+  } else {
+    conf <- as.integer(confidence)
+    if (conf < 0L || conf > 100L)
+      rlang::abort("`confidence` must be between 0 and 100.")
+    .exec(project$con,
+      "UPDATE codings SET confidence = ? WHERE id = ? AND status = 1",
+      list(conf, id)
+    )
+  }
+  if (nrow(row) > 0L)
+    .log_coding_audit(project$con,
+      coding_id  = id,
+      source_id  = row$source_id[[1L]],
+      code_id    = row$code_id[[1L]],
+      operation  = "update",
+      field      = "confidence",
+      old_value  = if (is.na(row$confidence[[1L]])) NA_character_
+                   else as.character(row$confidence[[1L]]),
+      new_value  = if (is.null(confidence)) NA_character_
+                   else as.character(as.integer(confidence)),
+      coder      = row$coder[[1L]],
+      changed_by = row$coder[[1L]]
+    )
+  invisible(TRUE)
+}
+
+#' Split a coding into two at a character position
+#'
+#' Soft-deletes the original coding and creates two replacements:
+#' `[selfirst, split_at]` and `[split_at + 1, selast]`. Both children
+#' inherit the original's code, coder, source, and coding metadata.
+#'
+#' @param project A `qc_project` object.
+#' @param coding_id Integer. The coding to split.
+#' @param split_at Integer. Absolute character position (same coordinate
+#'   system as `selfirst`/`selast`). Must be in
+#'   `[selfirst, selast - 1]`.
+#' @param memo1,memo2 Character. Memos for the two new codings.
+#'
+#' @return A two-row tibble of the created codings.
+#' @export
+qc_split_coding <- function(project, coding_id,
+                             split_at, memo1 = "", memo2 = "") {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  coding_id <- as.integer(coding_id)
+  split_at  <- as.integer(split_at)
+
+  orig <- .query(project$con,
+    "SELECT * FROM codings WHERE id = ? AND status = 1",
+    list(coding_id)
+  )
+  if (nrow(orig) == 0L)
+    rlang::abort(paste0("No active coding with id = ", coding_id))
+  if (split_at < orig$selfirst || split_at >= orig$selast)
+    rlang::abort(paste0(
+      "`split_at` must be in [selfirst, selast - 1]: [",
+      orig$selfirst, ", ", orig$selast - 1L, "]"
+    ))
+
+  .soft_delete(project$con, "codings", "id", coding_id)
+
+  r1 <- qc_add_coding(project,
+    source_id     = orig$source_id,
+    code_id       = orig$code_id,
+    selfirst      = orig$selfirst,
+    selast        = split_at,
+    memo          = if (nchar(memo1) > 0L) memo1 else orig$memo %||% "",
+    coder         = orig$coder %||% "default",
+    coding_source = orig$coding_source %||% "manual",
+    coding_status = orig$coding_status %||% "validated"
+  )
+  r2 <- qc_add_coding(project,
+    source_id     = orig$source_id,
+    code_id       = orig$code_id,
+    selfirst      = split_at + 1L,
+    selast        = orig$selast,
+    memo          = if (nchar(memo2) > 0L) memo2 else orig$memo %||% "",
+    coder         = orig$coder %||% "default",
+    coding_source = orig$coding_source %||% "manual",
+    coding_status = orig$coding_status %||% "validated"
+  )
+  rbind(r1, r2)
+}
+
+#' Merge two or more codings into one
+#'
+#' All codings must belong to the same document. The merged coding spans
+#' `min(selfirst)` to `max(selast)` of the group. Input codings are
+#' soft-deleted.
+#'
+#' @param project A `qc_project` object.
+#' @param coding_ids Integer vector. At least two coding ids.
+#' @param code_id Integer or `NULL`. Code for the merged coding. Defaults
+#'   to the code of the first coding in `coding_ids`.
+#' @param memo Character. Memo for the merged coding.
+#'
+#' @return A one-row tibble of the created coding.
+#' @export
+qc_merge_codings <- function(project, coding_ids, code_id = NULL,
+                              memo = "") {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  coding_ids <- as.integer(coding_ids)
+  if (length(coding_ids) < 2L)
+    rlang::abort("Supply at least two coding ids.")
+
+  ids_sql <- paste(coding_ids, collapse = ",")
+  rows <- .query(project$con, paste0(
+    "SELECT * FROM codings WHERE id IN (", ids_sql, ") AND status = 1"
+  ))
+  if (nrow(rows) != length(coding_ids))
+    rlang::abort("One or more coding ids not found or already deleted.")
+  if (length(unique(rows$source_id)) > 1L)
+    rlang::abort("All codings must belong to the same document.")
+
+  merged_code  <- if (!is.null(code_id)) as.integer(code_id)
+                  else rows$code_id[[1L]]
+  merged_coder <- rows$coder[[1L]] %||% "default"
+
+  for (id in coding_ids)
+    .soft_delete(project$con, "codings", "id", id)
+
+  qc_add_coding(project,
+    source_id     = rows$source_id[[1L]],
+    code_id       = merged_code,
+    selfirst      = min(rows$selfirst),
+    selast        = max(rows$selast),
+    memo          = memo,
+    coder         = merged_coder,
+    coding_source = "manual",
+    coding_status = "validated"
+  )
+}
+
+#' Find uncoded text segments in a document
+#'
+#' Splits a document into paragraphs or sentences and returns those that have
+#' no overlapping active coding. Useful for navigating to unreviewed text.
+#'
+#' @param project A `qc_project` object.
+#' @param source_id Integer. Document id.
+#' @param unit One of `"paragraph"` (default) or `"sentence"`.
+#' @param min_chars Integer. Minimum segment length to report (default 20).
+#'
+#' @return A tibble: `start`, `end`, `text`.
+#' @export
+qc_uncoded_segments <- function(project, source_id,
+                                 unit      = c("paragraph", "sentence"),
+                                 min_chars = 20L) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  unit      <- match.arg(unit)
+  source_id <- as.integer(source_id)
+  min_chars <- as.integer(min_chars)
+
+  doc     <- qc_get_document(project, source_id)
+  content <- doc$content
+  n       <- nchar(content)
+
+  EMPTY <- tibble::tibble(start = integer(), end = integer(),
+                          text  = character())
+  if (n == 0L) return(EMPTY)
+
+  units <- if (unit == "paragraph") .split_paragraphs(content)
+           else                     .split_sentences(content)
+  if (nrow(units) == 0L) return(EMPTY)
+
+  codings <- qc_list_codings(project, source_id)
+
+  keep <- vapply(seq_len(nrow(units)), function(i) {
+    s   <- units$start[[i]]
+    e   <- units$end[[i]]
+    if ((e - s + 1L) < min_chars) return(FALSE)
+    if (nrow(codings) == 0L) return(TRUE)
+    !any(codings$selfirst <= e & codings$selast >= s)
+  }, logical(1L))
+
+  units[keep, ]
+}
+
+#' Find disputed or draft-status segments in a document
+#'
+#' Returns codings that are either in `"draft"` status or that overlap with
+#' another coder's coding on a different code (a coder conflict).
+#'
+#' @param project A `qc_project` object.
+#' @param source_id Integer. Document id.
+#'
+#' @return A tibble: `coding_id`, `code_name`, `coder`, `reason`,
+#'   `selfirst`, `selast`, `seltext`. Ordered by `selfirst`.
+#' @export
+qc_disputed_segments <- function(project, source_id) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  source_id <- as.integer(source_id)
+
+  EMPTY <- tibble::tibble(
+    coding_id = integer(), code_name = character(),
+    coder     = character(), reason    = character(),
+    selfirst  = integer(),  selast    = integer(),
+    seltext   = character()
+  )
+
+  drafts <- .query(project$con,
+    "SELECT cod.id        AS coding_id,
+            c.name        AS code_name,
+            cod.coder     AS coder,
+            'draft'       AS reason,
+            cod.selfirst, cod.selast, cod.seltext
+     FROM   codings cod
+     JOIN   codes c ON c.id = cod.code_id
+     WHERE  cod.source_id = ? AND cod.status = 1
+       AND  cod.coding_status = 'draft'",
+    list(source_id))
+
+  conflicts <- .query(project$con,
+    "SELECT DISTINCT
+            c1.id         AS coding_id,
+            cod1.name     AS code_name,
+            c1.coder      AS coder,
+            'coder_conflict' AS reason,
+            c1.selfirst, c1.selast, c1.seltext
+     FROM   codings c1
+     JOIN   codes  cod1 ON cod1.id = c1.code_id
+     JOIN   codings c2  ON c2.source_id = c1.source_id
+                       AND c2.id       != c1.id
+                       AND c2.status    = 1
+                       AND c2.coder    != c1.coder
+                       AND c2.code_id  != c1.code_id
+                       AND c2.selfirst <= c1.selast
+                       AND c2.selast   >= c1.selfirst
+     WHERE  c1.source_id = ? AND c1.status = 1",
+    list(source_id))
+
+  result <- rbind(drafts, conflicts)
+  if (nrow(result) == 0L) return(EMPTY)
+
+  # Deduplicate: keep one row per coding_id
+  result <- result[!duplicated(result$coding_id), ]
+  result[order(result$selfirst), ]
+}
+
+# ── Internal document splitting helpers ────────────────────────────────────────
+
+.split_paragraphs <- function(content) {
+  m <- gregexpr("\\n{2,}", content, perl = TRUE)[[1L]]
+  if (m[[1L]] == -1L)
+    return(tibble::tibble(start = 1L, end = nchar(content), text = content))
+
+  sep_starts  <- as.integer(m)
+  sep_lengths <- attr(m, "match.length")
+  para_starts <- c(1L, sep_starts + sep_lengths)
+  para_ends   <- c(sep_starts - 1L, nchar(content))
+
+  keep <- nchar(trimws(substr(content, para_starts, para_ends))) > 0L
+  tibble::tibble(
+    start = para_starts[keep],
+    end   = para_ends[keep],
+    text  = substr(content, para_starts[keep], para_ends[keep])
+  )
+}
+
+.split_sentences <- function(content) {
+  m <- gregexpr("[.!?]+\\s+", content, perl = TRUE)[[1L]]
+  if (m[[1L]] == -1L)
+    return(tibble::tibble(start = 1L, end = nchar(content), text = content))
+
+  sep_starts  <- as.integer(m)
+  sep_lengths <- attr(m, "match.length")
+  sent_starts <- c(1L, sep_starts + sep_lengths)
+  sent_ends   <- c(sep_starts + sep_lengths - 1L, nchar(content))
+
+  keep <- sent_starts <= sent_ends &
+          nchar(trimws(substr(content, sent_starts, sent_ends))) > 0L
+  tibble::tibble(
+    start = sent_starts[keep],
+    end   = sent_ends[keep],
+    text  = substr(content, sent_starts[keep], sent_ends[keep])
+  )
 }
 
 # Build highlighted HTML from document content and a codings tibble.
@@ -131,20 +581,36 @@ qc_reassign_coding <- function(project, coding_id, new_code_id) {
 # that no inter-node whitespace is injected between text runs and <mark>
 # elements. That preserves the document's original line breaks and spacing
 # exactly as stored.
-build_highlighted_html <- function(content, codings) {
+#
+# opacity:  numeric 0–1, controls highlight background alpha.
+# cb_mode:  when TRUE uses a colored border-bottom instead of background fill,
+#           making codings distinguishable without relying on colour alone.
+# highlight_codes: integer vector; when not NULL only these code_ids are shown.
+build_highlighted_html <- function(content, codings,
+                                    opacity         = 0.33,
+                                    cb_mode         = FALSE,
+                                    highlight_codes = NULL) {
   n <- nchar(content)
 
   make_div <- function(inner_html) {
     htmltools::div(
-      class = "qc-text-display",
-      style = .text_display_style(),
+      class       = "qc-text-display",
+      role        = "region",
+      tabindex    = "0",
+      `aria-label` = "Document text — select a passage then choose a code to apply",
+      style       = .text_display_style(),
       htmltools::HTML(inner_html)
     )
   }
 
-  if (nrow(codings) == 0L || n == 0L) {
+  if (!is.null(highlight_codes))
+    codings <- codings[codings$code_id %in% as.integer(highlight_codes), ]
+
+  if (nrow(codings) == 0L || n == 0L)
     return(make_div(htmltools::htmlEscape(content)))
-  }
+
+  # Alpha hex suffix derived from opacity (clamped to [0.05, 1.0])
+  alpha_hex <- sprintf("%02X", as.integer(round(pmin(pmax(opacity, 0.05), 1.0) * 255)))
 
   breaks <- sort(unique(c(1L, codings$selfirst, codings$selast + 1L, n + 1L)))
   breaks <- breaks[breaks >= 1L & breaks <= n + 1L]
@@ -161,14 +627,28 @@ build_highlighted_html <- function(content, codings) {
     if (nrow(active) == 0L) {
       html_parts[[i]] <- seg_html
     } else {
-      col <- active$code_color[[1L]]
-      tip <- htmltools::htmlEscape(paste(active$code_name, collapse = ", "))
-      bg  <- if (grepl("^#[0-9A-Fa-f]{6}$", col)) paste0(col, "55") else col
+      col  <- active$code_color[[1L]]
+      tip  <- htmltools::htmlEscape(paste(active$code_name, collapse = ", "))
+      aria <- htmltools::htmlEscape(paste0("Coded as: ", tip))
+      hex  <- if (grepl("^#[0-9A-Fa-f]{6}$", col)) col else "#4E79A7"
+
+      style <- if (cb_mode) {
+        paste0("background-color:rgba(0,0,0,0.06);",
+               "border-bottom:3px solid ", hex, ";",
+               "border-radius:0;cursor:pointer;")
+      } else {
+        paste0("background-color:", hex, alpha_hex, ";cursor:pointer;")
+      }
+
+      ids_str <- paste(active$id, collapse = ",")
       html_parts[[i]] <- paste0(
-        '<mark style="background-color:', bg, '; cursor:pointer;"',
-        ' title="', tip, '"',
-        ' data-selfirst="', seg_start, '"',
-        ' data-selast="',   seg_end,   '">',
+        '<mark role="mark"',
+        ' aria-label="', aria, '"',
+        ' title="',      tip,  '"',
+        ' style="',      style, '"',
+        ' data-selfirst="',   seg_start, '"',
+        ' data-selast="',     seg_end,   '"',
+        ' data-coding-ids="', ids_str,   '">',
         seg_html,
         '</mark>'
       )
@@ -178,11 +658,54 @@ build_highlighted_html <- function(content, codings) {
   make_div(paste(html_parts, collapse = ""))
 }
 
-.text_display_style <- function() {
-  paste0(
-    "white-space: pre-wrap; font-family: Georgia, serif; line-height: 1.9; ",
-    "padding: 1.2rem; height: 68vh; overflow-y: scroll; ",
-    "font-size: 0.95rem; border: 1px solid #dee2e6; border-radius: 4px; ",
-    "user-select: text;"
-  )
+.text_display_style <- function() "user-select: text;"
+
+#' Retrieve the coding audit log
+#'
+#' Returns an append-only record of every coding operation (create, delete,
+#' update, reassign) across the project. Combined with [qc_code_history()] this
+#' gives a complete audit trail of all analytical decisions.
+#'
+#' @param project A `qc_project` object.
+#' @param source_id Integer or `NULL`. Filter to a single document.
+#' @param operation Character or `NULL`. One of `"create"`, `"delete"`,
+#'   `"update"`, `"reassign"`.
+#' @param from_date Date/POSIXct or `NULL`. Earliest `changed_at` to include.
+#' @param to_date   Date/POSIXct or `NULL`. Latest `changed_at` to include.
+#'
+#' @return A tibble ordered by `changed_at` descending: `id`, `coding_id`,
+#'   `operation`, `field`, `old_value`, `new_value`, `source_name`,
+#'   `code_name`, `selfirst`, `selast`, `seltext`, `coder`, `changed_by`,
+#'   `changed_at`.
+#' @export
+qc_coding_audit <- function(project, source_id = NULL, operation = NULL,
+                             from_date = NULL, to_date = NULL) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+
+  w_src  <- if (!is.null(source_id))
+    paste0("AND ca.source_id = ", as.integer(source_id)) else ""
+  w_op   <- if (!is.null(operation))
+    paste0("AND ca.operation = '", operation, "'") else ""
+  w_from <- if (!is.null(from_date))
+    paste0("AND ca.changed_at >= TIMESTAMPTZ '",
+           format(as.POSIXct(from_date), "%Y-%m-%d %H:%M:%S"), "'") else ""
+  w_to   <- if (!is.null(to_date))
+    paste0("AND ca.changed_at <= TIMESTAMPTZ '",
+           format(as.POSIXct(to_date),   "%Y-%m-%d %H:%M:%S"), "'") else ""
+
+  .query(project$con, paste0("
+    SELECT ca.id, ca.coding_id, ca.operation, ca.field,
+           ca.old_value, ca.new_value,
+           s.name  AS source_name,
+           c.name  AS code_name,
+           ca.selfirst, ca.selast, ca.seltext,
+           ca.coder, ca.changed_by, ca.changed_at
+    FROM   coding_audit ca
+    LEFT   JOIN sources s ON s.id = ca.source_id
+    LEFT   JOIN codes   c ON c.id = ca.code_id
+    WHERE  1 = 1
+    ", w_src, w_op, w_from, w_to, "
+    ORDER  BY ca.changed_at DESC
+  "))
 }
