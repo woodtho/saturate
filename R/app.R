@@ -27,26 +27,42 @@ saturate_ui <- function() {
       bslib::nav_spacer(),
       bslib::nav_item(
         shiny::div(
-          class = "qc-navbar-session",
+          class = "qc-navbar-session d-flex align-items-center gap-2",
+
+          # ── Active coder ─────────────────────────────────────────────────
           shiny::div(
-            class = "qc-navbar-field qc-navbar-field--coder",
-            shiny::selectizeInput(
-              "current_coder",
-              label    = "Active coder",
-              choices  = stats::setNames(default_coder, default_coder),
-              selected = default_coder,
-              width    = "190px",
-              options  = list(
-                create           = TRUE,
-                persist          = TRUE,
-                maxItems         = 1,
-                closeAfterSelect = TRUE,
-                placeholder      = "Type or pick a coder"
+            class = "qc-coder-block d-flex flex-column",
+            style = "line-height:1;",
+            shiny::tags$span(
+              "CODING AS",
+              style = paste0("font-size:0.62rem;font-weight:600;",
+                             "letter-spacing:.07em;color:rgba(255,255,255,.5);",
+                             "margin-bottom:2px;")
+            ),
+            shiny::div(
+              class = "d-flex align-items-center gap-1",
+              shiny::selectizeInput(
+                "current_coder",
+                label    = NULL,
+                choices  = stats::setNames(default_coder, default_coder),
+                selected = default_coder,
+                width    = "155px",
+                options  = list(
+                  create           = TRUE,
+                  persist          = TRUE,
+                  maxItems         = 1,
+                  closeAfterSelect = TRUE,
+                  placeholder      = "Type or pick…"
+                )
               )
             )
           ),
+
+          # ── Blind mode toggle ─────────────────────────────────────────────
+          shiny::uiOutput("ui_blind_btn", inline = TRUE),
+
           shiny::actionButton("btn_project_info", "Project",
-                              class = "btn-sm btn-outline-light qc-navbar-project")
+                              class = "btn-sm btn-outline-light ms-1 qc-navbar-project")
         )
       )
     )
@@ -63,7 +79,8 @@ saturate_server <- function(input, output, session, project) {
     refresh_docs     = 0L,
     refresh_codes    = 0L,
     active_source_id = NULL,
-    current_coder    = default_coder
+    current_coder    = default_coder,
+    blind_mode       = FALSE
   )
 
   shiny::observeEvent(input$current_coder, {
@@ -88,6 +105,32 @@ saturate_server <- function(input, output, session, project) {
       selected = selected,
       server   = FALSE
     )
+  })
+
+  # ── Blind mode toggle ──────────────────────────────────────────────────────
+
+  output$ui_blind_btn <- shiny::renderUI({
+    is_blind <- isTRUE(rv$blind_mode)
+    shiny::actionButton(
+      "btn_blind_mode",
+      if (is_blind)
+        shiny::tagList(shiny::icon("lock"),     " Blind ON")
+      else
+        shiny::tagList(shiny::icon("lock-open"), " Blind"),
+      class = if (is_blind)
+        "btn-sm btn-warning"
+      else
+        "btn-sm btn-outline-light",
+      title = paste0(
+        "Blind coding mode: hide other coders' work while coding. ",
+        if (is_blind) "Currently ON — click to disable."
+        else "Currently OFF — click to enable."
+      )
+    )
+  })
+
+  shiny::observeEvent(input$btn_blind_mode, {
+    rv$blind_mode <- !isTRUE(rv$blind_mode)
   })
 
   mod_documents_server("docs",     rv)

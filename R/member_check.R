@@ -126,12 +126,12 @@ qc_export_member_check <- function(project, check_id, path = NULL,
       rlang::abort("Package 'officer' is required for DOCX export. Install with: install.packages('officer')")
     doc <- .mc_docx(check, items, proj_info)
     if (!is.null(path)) {
-      officer::print(doc, target = path)
+      print(doc, target = path)
       cli::cli_alert_success("Member check exported to {.file {path}}")
       invisible(path)
     } else {
       tmp <- tempfile(fileext = ".docx")
-      officer::print(doc, target = tmp)
+      print(doc, target = tmp)
       invisible(tmp)
     }
   } else {
@@ -420,10 +420,10 @@ whether each interpretation accurately reflects your experience.</p>
   add <- function(d, ...) officer::body_add_par(d, ...)
 
   doc <- add(doc, "Member Check", style = "heading 1")
-  doc <- add(doc, paste0("Project: ", proj_info$name))
-  doc <- add(doc, paste0("Document: ", check$doc_name))
-  doc <- add(doc, paste0("Participant: ", check$participant_label))
-  doc <- add(doc, paste0("Date: ", format(check$sent_at, "%d %B %Y")))
+  doc <- add(doc, paste0("Project: ",     as.character(proj_info$name[[1L]])))
+  doc <- add(doc, paste0("Document: ",    as.character(check$doc_name[[1L]])))
+  doc <- add(doc, paste0("Participant: ", as.character(check$participant_label[[1L]])))
+  doc <- add(doc, paste0("Date: ",        format(check$sent_at[[1L]], "%d %B %Y")))
   doc <- add(doc, "")
   doc <- add(doc,
     "We have identified the following themes in your responses. Please indicate whether each interpretation accurately reflects your experience.")
@@ -435,17 +435,11 @@ whether each interpretation accurately reflects your experience.</p>
   } else {
     for (i in seq_len(nrow(items))) {
       r <- items[i, ]
-      doc <- add(doc, r$code_name, style = "heading 3")
-      doc <- officer::body_add_fpar(doc,
-        officer::fpar(
-          officer::ftext(
-            paste0("“", trimws(r$seltext), "”"),
-            prop = officer::fp_text(italic = TRUE)
-          )
-        )
-      )
-      if (!is.na(r$memo) && nchar(r$memo) > 0L)
-        doc <- add(doc, paste0("Researcher note: ", r$memo))
+      doc <- add(doc, as.character(r$code_name[[1L]]), style = “heading 3”)
+      doc <- add(doc, paste0(““”, trimws(as.character(r$seltext[[1L]])), “””))
+      memo_v <- as.character(r$memo[[1L]] %||% "")
+      if (!is.na(memo_v) && nchar(memo_v) > 0L)
+        doc <- add(doc, paste0("Researcher note: ", memo_v))
       doc <- add(doc, "Does this interpretation match your experience? Yes / No / Comment:")
       doc <- add(doc, "")
     }

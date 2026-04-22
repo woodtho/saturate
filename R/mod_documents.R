@@ -58,6 +58,9 @@ mod_documents_ui <- function(id) {
           "Documents",
           shiny::div(
             class = "d-flex gap-1",
+            shiny::actionButton(ns("btn_code_doc"), "Code →",
+              class = "btn-sm btn-primary",
+              title = "Open selected document in the Coding panel"),
             shiny::actionButton(ns("btn_edit_doc"), "Edit",
               class = "btn-sm btn-outline-secondary",
               title = "Edit selected document content"),
@@ -67,6 +70,12 @@ mod_documents_ui <- function(id) {
           )
         )
       ),
+      shiny::p(shiny::tags$small(
+        "Select a row, then click ",
+        shiny::tags$strong("Code →"),
+        " to open it in the Coding panel.",
+        class = "text-muted ps-2 pt-2 mb-0"
+      )),
       DT::dataTableOutput(ns("tbl_docs"))
     )
   )
@@ -109,11 +118,10 @@ mod_documents_server <- function(id, rv) {
       lv$selected_id <- if (!is.null(row)) docs()$id[[row]] else NULL
     })
 
-    # Row click → activate document and switch to Coding tab
-    shiny::observeEvent(input$tbl_docs_rows_selected, {
-      row <- input$tbl_docs_rows_selected
-      shiny::req(row)
-      rv$active_source_id <- docs()$id[[row]]
+    # "Code →" button: set active document and switch to Coding tab
+    shiny::observeEvent(input$btn_code_doc, {
+      shiny::req(lv$selected_id)
+      rv$active_source_id <- lv$selected_id
       shinyjs::runjs(
         "var t = document.querySelectorAll('[data-value=\"Coding\"]');
          if (t.length) t[0].click();"

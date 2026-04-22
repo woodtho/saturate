@@ -73,6 +73,7 @@ mod_coding_ui <- function(id) {
           ),
           shiny::uiOutput(ns("search_match_count"), inline = TRUE)
         ),
+        shiny::uiOutput(ns("blind_banner")),
         shiny::uiOutput(ns("text_display"))
       ),
 
@@ -100,10 +101,6 @@ mod_coding_ui <- function(id) {
                 label   = "Filter by coder",
                 choices = c("All coders" = ""),
                 selected = ""),
-              shiny::checkboxInput(ns("blind_mode"),
-                label = "Only show codings by the active coder",
-                value = FALSE),
-              shiny::uiOutput(ns("blind_mode_note")),
               shiny::sliderInput(ns("highlight_opacity"),
                 label = "Highlight opacity",
                 min = 0.1, max = 1.0, value = 0.33, step = 0.05,
@@ -190,7 +187,7 @@ mod_coding_server <- function(id, rv, parent_session) {
     codings_rv <- shiny::reactive({
       shiny::req(rv$active_source_id)
       rv$refresh_codes
-      coder_filter <- if (isTRUE(input$blind_mode)) rv$current_coder else NULL
+      coder_filter <- if (isTRUE(rv$blind_mode)) rv$current_coder else NULL
       qc_list_codings(rv$project, rv$active_source_id, coder = coder_filter)
     })
 
@@ -293,13 +290,16 @@ mod_coding_server <- function(id, rv, parent_session) {
       )
     })
 
-    output$blind_mode_note <- shiny::renderUI({
-      if (!isTRUE(input$blind_mode)) return(NULL)
-      shiny::tags$div(
-        class = "qc-filter-note",
-        shiny::tags$span("Showing codings by "),
+    output$blind_banner <- shiny::renderUI({
+      if (!isTRUE(rv$blind_mode)) return(NULL)
+      shiny::div(
+        class = "alert alert-warning mb-0 py-2 px-3 rounded-0 border-0 border-bottom",
+        style = "font-size:0.82rem;",
+        shiny::icon("lock"), " ",
+        shiny::tags$strong("Blind mode active — "),
+        "showing only ",
         shiny::tags$strong(rv$current_coder %||% "default"),
-        shiny::tags$span(".")
+        "'s codings. Other coders' work is hidden."
       )
     })
 
@@ -394,7 +394,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       coders <- coders[!is.na(coders) & nzchar(coders)]
       selected_coder <- input$filter_display_coder %||% ""
 
-      if (isTRUE(input$blind_mode)) {
+      if (isTRUE(rv$blind_mode)) {
         coder_choices  <- stats::setNames(active_coder, active_coder)
         selected_coder <- active_coder
       } else {
