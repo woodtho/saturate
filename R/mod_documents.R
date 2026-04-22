@@ -52,7 +52,21 @@ mod_documents_ui <- function(id) {
                           class = "btn-outline-primary w-100")
     ),
     bslib::card(
-      bslib::card_header("Documents"),
+      bslib::card_header(
+        shiny::div(
+          class = "d-flex justify-content-between align-items-center w-100",
+          "Documents",
+          shiny::div(
+            class = "d-flex gap-1",
+            shiny::actionButton(ns("btn_edit_doc"), "Edit",
+              class = "btn-sm btn-outline-secondary",
+              title = "Edit selected document content"),
+            shiny::actionButton(ns("btn_delete_doc"), "Delete",
+              class = "btn-sm btn-outline-danger",
+              title = "Delete selected document")
+          )
+        )
+      ),
       DT::dataTableOutput(ns("tbl_docs"))
     )
   )
@@ -60,6 +74,9 @@ mod_documents_ui <- function(id) {
 
 mod_documents_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    lv <- shiny::reactiveValues(selected_id = NULL)
 
     docs <- shiny::reactive({
       rv$refresh_docs
@@ -85,6 +102,25 @@ mod_documents_server <- function(id, rv) {
         colnames = c("ID", "Name", "Type", "Codings", "Memo")
       )
     })
+
+    # Track selected row
+    shiny::observeEvent(input$tbl_docs_rows_selected, {
+      row <- input$tbl_docs_rows_selected
+      lv$selected_id <- if (!is.null(row)) docs()$id[[row]] else NULL
+    })
+
+    # Row click → activate document and switch to Coding tab
+    shiny::observeEvent(input$tbl_docs_rows_selected, {
+      row <- input$tbl_docs_rows_selected
+      shiny::req(row)
+      rv$active_source_id <- docs()$id[[row]]
+      shinyjs::runjs(
+        "var t = document.querySelectorAll('[data-value=\"Coding\"]');
+         if (t.length) t[0].click();"
+      )
+    })
+
+    # ── Import / paste ─────────────────────────────────────────────────────────
 
     shiny::observeEvent(input$btn_import, {
       shiny::req(input$file_upload)
@@ -125,15 +161,93 @@ mod_documents_server <- function(id, rv) {
       })
     })
 
-    # Row click → activate document and switch to Coding tab
-    shiny::observeEvent(input$tbl_docs_rows_selected, {
-      row <- input$tbl_docs_rows_selected
-      shiny::req(row)
-      rv$active_source_id <- docs()$id[[row]]
-      shinyjs::runjs(
-        "var t = document.querySelectorAll('[data-value=\"Coding\"]');
-         if (t.length) t[0].click();"
+    # ── Edit document content ──────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_edit_doc, {
+      shiny::req(lv$selected_id)
+      doc <- tryCatch(
+        qc_get_document(rv$project, lv$selected_id),
+        error = function(e) NULL
       )
+      shiny::req(!is.null(doc))
+
+      shiny::showModal(shiny::modalDialog(
+        title     = paste0("Edit: ", doc$name),
+        size      = "l",
+        easyClose = FALSE,
+        shiny::p(
+          class = "text-muted",
+          shiny::tags$small(
+            "Use **bold** for emphasis. Changes are versioned and auditable. ",
+            "Existing codings will be flagged for review."
+          )
+        ),
+        shiny::textAreaInput(ns("edit_doc_content"), "Content",
+          value = doc$content,
+          rows  = 20,
+          width = "100%"),
+        shiny::textInput(ns("edit_doc_version_memo"), "Change note (optional)",
+          placeholder = "What changed and why?"),
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_save_edit_doc"), "Save Version",
+            class = "btn-primary")
+        )
+      ))
+    })
+
+    shiny::observeEvent(input$btn_save_edit_doc, {
+      shiny::req(lv$selected_id)
+      new_content <- input$edit_doc_content %||% ""
+      version_memo <- trimws(input$edit_doc_version_memo %||% "")
+      tryCatch({
+        qc_update_document_content(rv$project, lv$selected_id,
+          content = new_content,
+          memo    = version_memo)
+        rv$refresh_docs  <- rv$refresh_docs  + 1L
+        rv$refresh_codes <- rv$refresh_codes + 1L
+        shiny::removeModal()
+        shiny::showNotification("Document updated. Codings flagged for review.",
+                                type = "message")
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    # ── Delete document ────────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_delete_doc, {
+      shiny::req(lv$selected_id)
+      doc_name <- docs()$name[docs()$id == lv$selected_id]
+      shiny::showModal(shiny::modalDialog(
+        title     = "Delete document?",
+        size      = "s",
+        easyClose = TRUE,
+        shiny::p(paste0(
+          'Permanently remove "', doc_name, '" and all its codings? ',
+          'This cannot be undone.'
+        )),
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_confirm_delete_doc"), "Delete",
+            class = "btn-danger")
+        )
+      ))
+    })
+
+    shiny::observeEvent(input$btn_confirm_delete_doc, {
+      shiny::req(lv$selected_id)
+      tryCatch({
+        qc_delete_document(rv$project, lv$selected_id)
+        if (identical(rv$active_source_id, lv$selected_id))
+          rv$active_source_id <- NULL
+        lv$selected_id   <- NULL
+        rv$refresh_docs  <- rv$refresh_docs  + 1L
+        rv$refresh_codes <- rv$refresh_codes + 1L
+        shiny::removeModal()
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
     })
   })
 }

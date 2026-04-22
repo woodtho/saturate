@@ -17,25 +17,32 @@
 #'   `sent_at`.
 #' @export
 qc_create_member_check <- function(project, source_id, participant_label,
-                                    code_ids = NULL, created_by = NULL) {
+                                    code_ids = NULL, created_by = NULL,
+                                    return_by = "", return_to = "",
+                                    return_instructions = "") {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
 
-  source_id         <- as.integer(source_id)
-  participant_label <- as.character(participant_label)
-  created_by        <- created_by %||% Sys.info()[["user"]]
-  code_ids_str      <- if (!is.null(code_ids))
+  source_id           <- as.integer(source_id)
+  participant_label   <- as.character(participant_label)
+  created_by          <- created_by %||% Sys.info()[["user"]]
+  code_ids_str        <- if (!is.null(code_ids))
     paste(as.integer(code_ids), collapse = ",") else ""
+  return_by           <- as.character(return_by %||% "")
+  return_to           <- as.character(return_to %||% "")
+  return_instructions <- as.character(return_instructions %||% "")
 
   doc <- qc_get_document(project, source_id)
 
   check_row <- .query(project$con,
     "INSERT INTO member_checks
-       (source_id, participant_label, code_ids_filter, created_by)
-     VALUES (?, ?, ?, ?)
+       (source_id, participant_label, code_ids_filter, created_by,
+        return_by, return_to, return_instructions)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      RETURNING id, source_id, participant_label, status, sent_at",
-    list(source_id, participant_label, code_ids_str, created_by)
+    list(source_id, participant_label, code_ids_str, created_by,
+         return_by, return_to, return_instructions)
   )
 
   codings <- qc_list_codings(project, source_id)
@@ -71,14 +78,26 @@ qc_create_member_check <- function(project, source_id, participant_label,
 #'   `path = NULL`.
 #' @export
 qc_export_member_check <- function(project, check_id, path = NULL,
-                                    format = c("html", "txt")) {
+                                    format = c("html", "txt", "docx")) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   format   <- match.arg(format)
   check_id <- as.integer(check_id)
 
   check <- .query(project$con,
-    "SELECT mc.*, s.name AS doc_name
+    "SELECT mc.id,
+            mc.source_id,
+            mc.participant_label,
+            mc.code_ids_filter,
+            mc.created_by,
+            mc.sent_at,
+            mc.response_at,
+            mc.status,
+            mc.notes,
+            COALESCE(mc.return_by,           '') AS return_by,
+            COALESCE(mc.return_to,           '') AS return_to,
+            COALESCE(mc.return_instructions, '') AS return_instructions,
+            s.name AS doc_name
      FROM   member_checks mc
      JOIN   sources s ON s.id = mc.source_id
      WHERE  mc.id = ?",
@@ -101,18 +120,62 @@ qc_export_member_check <- function(project, check_id, path = NULL,
   )
 
   proj_info <- qc_project_info(project)
-  out       <- if (format == "txt")
-    .mc_txt(check, items, proj_info)
-  else
-    .mc_html(check, items, proj_info)
 
-  if (!is.null(path)) {
-    writeLines(out, path, useBytes = TRUE)
-    cli::cli_alert_success("Member check exported to {.file {path}}")
-    invisible(path)
+  if (format == "docx") {
+    if (!requireNamespace("officer", quietly = TRUE))
+      rlang::abort("Package 'officer' is required for DOCX export. Install with: install.packages('officer')")
+    doc <- .mc_docx(check, items, proj_info)
+    if (!is.null(path)) {
+      officer::print(doc, target = path)
+      cli::cli_alert_success("Member check exported to {.file {path}}")
+      invisible(path)
+    } else {
+      tmp <- tempfile(fileext = ".docx")
+      officer::print(doc, target = tmp)
+      invisible(tmp)
+    }
   } else {
-    invisible(out)
+    out <- if (format == "txt")
+      .mc_txt(check, items, proj_info)
+    else
+      .mc_html(check, items, proj_info)
+    if (!is.null(path)) {
+      writeLines(out, path, useBytes = TRUE)
+      cli::cli_alert_success("Member check exported to {.file {path}}")
+      invisible(path)
+    } else {
+      invisible(out)
+    }
   }
+}
+
+#' Set all items in a member check to the same status
+#'
+#' Convenience helper for bulk confirm or dispute. Calls
+#' [qc_record_member_response()] for every item in the check.
+#'
+#' @param project A `qc_project` object.
+#' @param check_id Integer. Member check id.
+#' @param status One of `"confirmed"` or `"disputed"`.
+#'
+#' @return Invisibly, the updated check list.
+#' @export
+qc_bulk_set_member_status <- function(project, check_id,
+                                       status = c("confirmed", "disputed")) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  status   <- match.arg(status)
+  check_id <- as.integer(check_id)
+
+  items <- .query(project$con,
+    "SELECT coding_id FROM member_check_items WHERE check_id = ?",
+    list(check_id)
+  )
+  for (cid in items$coding_id) {
+    qc_record_member_response(project, check_id, cid,
+                               response = "", status = status)
+  }
+  invisible(qc_list_member_checks(project))
 }
 
 #' Record a participant's response to a member check item
@@ -189,6 +252,9 @@ qc_list_member_checks <- function(project, source_id = NULL) {
            mc.sent_at,
            mc.response_at,
            mc.notes,
+           COALESCE(mc.return_by,           '') AS return_by,
+           COALESCE(mc.return_to,           '') AS return_to,
+           COALESCE(mc.return_instructions, '') AS return_instructions,
            COUNT(mci.id)         AS n_items,
            SUM(CASE WHEN mci.item_status = 'confirmed' THEN 1 ELSE 0 END)
                                  AS n_confirmed,
@@ -199,7 +265,8 @@ qc_list_member_checks <- function(project, source_id = NULL) {
     LEFT   JOIN member_check_items mci ON mci.check_id = mc.id
     WHERE  1 = 1 ", w_src, "
     GROUP  BY mc.id, s.name, mc.participant_label, mc.status,
-              mc.sent_at, mc.response_at, mc.notes
+              mc.sent_at, mc.response_at, mc.notes,
+              mc.return_by, mc.return_to, mc.return_instructions
     ORDER  BY mc.sent_at DESC
   "))
 }
@@ -277,8 +344,18 @@ whether each interpretation accurately reflects your experience.</p>
 <h2>General comments</h2>
 <div class='general'>&nbsp;</div>
 <h2>Return instructions</h2>
-<p>Please return by: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong><br>
-To: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong></p>
+", if (nchar(check$return_instructions[[1L]] %||% "") > 0L)
+    paste0("<p>", esc(check$return_instructions[[1L]]), "</p>")
+  else "", "
+<p>",
+  if (nchar(check$return_by[[1L]] %||% "") > 0L)
+    paste0("<strong>Return by:</strong> ", esc(check$return_by[[1L]]), "<br>")
+  else "Please return by: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong><br>",
+"",
+  if (nchar(check$return_to[[1L]] %||% "") > 0L)
+    paste0("<strong>Return to:</strong> ", esc(check$return_to[[1L]]))
+  else "Return to: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong>",
+"</p>
 <footer>Generated by saturate &bull; ", esc(format(Sys.time(), "%Y-%m-%d %H:%M")), "</footer>
 </body>
 </html>")
@@ -310,9 +387,87 @@ To: <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&n
     )
   }, character(1L)), collapse = "\n")
 
+  ret_by  <- trimws(check$return_by[[1L]]  %||% "")
+  ret_to  <- trimws(check$return_to[[1L]]  %||% "")
+  ret_ins <- trimws(check$return_instructions[[1L]] %||% "")
+
+  return_block <- paste0(
+    strrep("=", 60), "\n",
+    "Return instructions\n",
+    strrep("-", 60), "\n",
+    if (nchar(ret_ins) > 0L) paste0(ret_ins, "\n") else "",
+    if (nchar(ret_by) > 0L)
+      paste0("Return by: ", ret_by, "\n")
+    else
+      "Return by: ______________________________\n",
+    if (nchar(ret_to) > 0L)
+      paste0("Return to: ", ret_to, "\n")
+    else
+      "Return to: ______________________________\n"
+  )
+
   paste0(header, items_txt, "\n",
          strrep("=", 60), "\n",
          "General comments:\n\n\n",
+         return_block,
          strrep("=", 60), "\n",
          "Generated by saturate | ", format(Sys.time(), "%Y-%m-%d %H:%M"), "\n")
+}
+
+.mc_docx <- function(check, items, proj_info) {
+  doc <- officer::read_docx()
+
+  add <- function(d, ...) officer::body_add_par(d, ...)
+
+  doc <- add(doc, "Member Check", style = "heading 1")
+  doc <- add(doc, paste0("Project: ", proj_info$name))
+  doc <- add(doc, paste0("Document: ", check$doc_name))
+  doc <- add(doc, paste0("Participant: ", check$participant_label))
+  doc <- add(doc, paste0("Date: ", format(check$sent_at, "%d %B %Y")))
+  doc <- add(doc, "")
+  doc <- add(doc,
+    "We have identified the following themes in your responses. Please indicate whether each interpretation accurately reflects your experience.")
+  doc <- add(doc, "")
+  doc <- add(doc, "Coded Passages", style = "heading 2")
+
+  if (nrow(items) == 0L) {
+    doc <- add(doc, "(No coded passages to review.)")
+  } else {
+    for (i in seq_len(nrow(items))) {
+      r <- items[i, ]
+      doc <- add(doc, r$code_name, style = "heading 3")
+      doc <- officer::body_add_fpar(doc,
+        officer::fpar(
+          officer::ftext(
+            paste0("“", trimws(r$seltext), "”"),
+            prop = officer::fp_text(italic = TRUE)
+          )
+        )
+      )
+      if (!is.na(r$memo) && nchar(r$memo) > 0L)
+        doc <- add(doc, paste0("Researcher note: ", r$memo))
+      doc <- add(doc, "Does this interpretation match your experience? Yes / No / Comment:")
+      doc <- add(doc, "")
+    }
+  }
+
+  doc <- add(doc, "General Comments", style = "heading 2")
+  doc <- add(doc, "")
+  doc <- add(doc, "")
+
+  ret_by  <- trimws(check$return_by[[1L]]  %||% "")
+  ret_to  <- trimws(check$return_to[[1L]]  %||% "")
+  ret_ins <- trimws(check$return_instructions[[1L]] %||% "")
+
+  doc <- add(doc, "Return Instructions", style = "heading 2")
+  if (nchar(ret_ins) > 0L) doc <- add(doc, ret_ins)
+  doc <- add(doc, if (nchar(ret_by) > 0L)
+    paste0("Return by: ", ret_by) else "Return by: ________________________________")
+  doc <- add(doc, if (nchar(ret_to) > 0L)
+    paste0("Return to: ", ret_to) else "Return to: ________________________________")
+  doc <- add(doc, "")
+  doc <- add(doc,
+    paste0("Generated by saturate • ", format(Sys.time(), "%Y-%m-%d %H:%M")))
+
+  doc
 }

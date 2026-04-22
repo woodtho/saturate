@@ -17,6 +17,18 @@ mod_member_check_ui <- function(id) {
             "Restrict to codes (optional — blank = all)",
             choices = NULL, multiple = TRUE,
             options = list(placeholder = "All codes")),
+          shiny::hr(),
+          shiny::h6("Return instructions"),
+          shiny::textInput(ns("mc_return_by"), "Return by",
+            placeholder = "e.g. 2026-05-01 or 'within 2 weeks'"),
+          shiny::textInput(ns("mc_return_to"), "Return to (email / contact)",
+            placeholder = "e.g. researcher@university.edu"),
+          shiny::textAreaInput(ns("mc_return_instructions"),
+            "Instructions for participant",
+            rows = 3,
+            placeholder = paste0(
+              "e.g. Please read each passage and note whether the interpretation ",
+              "captures your experience. Return via email.")),
           shiny::actionButton(ns("btn_create_mc"), "Create check",
             class = "btn-primary w-100")
         )
@@ -40,11 +52,19 @@ mod_member_check_ui <- function(id) {
       bslib::card_header(shiny::textOutput(ns("detail_title"))),
       bslib::card_body(
         shiny::div(
-          class = "d-flex gap-2 mb-3",
+          class = "d-flex gap-2 mb-3 flex-wrap",
           shiny::downloadButton(ns("btn_dl_html"), "Export HTML",
             class = "btn-sm btn-outline-secondary"),
           shiny::downloadButton(ns("btn_dl_txt"), "Export TXT",
-            class = "btn-sm btn-outline-secondary")
+            class = "btn-sm btn-outline-secondary"),
+          shiny::downloadButton(ns("btn_dl_docx"), "Export Word",
+            class = "btn-sm btn-outline-secondary"),
+          shiny::div(class = "ms-auto d-flex gap-2",
+            shiny::actionButton(ns("btn_confirm_all"), "Confirm All",
+              class = "btn-sm btn-success"),
+            shiny::actionButton(ns("btn_dispute_all"), "Dispute All",
+              class = "btn-sm btn-danger")
+          )
         ),
         shiny::uiOutput(ns("check_items_ui"))
       )
@@ -125,13 +145,19 @@ mod_member_check_server <- function(id, rv) {
       tryCatch({
         qc_create_member_check(
           rv$project,
-          source_id         = as.integer(input$mc_source_id),
-          participant_label = trimws(input$mc_participant),
-          code_ids          = code_ids,
-          created_by        = rv$current_coder %||% Sys.info()[["user"]]
+          source_id           = as.integer(input$mc_source_id),
+          participant_label   = trimws(input$mc_participant),
+          code_ids            = code_ids,
+          created_by          = rv$current_coder %||% Sys.info()[["user"]],
+          return_by           = trimws(input$mc_return_by           %||% ""),
+          return_to           = trimws(input$mc_return_to           %||% ""),
+          return_instructions = trimws(input$mc_return_instructions %||% "")
         )
         shiny::showNotification("Member check created.", type = "message")
         shinyjs::reset("mc_participant")
+        shinyjs::reset("mc_return_by")
+        shinyjs::reset("mc_return_to")
+        shinyjs::reset("mc_return_instructions")
         lv$refresh_checks <- lv$refresh_checks + 1L
       }, error = function(e) {
         shiny::showNotification(conditionMessage(e), type = "error")
@@ -159,7 +185,33 @@ mod_member_check_server <- function(id, rv) {
              " [", check$status, "]")
     })
 
-    # ── Download handlers (fixed IDs, driven by lv$selected_check_id) ────────
+    # ── Bulk actions ──────────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_confirm_all, {
+      shiny::req(lv$selected_check_id)
+      tryCatch({
+        qc_bulk_set_member_status(rv$project, lv$selected_check_id,
+                                   status = "confirmed")
+        shiny::showNotification("All items confirmed.", type = "message")
+        lv$refresh_checks <- lv$refresh_checks + 1L
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    shiny::observeEvent(input$btn_dispute_all, {
+      shiny::req(lv$selected_check_id)
+      tryCatch({
+        qc_bulk_set_member_status(rv$project, lv$selected_check_id,
+                                   status = "disputed")
+        shiny::showNotification("All items disputed.", type = "message")
+        lv$refresh_checks <- lv$refresh_checks + 1L
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    # ── Download handlers ────────────────────────────────────────────────────
 
     output$btn_dl_html <- shiny::downloadHandler(
       filename = function() {
@@ -187,6 +239,25 @@ mod_member_check_server <- function(id, rv) {
       }
     )
 
+    output$btn_dl_docx <- shiny::downloadHandler(
+      filename = function() {
+        id_val <- shiny::isolate(lv$selected_check_id)
+        paste0("member_check_", id_val %||% "export", ".docx")
+      },
+      content = function(file) {
+        id_val <- shiny::isolate(lv$selected_check_id)
+        shiny::req(id_val)
+        if (!requireNamespace("officer", quietly = TRUE)) {
+          shiny::showNotification(
+            "Install the 'officer' package to export Word documents.",
+            type = "error")
+          return()
+        }
+        tmp <- qc_export_member_check(rv$project, id_val, format = "docx")
+        file.copy(tmp, file)
+      }
+    )
+
     # ── Check items UI ────────────────────────────────────────────────────────
 
     output$check_items_ui <- shiny::renderUI({
@@ -195,6 +266,31 @@ mod_member_check_server <- function(id, rv) {
       if (is.null(id_val)) {
         return(shiny::p(class = "text-muted",
                         "Select a row in the table above to record responses."))
+      }
+
+      # Show return instructions for this check
+      checks <- checks_rv()
+      check  <- checks[checks$id == id_val, ]
+      ret_hdr <- if (nrow(check) > 0L) {
+        ret_by  <- trimws(check$return_by[[1L]]  %||% "")
+        ret_to  <- trimws(check$return_to[[1L]]  %||% "")
+        ret_ins <- trimws(check$return_instructions[[1L]] %||% "")
+        has_ret <- any(nchar(c(ret_by, ret_to, ret_ins)) > 0L)
+        if (has_ret) {
+          shiny::div(
+            class = "alert alert-light border mb-3",
+            style = "font-size:0.875rem;",
+            if (nchar(ret_ins) > 0L)
+              shiny::p(class = "mb-1", ret_ins),
+            shiny::div(
+              class = "d-flex gap-4",
+              if (nchar(ret_by) > 0L)
+                shiny::span(shiny::tags$strong("Return by: "), ret_by),
+              if (nchar(ret_to) > 0L)
+                shiny::span(shiny::tags$strong("Return to: "), ret_to)
+            )
+          )
+        }
       }
 
       items <- tryCatch(.query(rv$project$con,
@@ -209,10 +305,14 @@ mod_member_check_server <- function(id, rv) {
       ), error = function(e) tibble::tibble())
 
       if (nrow(items) == 0L) {
-        return(shiny::p(class = "text-muted", "No items in this check."))
+        return(shiny::tagList(
+          ret_hdr,
+          shiny::p(class = "text-muted", "No items in this check.")
+        ))
       }
 
       shiny::tagList(
+        ret_hdr,
         shiny::h6(paste0(nrow(items), " item(s) — click Save to record each response")),
         lapply(seq_len(nrow(items)), function(i) {
           r          <- items[i, ]

@@ -1,3 +1,19 @@
+# Converts a display name to a lowercase slug (a-z, 0-9, _ only).
+# Ensures uniqueness within existing_keys by appending _2, _3 as needed.
+.make_code_key <- function(name, existing_keys) {
+  key    <- tolower(name)
+  key    <- gsub("[^a-z0-9]+", "_", key)
+  key    <- gsub("^_+|_+$",    "",  key)
+  if (nchar(key) == 0L) key <- "code"
+  base   <- key
+  suffix <- 2L
+  while (key %in% existing_keys) {
+    key    <- paste0(base, "_", suffix)
+    suffix <- suffix + 1L
+  }
+  key
+}
+
 # Internal helper — append one row to code_history
 .log_code_history <- function(con, code_id, operation,
                                field     = NULL,
@@ -25,30 +41,56 @@
 #'   taxonomies.
 #' @param definition Character. Full definition of the code.
 #' @param criteria Character. Inclusion/exclusion criteria for coders.
+#' @param code_key Character or `NULL`. Stable slug (e.g. `"positive_affect"`).
+#'   Auto-generated from `name` when `NULL`. Must be unique; may contain only
+#'   lowercase letters, digits, and underscores.
 #'
 #' @return A one-row tibble: `id`, `name`, `color`, `memo`, `created_at`.
 #' @export
 qc_add_code <- function(project, name, color = "#4E79A7", memo = "",
-                         parent_id = NULL, definition = "", criteria = "") {
+                         parent_id = NULL, definition = "", criteria = "",
+                         code_key = NULL, level = "", orientation = "",
+                         weight = NULL, weight_description = "") {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
   if (!is_string(name))  rlang::abort("`name` must be a single string.")
   if (!is_string(color)) rlang::abort("`color` must be a single string.")
+
+  existing_keys <- .query(project$con,
+    "SELECT code_key FROM codes WHERE status = 1 AND code_key IS NOT NULL"
+  )$code_key
+  if (is.null(code_key)) {
+    final_key <- .make_code_key(name, existing_keys)
+  } else {
+    final_key <- as.character(code_key)
+    if (final_key %in% existing_keys)
+      rlang::abort(paste0("code_key '", final_key, "' is already in use."))
+  }
+
+  wt <- if (!is.null(weight)) as.double(weight) else NA_real_
   if (is.null(parent_id)) {
     code <- .query(project$con,
-      "INSERT INTO codes (name, color, memo, definition, criteria)
-       VALUES (?, ?, ?, ?, ?)
+      "INSERT INTO codes
+         (name, color, memo, definition, criteria, code_key,
+          level, orientation, weight, weight_description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING id, name, color, memo, created_at",
-      list(name, color, memo %||% "", definition %||% "", criteria %||% "")
+      list(name, color, memo %||% "", definition %||% "", criteria %||% "",
+           final_key, level %||% "", orientation %||% "",
+           wt, weight_description %||% "")
     )
   } else {
     code <- .query(project$con,
-      "INSERT INTO codes (name, color, memo, parent_id, definition, criteria)
-       VALUES (?, ?, ?, ?, ?, ?)
+      "INSERT INTO codes
+         (name, color, memo, parent_id, definition, criteria, code_key,
+          level, orientation, weight, weight_description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING id, name, color, memo, created_at",
       list(name, color, memo %||% "", as.integer(parent_id),
-           definition %||% "", criteria %||% "")
+           definition %||% "", criteria %||% "", final_key,
+           level %||% "", orientation %||% "",
+           wt, weight_description %||% "")
     )
   }
   .log_code_history(project$con, code$id, "create",
@@ -61,8 +103,8 @@ qc_add_code <- function(project, name, color = "#4E79A7", memo = "",
 #' @param project A `qc_project` object.
 #'
 #' @return A tibble with columns `id`, `name`, `color`, `memo`, `parent_id`,
-#'   `parent_name`, `definition`, `criteria`, `depth` (0 = root),
-#'   `n_codings`, `categories`.
+#'   `parent_name`, `definition`, `criteria`, `code_key`, `deprecated`,
+#'   `deprecated_reason`, `depth` (0 = root), `n_codings`, `categories`.
 #' @export
 qc_list_codes <- function(project) {
   assert_class(project, "qc_project")
@@ -82,7 +124,9 @@ qc_list_codes <- function(project) {
            c.parent_id,
            p.name                                             AS parent_name,
            c.definition, c.criteria,
+           c.code_key, c.deprecated, c.deprecated_reason,
            h.depth,
+           c.weight, c.weight_description,
            COUNT(DISTINCT cod.id)                            AS n_codings,
            STRING_AGG(DISTINCT cat.name, ', ' ORDER BY cat.name)
                                                              AS categories
@@ -97,7 +141,9 @@ qc_list_codes <- function(project) {
            ON cat.id = l.category_id AND cat.status = 1
     WHERE  c.status = 1
     GROUP  BY c.id, c.name, c.color, c.memo, c.parent_id,
-              p.name, c.definition, c.criteria, h.depth
+              p.name, c.definition, c.criteria,
+              c.code_key, c.deprecated, c.deprecated_reason, h.depth,
+              c.weight, c.weight_description
     ORDER  BY h.depth, c.name
   ")
 }
@@ -117,27 +163,42 @@ qc_list_codes <- function(project) {
 #' @return The updated one-row tibble.
 #' @export
 qc_update_code <- function(project, id,
-                            name       = NULL,
-                            color      = NULL,
-                            memo       = NULL,
-                            definition = NULL,
-                            criteria   = NULL,
-                            parent_id  = NULL) {
+                            name               = NULL,
+                            color              = NULL,
+                            memo               = NULL,
+                            definition         = NULL,
+                            criteria           = NULL,
+                            parent_id          = NULL,
+                            level              = NULL,
+                            orientation        = NULL,
+                            weight             = NULL,
+                            weight_description = NULL) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
   id <- as.integer(id)
 
   current <- .query(project$con,
-    "SELECT name, color, memo, definition, criteria FROM codes
+    "SELECT name, color, memo, definition, criteria,
+            level, orientation, weight_description FROM codes
      WHERE id = ? AND status = 1",
     list(id)
   )
   if (nrow(current) == 0L)
     rlang::abort(paste0("No active code with id = ", id))
 
+  # Numeric weight handled separately — it's a DOUBLE, not VARCHAR
+  if (!is.null(weight)) {
+    wt <- if (is.na(weight)) NA_real_ else as.double(weight)
+    .exec(project$con,
+      "UPDATE codes SET weight = ? WHERE id = ? AND status = 1",
+      list(wt, id))
+  }
+
   str_updates <- list(name = name, color = color, memo = memo,
-                      definition = definition, criteria = criteria)
+                      definition = definition, criteria = criteria,
+                      level = level, orientation = orientation,
+                      weight_description = weight_description)
   for (col in names(str_updates)) {
     val <- str_updates[[col]]
     if (is.null(val)) next
@@ -430,4 +491,111 @@ qc_split_code <- function(project, code_id, new_names,
                     new_value = paste(new_names, collapse = ", "))
 
   do.call(rbind, new_rows)
+}
+
+#' Assign a stable key to a code
+#'
+#' Sets a human-readable slug on a code that stays constant across renames.
+#' Keys must be unique across all active codes and may contain only lowercase
+#' letters, digits, and underscores.
+#'
+#' @param project A `qc_project` object.
+#' @param id Integer. Code id.
+#' @param key Character. The key to assign (e.g. `"positive_affect"`).
+#'
+#' @return Invisibly, `key`.
+#' @export
+qc_set_code_key <- function(project, id, key) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  id  <- as.integer(id)
+  key <- as.character(key)
+  if (!grepl("^[a-z0-9_]+$", key))
+    rlang::abort("`key` may only contain lowercase letters, digits, and underscores.")
+
+  conflict <- .query(project$con,
+    "SELECT id FROM codes WHERE code_key = ? AND id != ? AND status = 1",
+    list(key, id))
+  if (nrow(conflict) > 0L)
+    rlang::abort(paste0("code_key '", key, "' is already used by another code."))
+
+  .exec(project$con,
+    "UPDATE codes SET code_key = ? WHERE id = ? AND status = 1",
+    list(key, id))
+  .log_code_history(project$con, id, "update",
+                    field = "code_key", new_value = key)
+  invisible(key)
+}
+
+#' Mark a code as deprecated
+#'
+#' Deprecated codes are retained and their historical codings are preserved,
+#' but [qc_add_coding()] will reject new codings against them. Reverse with
+#' [qc_undeprecate_code()].
+#'
+#' @param project A `qc_project` object.
+#' @param id Integer. Code id.
+#' @param reason Character. Optional explanation (stored and shown in exports).
+#'
+#' @return Invisibly, `TRUE`.
+#' @export
+qc_deprecate_code <- function(project, id, reason = "") {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  id <- as.integer(id)
+
+  current <- .query(project$con,
+    "SELECT name, deprecated FROM codes WHERE id = ? AND status = 1",
+    list(id))
+  if (nrow(current) == 0L)
+    rlang::abort(paste0("No active code with id = ", id))
+  if (current$deprecated[[1L]] == 1L)
+    cli::cli_warn("Code {.val {current$name[[1L]]}} is already deprecated.")
+
+  .exec(project$con,
+    "UPDATE codes SET deprecated = 1, deprecated_reason = ?
+     WHERE id = ? AND status = 1",
+    list(reason %||% "", id))
+  .log_code_history(project$con, id, "deprecate",
+                    field     = "deprecated",
+                    old_value = "0",
+                    new_value = if (nchar(reason %||% "") > 0L)
+                      paste0("1: ", reason) else "1")
+  invisible(TRUE)
+}
+
+#' Restore a deprecated code to active status
+#'
+#' Clears the deprecated flag so new codings can be applied again.
+#'
+#' @param project A `qc_project` object.
+#' @param id Integer. Code id.
+#'
+#' @return Invisibly, `TRUE`.
+#' @export
+qc_undeprecate_code <- function(project, id) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .assert_unlocked(project)
+  id <- as.integer(id)
+
+  current <- .query(project$con,
+    "SELECT name, deprecated FROM codes WHERE id = ? AND status = 1",
+    list(id))
+  if (nrow(current) == 0L)
+    rlang::abort(paste0("No active code with id = ", id))
+  if (current$deprecated[[1L]] == 0L)
+    cli::cli_warn("Code {.val {current$name[[1L]]}} is not currently deprecated.")
+
+  .exec(project$con,
+    "UPDATE codes SET deprecated = 0, deprecated_reason = ''
+     WHERE id = ? AND status = 1",
+    list(id))
+  .log_code_history(project$con, id, "undeprecate",
+                    field     = "deprecated",
+                    old_value = "1",
+                    new_value = "0")
+  invisible(TRUE)
 }

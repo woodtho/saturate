@@ -1,11 +1,9 @@
 mod_coding_ui <- function(id) {
   ns       <- shiny::NS(id)
   js_file  <- system.file("app", "coding.js",  package = "saturate")
-  css_file <- system.file("app", "styles.css", package = "saturate")
   shiny::tagList(
     shiny::tags$head(
-      shiny::includeScript(js_file),
-      shiny::includeCSS(css_file)
+      shiny::includeScript(js_file)
     ),
     bslib::layout_columns(
       col_widths = c(8, 4),
@@ -17,7 +15,23 @@ mod_coding_ui <- function(id) {
             class = "d-flex justify-content-between align-items-center w-100",
             shiny::textOutput(ns("doc_title")),
             shiny::div(
-              class = "d-flex gap-1 flex-shrink-0",
+              class = "d-flex gap-1 flex-shrink-0align-items-center",
+              shiny::div(
+                class = "form-check form-switch d-flex align-items-center gap-1 me-1",
+                style = "margin-bottom:0;",
+                shiny::tags$input(
+                  id    = ns("show_line_numbers"),
+                  class = "form-check-input",
+                  type  = "checkbox",
+                  role  = "switch"
+                ),
+                shiny::tags$label(
+                  `for` = ns("show_line_numbers"),
+                  class = "form-check-label text-muted",
+                  style = "font-size:0.75rem;white-space:nowrap;",
+                  "Lines"
+                )
+              ),
               shiny::actionButton(ns("btn_nav_prev"), "← Prev",
                 class = "btn-sm btn-outline-secondary",
                 title = "Previous uncoded segment  (p)"),
@@ -32,6 +46,32 @@ mod_coding_ui <- function(id) {
                 title = "Keyboard shortcuts  (?)")
             )
           )
+        ),
+        shiny::div(
+          class = "px-3 pt-2 pb-1 border-bottom d-flex gap-2 align-items-center",
+          shiny::div(
+            class = "flex-grow-1",
+            style = "margin-bottom:0;",
+            shiny::textInput(ns("doc_search"), label = NULL,
+              placeholder = "Search document…",
+              width = "100%")
+          ),
+          shiny::div(
+            class = "form-check d-flex align-items-center gap-1 flex-shrink-0",
+            style = "margin-bottom:0;",
+            shiny::tags$input(
+              id    = ns("search_regex"),
+              class = "form-check-input",
+              type  = "checkbox"
+            ),
+            shiny::tags$label(
+              `for` = ns("search_regex"),
+              class = "form-check-label text-muted",
+              style = "font-size:0.75rem;white-space:nowrap;",
+              "Regex"
+            )
+          ),
+          shiny::uiOutput(ns("search_match_count"), inline = TRUE)
         ),
         shiny::uiOutput(ns("text_display"))
       ),
@@ -57,9 +97,13 @@ mod_coding_ui <- function(id) {
                 choices = NULL, multiple = TRUE,
                 options = list(placeholder = "All categories")),
               shiny::selectInput(ns("filter_display_coder"),
-                label   = "Show coder",
+                label   = "Filter by coder",
                 choices = c("All coders" = ""),
                 selected = ""),
+              shiny::checkboxInput(ns("blind_mode"),
+                label = "Only show codings by the active coder",
+                value = FALSE),
+              shiny::uiOutput(ns("blind_mode_note")),
               shiny::sliderInput(ns("highlight_opacity"),
                 label = "Highlight opacity",
                 min = 0.1, max = 1.0, value = 0.33, step = 0.05,
@@ -106,9 +150,15 @@ mod_coding_ui <- function(id) {
           shiny::textAreaInput(ns("seg_memo"), "Segment memo", rows = 2),
           shiny::actionButton(ns("btn_apply"), "Apply Code",
             class = "btn-success w-100"),
+          shiny::actionButton(ns("btn_create_excerpt"), "Create Excerpt",
+            class = "btn-outline-secondary w-100 mt-1",
+            title = "Save selected text as a named excerpt with optional memo"),
           shiny::hr(),
           shiny::h6("Codings in this document"),
-          DT::dataTableOutput(ns("tbl_codings"))
+          DT::dataTableOutput(ns("tbl_codings")),
+          shiny::hr(),
+          shiny::h6("Excerpts in this document"),
+          DT::dataTableOutput(ns("tbl_excerpts"))
         )
       )
     )
@@ -122,11 +172,12 @@ mod_coding_server <- function(id, rv, parent_session) {
     session$sendCustomMessage("qc_set_ns", list(ns_prefix = ns("")))
 
     lv <- shiny::reactiveValues(
-      nav_targets  = NULL,   # tibble(start, end, text) of uncoded segments
-      nav_cursor   = 0L,     # current position in nav_targets
-      highlight_op = 0.33,
-      cb_mode      = FALSE,
-      pending_sel  = NULL    # code id to pre-select after next refresh
+      nav_targets       = NULL,  # tibble(start, end, text) of uncoded segments
+      nav_cursor        = 0L,    # current position in nav_targets
+      highlight_op      = 0.33,
+      cb_mode           = FALSE,
+      pending_sel       = NULL,  # code id to pre-select after next refresh
+      editing_excerpt_id = NULL
     )
 
     # ── Core reactives ─────────────────────────────────────────────────────────
@@ -139,7 +190,7 @@ mod_coding_server <- function(id, rv, parent_session) {
     codings_rv <- shiny::reactive({
       shiny::req(rv$active_source_id)
       rv$refresh_codes
-      coder_filter <- if (isTRUE(rv$blind_mode)) rv$current_coder else NULL
+      coder_filter <- if (isTRUE(input$blind_mode)) rv$current_coder else NULL
       qc_list_codings(rv$project, rv$active_source_id, coder = coder_filter)
     })
 
@@ -167,6 +218,15 @@ mod_coding_server <- function(id, rv, parent_session) {
       qc_get_document(rv$project, rv$active_source_id)
     })
 
+    excerpts_rv <- shiny::reactive({
+      shiny::req(rv$active_source_id)
+      rv$refresh_codes
+      tryCatch(
+        qc_list_excerpts(rv$project, rv$active_source_id),
+        error = function(e) tibble::tibble()
+      )
+    })
+
     # ── Output rendering ───────────────────────────────────────────────────────
 
     output$doc_title <- shiny::renderText({
@@ -174,13 +234,53 @@ mod_coding_server <- function(id, rv, parent_session) {
       doc_rv()$name
     })
 
+    search_rv <- shiny::reactive({
+      pattern <- trimws(input$doc_search %||% "")
+      if (nchar(pattern) == 0L) return(NULL)
+      doc <- doc_rv()
+      shiny::req(doc)
+      content   <- doc$content
+      use_regex <- isTRUE(input$search_regex)
+      tryCatch({
+        m <- gregexpr(pattern, content,
+                      perl  = use_regex,
+                      fixed = !use_regex,
+                      ignore.case = TRUE)[[1L]]
+        if (m[[1L]] == -1L)
+          return(tibble::tibble(selfirst = integer(0), selast = integer(0)))
+        starts  <- as.integer(m)
+        lengths <- attr(m, "match.length")
+        tibble::tibble(selfirst = starts, selast = starts + lengths - 1L)
+      }, error = function(e) NULL)
+    })
+
+    output$search_match_count <- shiny::renderUI({
+      pattern <- trimws(input$doc_search %||% "")
+      if (nchar(pattern) == 0L) return(NULL)
+      sr <- search_rv()
+      if (is.null(sr)) {
+        return(shiny::span("Invalid pattern",
+          class = "text-danger", style = "font-size:0.75rem;"))
+      }
+      n <- nrow(sr)
+      shiny::span(
+        if (n == 0L) "No matches"
+        else paste0(n, " match", if (n != 1L) "es" else ""),
+        class = if (n == 0L) "text-muted" else "text-success fw-semibold",
+        style = "font-size:0.75rem;white-space:nowrap;"
+      )
+    })
+
     output$text_display <- shiny::renderUI({
       shiny::req(doc_rv())
       build_highlighted_html(
         doc_rv()$content,
         filtered_codings_rv(),
-        opacity = lv$highlight_op,
-        cb_mode = lv$cb_mode
+        opacity           = lv$highlight_op,
+        cb_mode           = lv$cb_mode,
+        excerpts          = excerpts_rv(),
+        show_line_numbers = isTRUE(input$show_line_numbers),
+        search_ranges     = search_rv()
       )
     })
 
@@ -190,6 +290,16 @@ mod_coding_server <- function(id, rv, parent_session) {
         class = "qc-selection-preview",
         if (nchar(txt) > 0L) txt
         else shiny::span("No text selected", style = "color:#adb5bd;font-style:normal;")
+      )
+    })
+
+    output$blind_mode_note <- shiny::renderUI({
+      if (!isTRUE(input$blind_mode)) return(NULL)
+      shiny::tags$div(
+        class = "qc-filter-note",
+        shiny::tags$span("Showing codings by "),
+        shiny::tags$strong(rv$current_coder %||% "default"),
+        shiny::tags$span(".")
       )
     })
 
@@ -276,13 +386,28 @@ mod_coding_server <- function(id, rv, parent_session) {
     })
 
     shiny::observe({
+      rv$refresh_codes
       cats   <- .query(rv$project$con,
         "SELECT id, name FROM code_categories WHERE status = 1 ORDER BY name")
-      coders <- qc_list_coders(rv$project)$coder
+      active_coder <- rv$current_coder %||% "default"
+      coders <- unique(c(active_coder, qc_list_coders(rv$project)$coder))
+      coders <- coders[!is.na(coders) & nzchar(coders)]
+      selected_coder <- input$filter_display_coder %||% ""
+
+      if (isTRUE(input$blind_mode)) {
+        coder_choices  <- stats::setNames(active_coder, active_coder)
+        selected_coder <- active_coder
+      } else {
+        if (!selected_coder %in% c("", coders)) selected_coder <- ""
+        coder_choices <- c("All coders" = "",
+                           stats::setNames(coders, coders))
+      }
+
       shiny::updateSelectizeInput(session, "filter_display_cats",
         choices = stats::setNames(cats$id, cats$name), server = TRUE)
       shiny::updateSelectInput(session, "filter_display_coder",
-        choices = c("All coders" = "", stats::setNames(coders, coders)))
+        choices = coder_choices,
+        selected = selected_coder)
     })
 
     # ── Code info tooltip ──────────────────────────────────────────────────────
@@ -595,6 +720,128 @@ mod_coding_server <- function(id, rv, parent_session) {
         qc_delete_coding(rv$project, cid)
         rv$refresh_codes  <- rv$refresh_codes + 1L
         lv$editing_coding <- NULL
+        shiny::removeModal()
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    # ── Excerpt creation ────────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_create_excerpt, {
+      sel <- input$selection
+      shiny::req(sel, rv$active_source_id)
+      if (is.null(sel$start) || is.null(sel$end)) {
+        shiny::showNotification("Select text first.", type = "warning")
+        return()
+      }
+      shiny::showModal(shiny::modalDialog(
+        title     = "Create Excerpt",
+        size      = "s",
+        easyClose = TRUE,
+        shiny::div(
+          class = "qc-selection-preview mb-2",
+          if (nchar(sel$text %||% "") > 0L) sel$text
+          else shiny::span("(selected passage)", style = "color:#adb5bd;")
+        ),
+        shiny::textAreaInput(ns("excerpt_memo_input"), "Memo (optional)",
+          rows = 3, placeholder = "Why is this passage notable?"),
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_save_excerpt"), "Save Excerpt",
+            class = "btn-primary")
+        )
+      ))
+    })
+
+    shiny::observeEvent(input$btn_save_excerpt, {
+      sel <- input$selection
+      shiny::req(sel, rv$active_source_id)
+      tryCatch({
+        qc_add_excerpt(
+          rv$project,
+          source_id = rv$active_source_id,
+          selfirst  = as.integer(sel$start),
+          selast    = as.integer(sel$end),
+          memo      = input$excerpt_memo_input %||% "",
+          coder     = rv$current_coder %||% "default"
+        )
+        rv$refresh_codes <- rv$refresh_codes + 1L
+        shiny::removeModal()
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    # ── Excerpts table ─────────────────────────────────────────────────────────
+
+    output$tbl_excerpts <- DT::renderDataTable({
+      shiny::req(rv$active_source_id)
+      df <- excerpts_rv()
+      if (nrow(df) == 0L) {
+        return(DT::datatable(
+          tibble::tibble(message = "No excerpts yet."),
+          rownames = FALSE, options = list(dom = "t")
+        ))
+      }
+      DT::datatable(
+        dplyr::select(df, seltext, memo),
+        class     = "table table-hover table-sm",
+        selection = "single",
+        rownames  = FALSE,
+        options   = list(
+          pageLength = 5, dom = "tp",
+          columnDefs = list(
+            list(targets = 0, className = "dt-truncate"),
+            list(targets = 1, className = "dt-muted dt-truncate")
+          )
+        ),
+        colnames = c("Passage", "Memo")
+      )
+    })
+
+    shiny::observeEvent(input$tbl_excerpts_rows_selected, {
+      row <- input$tbl_excerpts_rows_selected
+      shiny::req(row)
+      exc <- excerpts_rv()
+      shiny::showModal(shiny::modalDialog(
+        title     = "Excerpt",
+        size      = "s",
+        easyClose = TRUE,
+        shiny::div(
+          class = "qc-selection-preview mb-2",
+          exc$seltext[[row]]
+        ),
+        shiny::textAreaInput(ns("edit_excerpt_memo"), "Memo",
+          value = exc$memo[[row]] %||% "", rows = 3),
+        footer = shiny::tagList(
+          shiny::actionButton(ns("btn_delete_excerpt"), "Delete",
+            class = "btn-outline-danger me-auto"),
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_save_excerpt_memo"), "Save",
+            class = "btn-primary")
+        )
+      ))
+      lv$editing_excerpt_id <- exc$id[[row]]
+    })
+
+    shiny::observeEvent(input$btn_save_excerpt_memo, {
+      shiny::req(lv$editing_excerpt_id)
+      tryCatch({
+        qc_update_excerpt_memo(rv$project, lv$editing_excerpt_id,
+                               input$edit_excerpt_memo %||% "")
+        rv$refresh_codes <- rv$refresh_codes + 1L
+        shiny::removeModal()
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    shiny::observeEvent(input$btn_delete_excerpt, {
+      shiny::req(lv$editing_excerpt_id)
+      tryCatch({
+        qc_delete_excerpt(rv$project, lv$editing_excerpt_id)
+        rv$refresh_codes <- rv$refresh_codes + 1L
         shiny::removeModal()
       }, error = function(e) {
         shiny::showNotification(conditionMessage(e), type = "error")

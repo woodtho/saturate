@@ -11,14 +11,19 @@
 #' @param source_ids Integer vector or `NULL`. Restrict to these documents.
 #' @param context_chars Integer. Characters of surrounding text to include on
 #'   each side of the match (default 80).
+#' @param accent_fold Logical. When `TRUE` (requires `stringi`), both the
+#'   document text and `pattern` are converted to ASCII-equivalent characters
+#'   before matching, enabling accent-insensitive search (e.g. `"cafe"` matches
+#'   `"café"`).
 #'
 #' @return A tibble: `source_id`, `source_name`, `match_n`, `match_start`,
 #'   `match_end`, `match_text`, `context`.
 #' @export
 qc_search_documents <- function(project, pattern,
-                                 regex        = FALSE,
-                                 ignore_case  = TRUE,
-                                 source_ids   = NULL,
+                                 regex         = FALSE,
+                                 ignore_case   = TRUE,
+                                 accent_fold   = FALSE,
+                                 source_ids    = NULL,
                                  context_chars = 80L) {
   assert_class(project, "qc_project")
   assert_con(project$con)
@@ -28,10 +33,20 @@ qc_search_documents <- function(project, pattern,
   if (!is.null(source_ids))
     docs <- docs[docs$id %in% as.integer(source_ids), ]
 
+  if (accent_fold) {
+    if (!requireNamespace("stringi", quietly = TRUE))
+      rlang::abort("Install `stringi` for accent-insensitive search.")
+    fold <- function(x) stringi::stri_trans_general(x, "Latin-ASCII")
+  } else {
+    fold <- identity
+  }
+  search_pattern <- fold(pattern)
+
   rows <- vector("list", nrow(docs))
   for (i in seq_len(nrow(docs))) {
-    content <- docs$content[[i]]
-    m <- gregexpr(pattern, content,
+    content        <- docs$content[[i]]
+    search_content <- fold(content)
+    m <- gregexpr(search_pattern, search_content,
                   perl        = regex,
                   fixed       = !regex,
                   ignore.case = ignore_case)[[1L]]

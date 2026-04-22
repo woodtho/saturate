@@ -77,7 +77,9 @@
       criteria          VARCHAR DEFAULT '',
       code_key          VARCHAR,
       deprecated        INTEGER NOT NULL DEFAULT 0,
-      deprecated_reason VARCHAR NOT NULL DEFAULT ''
+      deprecated_reason VARCHAR NOT NULL DEFAULT '',
+      weight            DOUBLE,
+      weight_description VARCHAR NOT NULL DEFAULT ''
     )
   ",
 
@@ -308,7 +310,62 @@
     )
   ",
   idx_mc_source = "CREATE INDEX IF NOT EXISTS idx_mc_source ON member_checks(source_id)",
-  idx_mci_check = "CREATE INDEX IF NOT EXISTS idx_mci_check ON member_check_items(check_id)"
+  idx_mci_check = "CREATE INDEX IF NOT EXISTS idx_mci_check ON member_check_items(check_id)",
+
+  # excerpts — reader passages separate from codings, with optional memo
+  seq_excerpts = "CREATE SEQUENCE IF NOT EXISTS excerpts_id_seq START 1",
+
+  tbl_excerpts = "
+    CREATE TABLE IF NOT EXISTS excerpts (
+      id         BIGINT PRIMARY KEY DEFAULT nextval('excerpts_id_seq'),
+      source_id  BIGINT NOT NULL,
+      selfirst   INTEGER NOT NULL,
+      selast     INTEGER NOT NULL,
+      seltext    VARCHAR NOT NULL DEFAULT '',
+      memo       VARCHAR NOT NULL DEFAULT '',
+      coder      VARCHAR NOT NULL DEFAULT 'default',
+      status     INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT now()
+    )
+  ",
+  idx_excerpts_src = "CREATE INDEX IF NOT EXISTS idx_excerpts_source ON excerpts(source_id)",
+
+  # project_memos — append-only analytical / reflexivity journal
+  seq_pmemos = "CREATE SEQUENCE IF NOT EXISTS project_memos_id_seq START 1",
+
+  tbl_project_memos = "
+    CREATE TABLE IF NOT EXISTS project_memos (
+      id         BIGINT PRIMARY KEY DEFAULT nextval('project_memos_id_seq'),
+      content    VARCHAR NOT NULL,
+      memo_type  VARCHAR NOT NULL DEFAULT 'analytical',
+      created_by VARCHAR NOT NULL DEFAULT '',
+      status     INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT now()
+    )
+  ",
+
+  # themes — analytical theme objects (Braun & Clarke reflexive TA)
+  seq_themes          = "CREATE SEQUENCE IF NOT EXISTS themes_id_seq START 1",
+
+  tbl_themes = "
+    CREATE TABLE IF NOT EXISTS themes (
+      id              BIGINT PRIMARY KEY DEFAULT nextval('themes_id_seq'),
+      name            VARCHAR NOT NULL,
+      central_concept VARCHAR NOT NULL DEFAULT '',
+      narrative       VARCHAR NOT NULL DEFAULT '',
+      status          INTEGER NOT NULL DEFAULT 1,
+      created_at      TIMESTAMPTZ DEFAULT now()
+    )
+  ",
+  tbl_theme_code_links = "
+    CREATE TABLE IF NOT EXISTS theme_code_links (
+      theme_id   BIGINT NOT NULL,
+      code_id    BIGINT NOT NULL,
+      status     INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (theme_id, code_id)
+    )
+  ",
+  idx_theme_code = "CREATE INDEX IF NOT EXISTS idx_theme_code ON theme_code_links(theme_id)"
 )
 
 .bootstrap_schema <- function(con) {
@@ -337,6 +394,13 @@
   .add_column_if_missing(con, "codes",   "code_key",            "VARCHAR")
   .add_column_if_missing(con, "codes",   "deprecated",          "INTEGER DEFAULT 0")
   .add_column_if_missing(con, "codes",   "deprecated_reason",   "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "codes",   "level",               "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "codes",   "orientation",         "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "codes",   "weight",              "DOUBLE")
+  .add_column_if_missing(con, "codes",   "weight_description",  "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "member_checks", "return_by",           "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "member_checks", "return_to",           "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "member_checks", "return_instructions",  "VARCHAR DEFAULT ''")
 
   # Seed project_meta if empty
   existing <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM project_meta")$n

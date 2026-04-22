@@ -75,5 +75,17 @@ utils::globalVariables(c(
   # member checks
   "participant_label", "item_status", "participant_response",
   "check_id", "n_items", "n_confirmed", "n_disputed",
-  "code_color"
+  "code_color",
+  # excerpts
+  "excerpt_id",
+  # project memos / journal
+  "memo_type", "created_by",
+  # themes
+  "central_concept", "narrative", "theme_id",
+  # coding orientation
+  "level", "orientation",
+  # word cloud
+  "word", "freq",
+  # code weights
+  "weight", "weight_description"
 ))

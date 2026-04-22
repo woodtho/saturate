@@ -75,8 +75,12 @@ mod_query_ui <- function(id) {
                                            "Segment (overlap)" = "segment"),
                                width = "200px"),
             shiny::actionButton(ns("btn_cooc"), "Compute",
-                                class = "btn-primary")
+                                class = "btn-primary"),
+            shiny::downloadButton(ns("dl_cooc"), "Download PNG",
+                                  class = "btn-outline-secondary")
           ),
+          shiny::plotOutput(ns("plt_cooc"), height = "380px"),
+          shiny::br(),
           DT::dataTableOutput(ns("tbl_cooc"))
         )
       ),
@@ -99,7 +103,9 @@ mod_query_ui <- function(id) {
                 width = "180px")
             ),
             shiny::actionButton(ns("btn_saturation"), "Compute",
-                                class = "btn-primary")
+                                class = "btn-primary"),
+            shiny::downloadButton(ns("dl_saturation"), "Download PNG",
+                                  class = "btn-outline-secondary")
           ),
           shiny::plotOutput(ns("plt_saturation"), height = "320px"),
           shiny::br(),
@@ -151,6 +157,31 @@ mod_query_ui <- function(id) {
             class = "text-muted")),
           DT::dataTableOutput(ns("tbl_xtab"))
         )
+      ),
+
+      # ── Word Cloud ───────────────────────────────────────────────────────
+      bslib::nav_panel("Word Cloud",
+        shiny::div(
+          class = "p-3",
+          shiny::div(
+            class = "d-flex gap-3 align-items-end mb-3 flex-wrap",
+            shiny::div(
+              shiny::tags$label("Cloud type", class = "form-label"),
+              shiny::selectInput(ns("wc_type"), NULL,
+                choices = c(
+                  "All codes — sized by coding count" = "codes",
+                  "Single code — words in excerpts"   = "excerpt_words"
+                ),
+                width = "280px")
+            ),
+            shiny::uiOutput(ns("wc_code_picker")),
+            shiny::actionButton(ns("btn_wordcloud"), "Generate",
+              class = "btn-primary"),
+            shiny::downloadButton(ns("dl_wordcloud"), "Download PNG",
+              class = "btn-outline-secondary")
+          ),
+          shiny::uiOutput(ns("wc_output"))
+        )
       )
     )
   )
@@ -158,6 +189,7 @@ mod_query_ui <- function(id) {
 
 mod_query_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
     shiny::observe({
       rv$refresh_codes
@@ -281,6 +313,17 @@ mod_query_server <- function(id, rv) {
       qc_code_cooccurrence(rv$project, unit = input$cooc_unit)
     })
 
+    output$plt_cooc <- shiny::renderPlot({
+      shiny::req(nrow(cooc_results()) > 0)
+      if (!requireNamespace("ggplot2", quietly = TRUE)) {
+        graphics::plot.new()
+        graphics::text(0.5, 0.5, "Install ggplot2 to see this chart",
+                       cex = 1.2, col = "grey40")
+        return(invisible(NULL))
+      }
+      qc_plot_cooccurrence(rv$project, unit = input$cooc_unit %||% "document")
+    })
+
     output$tbl_cooc <- DT::renderDataTable({
       DT::datatable(
         cooc_results(),
@@ -295,6 +338,25 @@ mod_query_server <- function(id, rv) {
         colnames = c("Code 1 ID", "Code 1", "Code 2 ID", "Code 2", "Count")
       )
     })
+
+    output$dl_cooc <- shiny::downloadHandler(
+      filename = function() paste0("cooccurrence_", format(Sys.Date(), "%Y%m%d"), ".png"),
+      content  = function(file) {
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+          shiny::showNotification("Install ggplot2 to export this chart.", type = "error")
+          return()
+        }
+        p <- tryCatch(
+          qc_plot_cooccurrence(rv$project, unit = input$cooc_unit %||% "document"),
+          error = function(e) NULL
+        )
+        if (is.null(p)) {
+          shiny::showNotification("No co-occurrence data to export.", type = "warning")
+          return()
+        }
+        ggplot2::ggsave(file, plot = p, width = 8, height = 6, dpi = 150)
+      }
+    )
 
     # ── Saturation curve ───────────────────────────────────────────────────
 
@@ -419,6 +481,112 @@ mod_query_server <- function(id, rv) {
         rownames = FALSE,
         options  = list(pageLength = 25, dom = "ftp", scrollX = TRUE)
       )
+    })
+
+    # ── Word Cloud ──────────────────────────────────────────────────────────
+
+    output$wc_code_picker <- shiny::renderUI({
+      if (input$wc_type != "excerpt_words") return(NULL)
+      codes <- qc_list_codes(rv$project)
+      shiny::div(
+        shiny::tags$label("Code", class = "form-label"),
+        shiny::selectInput(ns("wc_code_id"), NULL,
+          choices = stats::setNames(codes$id, codes$name),
+          width   = "220px")
+      )
+    })
+
+    wc_data <- shiny::eventReactive(input$btn_wordcloud, {
+      type <- input$wc_type %||% "codes"
+      if (type == "codes") {
+        codes <- qc_list_codes(rv$project)
+        codes <- codes[codes$n_codings > 0L, ]
+        if (nrow(codes) == 0L) return(NULL)
+        list(
+          type  = "codes",
+          words = tibble::tibble(
+            word = codes$name,
+            freq = as.integer(codes$n_codings)
+          )
+        )
+      } else {
+        shiny::req(input$wc_code_id)
+        code_id  <- as.integer(input$wc_code_id)
+        segments <- qc_get_coded_segments(rv$project,
+                                          code_ids = code_id)
+        if (nrow(segments) == 0L) return(NULL)
+        all_text <- paste(segments$seltext, collapse = " ")
+        words    <- unlist(strsplit(
+          tolower(gsub("[^a-zA-Z' ]", " ", all_text)), "\\s+"))
+        words    <- words[nchar(words) > 3L]
+        stop_words <- c(
+          "that", "this", "with", "have", "from", "they", "been",
+          "were", "their", "would", "could", "about", "when", "what",
+          "your", "which", "some", "also", "than", "then", "into",
+          "more", "will", "just", "there", "like", "very", "only"
+        )
+        words <- words[!words %in% stop_words]
+        if (length(words) == 0L) return(NULL)
+        freq_tbl <- sort(table(words), decreasing = TRUE)
+        list(
+          type  = "excerpt_words",
+          words = tibble::tibble(
+            word = names(freq_tbl),
+            freq = as.integer(freq_tbl)
+          )
+        )
+      }
+    }, ignoreNULL = FALSE)
+
+    output$wc_output <- shiny::renderUI({
+      d <- wc_data()
+      if (is.null(d)) {
+        return(shiny::p(
+          class = "text-muted",
+          "No data. Run a query or select a code with codings, then click Generate."
+        ))
+      }
+
+      if (!requireNamespace("wordcloud2", quietly = TRUE)) {
+        # Fallback: horizontal bar chart via base graphics
+        return(shiny::div(
+          shiny::p(shiny::tags$small(
+            class = "text-muted",
+            "Install the wordcloud2 package for interactive clouds. ",
+            "Showing bar chart instead."
+          )),
+          shiny::plotOutput(ns("wc_fallback_plot"), height = "400px")
+        ))
+      }
+
+      top <- head(d$words[order(-d$words$freq), ], 150L)
+      wordcloud2::wordcloud2Output(ns("wc_widget"), height = "480px")
+    })
+
+    if (requireNamespace("wordcloud2", quietly = TRUE)) {
+      output$wc_widget <- wordcloud2::renderWordcloud2({
+        d <- wc_data()
+        shiny::req(!is.null(d))
+        top <- head(d$words[order(-d$words$freq), ], 150L)
+        wordcloud2::wordcloud2(top, size = 0.6, color = "random-dark")
+      })
+    }
+
+    output$wc_fallback_plot <- shiny::renderPlot({
+      d <- wc_data()
+      shiny::req(!is.null(d))
+      top <- head(d$words[order(-d$words$freq), ], 30L)
+      top <- top[order(top$freq), ]
+      op <- graphics::par(mar = c(4, 10, 2, 1))
+      graphics::barplot(top$freq,
+        names.arg = top$word,
+        horiz     = TRUE,
+        las       = 1,
+        col       = "#4E79A7",
+        border    = NA,
+        xlab      = "Count"
+      )
+      graphics::par(op)
     })
   })
 }

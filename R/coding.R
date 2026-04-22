@@ -577,19 +577,23 @@ qc_disputed_segments <- function(project, source_id) {
 # Build highlighted HTML from document content and a codings tibble.
 # Used by the Shiny coding panel.
 #
-# Builds the output as a raw HTML string rather than an htmltools tag tree so
-# that no inter-node whitespace is injected between text runs and <mark>
-# elements. That preserves the document's original line breaks and spacing
-# exactly as stored.
+# Builds the document HTML with coding highlights, excerpt underlines,
+# memo icons, optional bold markdown, and optional line numbers.
 #
-# opacity:  numeric 0–1, controls highlight background alpha.
-# cb_mode:  when TRUE uses a colored border-bottom instead of background fill,
-#           making codings distinguishable without relying on colour alone.
-# highlight_codes: integer vector; when not NULL only these code_ids are shown.
+# codings:          tibble from qc_list_codings — must have id, code_id,
+#                   code_color, code_name, selfirst, selast, memo.
+# excerpts:         tibble from qc_list_excerpts or NULL — selfirst, selast, memo.
+# opacity:          numeric 0–1, highlight background alpha.
+# cb_mode:          TRUE → border-bottom instead of fill (colorblind-safe).
+# highlight_codes:  integer vector; when not NULL only these code_ids are shown.
+# show_line_numbers: TRUE → prepend line numbers to each line.
 build_highlighted_html <- function(content, codings,
-                                    opacity         = 0.33,
-                                    cb_mode         = FALSE,
-                                    highlight_codes = NULL) {
+                                    opacity           = 0.33,
+                                    cb_mode           = FALSE,
+                                    highlight_codes   = NULL,
+                                    excerpts          = NULL,
+                                    show_line_numbers = FALSE,
+                                    search_ranges     = NULL) {
   n <- nchar(content)
 
   make_div <- function(inner_html) {
@@ -606,29 +610,75 @@ build_highlighted_html <- function(content, codings,
   if (!is.null(highlight_codes))
     codings <- codings[codings$code_id %in% as.integer(highlight_codes), ]
 
-  if (nrow(codings) == 0L || n == 0L)
-    return(make_div(htmltools::htmlEscape(content)))
+  if (!is.null(excerpts) && !is.data.frame(excerpts))    excerpts <- NULL
+  if (!is.null(excerpts) && nrow(excerpts) == 0L)        excerpts <- NULL
+  if (!is.null(search_ranges) && !is.data.frame(search_ranges)) search_ranges <- NULL
+  if (!is.null(search_ranges) && nrow(search_ranges) == 0L)     search_ranges <- NULL
 
-  # Alpha hex suffix derived from opacity (clamped to [0.05, 1.0])
+  no_codings  <- nrow(codings) == 0L
+  no_excerpts <- is.null(excerpts)
+  no_search   <- is.null(search_ranges)
+
+  if ((no_codings && no_excerpts && no_search) || n == 0L) {
+    raw <- .apply_bold(htmltools::htmlEscape(content))
+    if (show_line_numbers) raw <- .add_line_numbers(raw)
+    return(make_div(raw))
+  }
+
+  # Alpha hex suffix (clamped to [0.05, 1.0])
   alpha_hex <- sprintf("%02X", as.integer(round(pmin(pmax(opacity, 0.05), 1.0) * 255)))
 
-  breaks <- sort(unique(c(1L, codings$selfirst, codings$selast + 1L, n + 1L)))
-  breaks <- breaks[breaks >= 1L & breaks <= n + 1L]
+  # Build break points from codings, excerpts, and search matches
+  c_breaks <- if (!no_codings)  c(codings$selfirst,      codings$selast      + 1L) else integer(0)
+  e_breaks <- if (!no_excerpts) c(excerpts$selfirst,     excerpts$selast     + 1L) else integer(0)
+  s_breaks <- if (!no_search)   c(search_ranges$selfirst, search_ranges$selast + 1L) else integer(0)
+  breaks   <- sort(unique(c(1L, c_breaks, e_breaks, s_breaks, n + 1L)))
+  breaks   <- breaks[breaks >= 1L & breaks <= n + 1L]
 
   html_parts <- character(length(breaks) - 1L)
   for (i in seq_along(html_parts)) {
     seg_start <- breaks[i]
     seg_end   <- breaks[i + 1L] - 1L
-    seg_html  <- htmltools::htmlEscape(substr(content, seg_start, seg_end))
+    seg_raw   <- substr(content, seg_start, seg_end)
+    seg_html  <- .apply_bold(htmltools::htmlEscape(seg_raw))
 
-    active <- codings[
-      codings$selfirst <= seg_start & codings$selast >= seg_start, ]
+    active_c <- if (!no_codings)
+      codings[codings$selfirst <= seg_start & codings$selast >= seg_start, ]
+    else
+      codings[integer(0), ]
 
-    if (nrow(active) == 0L) {
+    active_e <- if (!no_excerpts)
+      excerpts[excerpts$selfirst <= seg_start & excerpts$selast >= seg_start, ]
+    else
+      NULL
+
+    in_search <- if (!no_search)
+      any(search_ranges$selfirst <= seg_start & search_ranges$selast >= seg_start)
+    else
+      FALSE
+
+    has_coding  <- nrow(active_c) > 0L
+    has_excerpt <- !is.null(active_e) && nrow(active_e) > 0L
+
+    # Search highlight prefix/suffix — layered on top of coding/excerpt marks
+    s_open  <- if (in_search)
+      '<mark class="qc-search-match" style="background:#FFE566;outline:2px solid #F0A500;outline-offset:-1px;">'
+    else ""
+    s_close <- if (in_search) "</mark>" else ""
+
+    if (!has_coding && !has_excerpt && !in_search) {
       html_parts[[i]] <- seg_html
-    } else {
-      col  <- active$code_color[[1L]]
-      tip  <- htmltools::htmlEscape(paste(active$code_name, collapse = ", "))
+      next
+    }
+
+    if (!has_coding && !has_excerpt) {
+      html_parts[[i]] <- paste0(s_open, seg_html, s_close)
+      next
+    }
+
+    if (has_coding) {
+      col  <- active_c$code_color[[1L]]
+      tip  <- htmltools::htmlEscape(paste(active_c$code_name, collapse = ", "))
       aria <- htmltools::htmlEscape(paste0("Coded as: ", tip))
       hex  <- if (grepl("^#[0-9A-Fa-f]{6}$", col)) col else "#4E79A7"
 
@@ -640,8 +690,15 @@ build_highlighted_html <- function(content, codings,
         paste0("background-color:", hex, alpha_hex, ";cursor:pointer;")
       }
 
-      ids_str <- paste(active$id, collapse = ",")
+      ids_str   <- paste(active_c$id, collapse = ",")
+      memos_txt <- paste(active_c$memo[nzchar(active_c$memo %||% "")], collapse = "; ")
+      memo_icon <- if (nzchar(memos_txt))
+        paste0('<sup class="qc-memo-icon" title="', htmltools::htmlEscape(memos_txt),
+               '" aria-label="Memo">&#10148;</sup>')
+      else ""
+
       html_parts[[i]] <- paste0(
+        s_open,
         '<mark role="mark"',
         ' aria-label="', aria, '"',
         ' title="',      tip,  '"',
@@ -649,13 +706,54 @@ build_highlighted_html <- function(content, codings,
         ' data-selfirst="',   seg_start, '"',
         ' data-selast="',     seg_end,   '"',
         ' data-coding-ids="', ids_str,   '">',
-        seg_html,
-        '</mark>'
+        seg_html, memo_icon,
+        '</mark>',
+        s_close
+      )
+    } else {
+      # Excerpt-only segment
+      exc_memo <- paste(
+        active_e$memo[nzchar(active_e$memo %||% "")], collapse = "; ")
+      exc_tip  <- htmltools::htmlEscape(
+        if (nzchar(exc_memo)) paste0("Excerpt: ", exc_memo) else "Excerpt"
+      )
+      memo_icon <- if (nzchar(exc_memo))
+        paste0('<sup class="qc-memo-icon" title="',
+               htmltools::htmlEscape(exc_memo),
+               '" aria-label="Excerpt memo">&#10148;</sup>')
+      else ""
+      html_parts[[i]] <- paste0(
+        s_open,
+        '<span class="qc-excerpt" title="', exc_tip, '"',
+        ' style="border-bottom:2px dashed #6c757d;cursor:default;">',
+        seg_html, memo_icon,
+        '</span>',
+        s_close
       )
     }
   }
 
-  make_div(paste(html_parts, collapse = ""))
+  html_out <- paste(html_parts, collapse = "")
+  if (show_line_numbers) html_out <- .add_line_numbers(html_out)
+  make_div(html_out)
+}
+
+# Convert **bold** markdown syntax to <strong> within already-HTML-escaped text.
+# Double-asterisks are not HTML-special so no entity mangling occurs.
+.apply_bold <- function(html) {
+  gsub("\\*\\*([^*\n]+)\\*\\*", "<strong>\\1</strong>", html, perl = TRUE)
+}
+
+# Wrap each newline-delimited line with a line-number gutter span.
+.add_line_numbers <- function(html) {
+  lines    <- strsplit(html, "\n", fixed = TRUE)[[1L]]
+  n_digits <- nchar(as.character(length(lines)))
+  numbered <- vapply(seq_along(lines), function(i) {
+    num <- formatC(i, width = n_digits, flag = " ")
+    paste0('<span class="qc-line-num" aria-hidden="true">', num, '</span>',
+           lines[[i]])
+  }, character(1L))
+  paste(numbered, collapse = "\n")
 }
 
 .text_display_style <- function() "user-select: text;"

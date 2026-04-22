@@ -14,6 +14,66 @@ body { font-size: 0.9rem; }
   font-size: 1.05rem;
 }
 
+.qc-navbar-session {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.15rem 0;
+}
+
+.qc-navbar-field {
+  min-width: 190px;
+}
+
+.qc-navbar-field .shiny-input-container,
+.qc-navbar-field .selectize-control {
+  margin-bottom: 0;
+}
+
+.navbar .qc-navbar-field .form-label {
+  display: block;
+  margin-bottom: 0.22rem;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.navbar .qc-navbar-field .selectize-input,
+.navbar .qc-navbar-field .selectize-input.input-active {
+  min-height: 32px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.navbar .qc-navbar-field .selectize-input.focus {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: none;
+}
+
+.navbar .qc-navbar-field .selectize-input > input,
+.navbar .qc-navbar-field .selectize-input .item {
+  color: #fff;
+  font-size: 0.84rem;
+}
+
+.navbar .qc-navbar-field .selectize-dropdown {
+  border-radius: 8px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 10px 24px rgba(18, 38, 63, 0.18);
+}
+
+.qc-navbar-project {
+  margin-bottom: 1px;
+}
+
 .navbar .form-control {
   height: 28px;
   font-size: 0.8rem;
@@ -59,6 +119,16 @@ label:not(.form-check-label):not(.btn):not([class*="btn"]) {
   margin-bottom: 3px;
 }
 .form-check-label { font-size: 0.85rem; }
+
+.qc-filter-note {
+  margin: -0.25rem 0 0.55rem;
+  font-size: 0.78rem;
+  color: #6c757d;
+}
+
+.qc-filter-note strong {
+  color: #2c3e50;
+}
 
 /* ── Form controls ─────────────────────────────────────────────────────────── */
 .form-control,
@@ -217,6 +287,17 @@ table.dataTable tbody tr.selected > td {
   border-radius: 4px !important;
   margin: 0 1px !important;
   border: none !important;
+}
+
+@media (max-width: 991.98px) {
+  .qc-navbar-session {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .qc-navbar-field {
+    min-width: 170px;
+  }
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
 .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {

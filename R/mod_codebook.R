@@ -14,6 +14,22 @@ mod_codebook_ui <- function(id) {
         shiny::textAreaInput(ns("code_definition"), "Definition", rows = 3),
         shiny::textAreaInput(ns("code_criteria"),   "Criteria (include/exclude)", rows = 3),
         shiny::textAreaInput(ns("code_memo"), "Memo", rows = 2),
+
+        # ── Weight (optional) ────────────────────────────────────────────
+        shiny::tags$details(
+          style = "margin-bottom:12px;",
+          shiny::tags$summary(
+            style = "cursor:pointer;font-size:0.82rem;color:#6c757d;user-select:none;",
+            "Weight (optional)"
+          ),
+          shiny::div(
+            style = "padding-top:8px;",
+            shiny::checkboxInput(ns("weight_enabled"), "Assign a weight to this code",
+              value = FALSE),
+            shiny::uiOutput(ns("weight_controls"))
+          )
+        ),
+
         shiny::uiOutput(ns("action_buttons")),
         shiny::hr(),
         shiny::h6("Categories"),
@@ -80,6 +96,29 @@ mod_codebook_server <- function(id, rv) {
               WHERE  status = 1 ORDER BY name")
     })
 
+    # ── Weight controls ───────────────────────────────────────────────────
+
+    output$weight_controls <- shiny::renderUI({
+      if (!isTRUE(input$weight_enabled)) return(NULL)
+      shiny::tagList(
+        shiny::sliderInput(ns("code_weight"), "Weight",
+          min = -1, max = 1, value = 0, step = 0.1, ticks = FALSE),
+        shiny::div(
+          style = paste0(
+            "font-size:0.78rem;color:#6c757d;",
+            "display:flex;justify-content:space-between;",
+            "margin-top:-10px;margin-bottom:8px;"),
+          shiny::span("−1  strongly negative"),
+          shiny::span("0  neutral"),
+          shiny::span("+1  strongly positive")
+        ),
+        shiny::textInput(ns("code_weight_desc"),
+          label       = "What does this weight mean for this code?",
+          placeholder = "e.g. indicates emotional valence of the passage"
+        )
+      )
+    })
+
     # ── Form header ───────────────────────────────────────────────────────
 
     output$form_header <- shiny::renderText({
@@ -125,8 +164,8 @@ mod_codebook_server <- function(id, rv) {
     # ── Codes table ───────────────────────────────────────────────────────
 
     output$tbl_codes <- DT::renderDataTable({
-      df <- dplyr::select(codes(), id, name, color, n_codings, categories,
-                          definition, criteria, memo)
+      df <- dplyr::select(codes(), id, name, color, weight, n_codings,
+                          categories, definition, criteria, memo)
       df$color <- sprintf(
         '<span class="qc-swatch" style="background:%s;" title="%s"></span>',
         df$color, df$color
@@ -142,12 +181,13 @@ mod_codebook_server <- function(id, rv) {
           columnDefs = list(
             list(targets = 0, width = "50px"),
             list(targets = 2, width = "44px", className = "text-center"),
-            list(targets = 3, width = "70px", className = "text-center"),
-            list(targets = c(5, 6, 7), className = "dt-muted dt-truncate")
+            list(targets = 3, width = "55px", className = "text-center text-muted"),
+            list(targets = 4, width = "70px", className = "text-center"),
+            list(targets = c(6, 7, 8), className = "dt-muted dt-truncate")
           )
         ),
-        colnames = c("ID", "Name", "Color", "Codings", "Categories",
-                     "Definition", "Criteria", "Memo")
+        colnames = c("ID", "Name", "Color", "Weight", "Codings",
+                     "Categories", "Definition", "Criteria", "Memo")
       )
     })
 
@@ -164,24 +204,42 @@ mod_codebook_server <- function(id, rv) {
       d <- codes()
       lv$selected_id   <- d$id[[row]]
       lv$selected_name <- d$name[[row]]
-      shiny::updateTextInput(    session, "code_name",  value = d$name[[row]])
-      colourpicker::updateColourInput(session, "code_color", value = d$color[[row]])
-      shiny::updateTextAreaInput(session, "code_definition", value = d$definition[[row]] %||% "")
-      shiny::updateTextAreaInput(session, "code_criteria",   value = d$criteria[[row]]   %||% "")
-      shiny::updateTextAreaInput(session, "code_memo",       value = d$memo[[row]])
+      shiny::updateTextInput(session, "code_name", value = d$name[[row]])
+      colourpicker::updateColourInput(session, "code_color",
+                                      value = d$color[[row]])
+      shiny::updateTextAreaInput(session, "code_definition",
+                                 value = d$definition[[row]] %||% "")
+      shiny::updateTextAreaInput(session, "code_criteria",
+                                 value = d$criteria[[row]] %||% "")
+      shiny::updateTextAreaInput(session, "code_memo", value = d$memo[[row]])
+
+      # Populate weight controls
+      wt <- d$weight[[row]]
+      has_weight <- !is.null(wt) && !is.na(wt)
+      shiny::updateCheckboxInput(session, "weight_enabled", value = has_weight)
+      if (has_weight) {
+        shiny::updateSliderInput(session, "code_weight", value = wt)
+        shiny::updateTextInput(session, "code_weight_desc",
+          value = d$weight_description[[row]] %||% "")
+      }
     })
 
     # ── Add code ──────────────────────────────────────────────────────────
 
     shiny::observeEvent(input$btn_add_code, {
       shiny::req(nchar(trimws(input$code_name)) > 0)
+      wt <- if (isTRUE(input$weight_enabled)) input$code_weight %||% NULL else NULL
+      wd <- if (isTRUE(input$weight_enabled))
+        trimws(input$code_weight_desc %||% "") else ""
       tryCatch({
         qc_add_code(rv$project,
-                    name       = trimws(input$code_name),
-                    color      = input$code_color,
-                    definition = input$code_definition,
-                    criteria   = input$code_criteria,
-                    memo       = input$code_memo)
+                    name               = trimws(input$code_name),
+                    color              = input$code_color,
+                    definition         = input$code_definition,
+                    criteria           = input$code_criteria,
+                    memo               = input$code_memo,
+                    weight             = wt,
+                    weight_description = wd)
         rv$refresh_codes <- rv$refresh_codes + 1L
         .reset_form(session)
       }, error = function(e) {
@@ -193,13 +251,18 @@ mod_codebook_server <- function(id, rv) {
 
     shiny::observeEvent(input$btn_save_code, {
       shiny::req(lv$selected_id, nchar(trimws(input$code_name)) > 0)
+      wt <- if (isTRUE(input$weight_enabled)) input$code_weight %||% NA else NA
+      wd <- if (isTRUE(input$weight_enabled))
+        trimws(input$code_weight_desc %||% "") else ""
       tryCatch({
         qc_update_code(rv$project, lv$selected_id,
-                       name       = trimws(input$code_name),
-                       color      = input$code_color,
-                       definition = input$code_definition,
-                       criteria   = input$code_criteria,
-                       memo       = input$code_memo)
+                       name               = trimws(input$code_name),
+                       color              = input$code_color,
+                       definition         = input$code_definition,
+                       criteria           = input$code_criteria,
+                       memo               = input$code_memo,
+                       weight             = wt,
+                       weight_description = wd)
         rv$refresh_codes <- rv$refresh_codes + 1L
         lv$selected_id   <- NULL
         lv$selected_name <- NULL
@@ -518,4 +581,5 @@ mod_codebook_server <- function(id, rv) {
   shiny::updateTextAreaInput(session, "code_definition", value = "")
   shiny::updateTextAreaInput(session, "code_criteria",   value = "")
   shiny::updateTextAreaInput(session, "code_memo",       value = "")
+  shiny::updateCheckboxInput(session, "weight_enabled",  value = FALSE)
 }

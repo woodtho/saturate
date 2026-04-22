@@ -21,6 +21,10 @@
 #'   `list(industry = "tech", size = "small")`. Every key-value pair must
 #'   match a row in `source_attributes` for the document to be included (AND
 #'   semantics across pairs).
+#' @param limit Integer or `NULL`. Maximum number of rows to return. `NULL`
+#'   (default) returns all matching rows. Use with `offset` for pagination.
+#' @param offset Integer. Number of rows to skip before returning results
+#'   (default 0). Only meaningful when `limit` is set.
 #'
 #' @return A tibble: `coding_id`, `source_id`, `source_name`, `code_id`,
 #'   `code_name`, `code_color`, `category_names`, `selfirst`, `selast`,
@@ -37,7 +41,9 @@ qc_get_coded_segments <- function(project,
                                   coder         = NULL,
                                   coding_source = NULL,
                                   coding_status = NULL,
-                                  source_attrs  = NULL) {
+                                  source_attrs  = NULL,
+                                  limit         = NULL,
+                                  offset        = 0L) {
   assert_class(project, "qc_project")
   assert_con(project$con)
 
@@ -116,6 +122,12 @@ qc_get_coded_segments <- function(project,
               cod.coder, cod.coding_source, cod.coding_status, cod.created_at
     ORDER  BY s.name, cod.selfirst
   ")
+
+  if (!is.null(limit)) {
+    limit  <- as.integer(limit)
+    offset <- as.integer(offset)
+    sql    <- paste0(sql, "  LIMIT ", limit, " OFFSET ", offset, "\n")
+  }
 
   .query(project$con, sql, if (length(sa_params) > 0L) sa_params else NULL)
 }
