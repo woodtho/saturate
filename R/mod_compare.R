@@ -84,6 +84,7 @@ mod_compare_server <- function(id, rv) {
     output$ctrl_shared_doc <- shiny::renderUI({
       if (input$mode != "coders") return(NULL)
       docs <- docs_rv()
+      if (nrow(docs) == 0L) return(NULL)
       shiny::div(
         shiny::tags$label("Document", class = "form-label"),
         shiny::selectInput(ns("shared_doc"),
@@ -96,6 +97,7 @@ mod_compare_server <- function(id, rv) {
     output$ctrl_left <- shiny::renderUI({
       if (input$mode == "docs") {
         docs <- docs_rv()
+        if (nrow(docs) == 0L) return(NULL)
         shiny::div(
           shiny::tags$label("Left document", class = "form-label"),
           shiny::selectInput(ns("left_doc"),
@@ -118,6 +120,7 @@ mod_compare_server <- function(id, rv) {
     output$ctrl_right <- shiny::renderUI({
       if (input$mode == "docs") {
         docs <- docs_rv()
+        if (nrow(docs) == 0L) return(NULL)
         shiny::div(
           shiny::tags$label("Right document", class = "form-label"),
           shiny::selectInput(ns("right_doc"),
