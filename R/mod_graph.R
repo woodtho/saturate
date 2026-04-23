@@ -49,7 +49,14 @@ mod_graph_ui <- function(id) {
     ),
 
     bslib::card(
-      bslib::card_header(shiny::textOutput(ns("graph_title"))),
+      bslib::card_header(
+        shiny::div(
+          class = "d-flex justify-content-between align-items-center w-100",
+          shiny::textOutput(ns("graph_title")),
+          shiny::downloadButton(ns("dl_edgelist_csv"), "Edge list CSV",
+            class = "btn-sm btn-outline-secondary")
+        )
+      ),
       shiny::uiOutput(ns("graph_or_msg"))
     )
   )
@@ -155,6 +162,24 @@ mod_graph_server <- function(id, rv) {
         )
       )
     })
+
+    output$dl_edgelist_csv <- shiny::downloadHandler(
+      filename = function() paste0("graph_edges_", Sys.Date(), ".csv"),
+      content  = function(file) {
+        gd <- graph_data()
+        edges <- if (!is.null(gd) && nrow(gd$edges) > 0L) {
+          nodes <- gd$nodes[, c("id", "label"), drop = FALSE]
+          e     <- gd$edges
+          e$from_label <- nodes$label[match(e$from, nodes$id)]
+          e$to_label   <- nodes$label[match(e$to,   nodes$id)]
+          e[, c("from_label", "to_label",
+                intersect(c("value", "title"), names(e))), drop = FALSE]
+        } else {
+          tibble::tibble(from_label = character(), to_label = character())
+        }
+        utils::write.csv(edges, file, row.names = FALSE)
+      }
+    )
 
     shiny::observeEvent(input$selected_node, {
       lv$selected_node <- input$selected_node

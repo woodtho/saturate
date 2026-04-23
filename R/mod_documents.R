@@ -32,6 +32,8 @@ mod_documents_ui <- function(id) {
           "Documents",
           shiny::div(
             class = "d-flex gap-1",
+            shiny::downloadButton(ns("dl_docs_csv"), "CSV",
+              class = "btn-sm btn-outline-secondary"),
             shiny::actionButton(ns("btn_code_doc"), "Code →",
               class = "btn-sm btn-primary",
               title = "Open selected document in the Coding panel"),
@@ -110,6 +112,20 @@ mod_documents_server <- function(id, rv) {
          if (t.length) t[0].click();"
       )
     })
+
+    # ── Document list CSV ──────────────────────────────────────────────────────
+
+    output$dl_docs_csv <- shiny::downloadHandler(
+      filename = function() paste0("documents_", Sys.Date(), ".csv"),
+      content  = function(file) {
+        df <- tryCatch(
+          dplyr::select(docs(), id, name, source_type, word_count,
+                        char_count, n_codings, n_coders, memo),
+          error = function(e) tibble::tibble()
+        )
+        utils::write.csv(df, file, row.names = FALSE)
+      }
+    )
 
     # ── File upload: parse then show import preview modal ─────────────────────
 

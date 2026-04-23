@@ -116,6 +116,10 @@ mod_themes_server <- function(id, rv) {
               shiny::span(paste0("Theme #", id_val, " — ", th$name)),
               shiny::div(
                 class = "d-flex gap-2",
+                shiny::downloadButton(ns("dl_theme_docx"), "DOCX",
+                  class = "btn-sm btn-outline-secondary"),
+                shiny::downloadButton(ns("dl_theme_txt"), "TXT",
+                  class = "btn-sm btn-outline-secondary"),
                 shiny::actionButton(ns("btn_save_theme"), "Save",
                   class = "btn-sm btn-primary"),
                 shiny::actionButton(ns("btn_delete_theme"), "Delete",
@@ -288,6 +292,64 @@ mod_themes_server <- function(id, rv) {
         shiny::showNotification(conditionMessage(e), type = "error")
       })
     })
+
+    # ── Theme exports ──────────────────────────────────────────────────────────
+
+    output$dl_theme_docx <- shiny::downloadHandler(
+      filename = function() {
+        th <- tryCatch(
+          qc_list_themes(rv$project),
+          error = function(e) tibble::tibble(id = integer(), name = character())
+        )
+        nm <- if (!is.null(lv$selected_id) && lv$selected_id %in% th$id)
+          gsub("[^A-Za-z0-9_-]", "_", th$name[th$id == lv$selected_id][[1L]])
+        else "theme"
+        paste0(nm, "_", Sys.Date(), ".docx")
+      },
+      content = function(file) {
+        shiny::req(lv$selected_id)
+        tryCatch({
+          tmp <- qc_export_themes_report(
+            rv$project,
+            format    = "docx",
+            theme_ids = lv$selected_id,
+            include_excerpts  = TRUE,
+            include_narrative = TRUE
+          )
+          file.copy(tmp, file)
+        }, error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error")
+        })
+      }
+    )
+
+    output$dl_theme_txt <- shiny::downloadHandler(
+      filename = function() {
+        th <- tryCatch(
+          qc_list_themes(rv$project),
+          error = function(e) tibble::tibble(id = integer(), name = character())
+        )
+        nm <- if (!is.null(lv$selected_id) && lv$selected_id %in% th$id)
+          gsub("[^A-Za-z0-9_-]", "_", th$name[th$id == lv$selected_id][[1L]])
+        else "theme"
+        paste0(nm, "_", Sys.Date(), ".txt")
+      },
+      content = function(file) {
+        shiny::req(lv$selected_id)
+        tryCatch({
+          tmp <- qc_export_themes_report(
+            rv$project,
+            format    = "txt",
+            theme_ids = lv$selected_id,
+            include_excerpts  = TRUE,
+            include_narrative = TRUE
+          )
+          file.copy(tmp, file)
+        }, error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error")
+        })
+      }
+    )
 
     # ── Edit links modal ───────────────────────────────────────────────────────
 

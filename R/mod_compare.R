@@ -68,7 +68,14 @@ mod_compare_ui <- function(id) {
 
     # ── Differences table ─────────────────────────────────────────────────────
     bslib::card(
-      bslib::card_header("Differences"),
+      bslib::card_header(
+        shiny::div(
+          class = "d-flex justify-content-between align-items-center w-100",
+          "Differences",
+          shiny::downloadButton(ns("dl_diff_csv"), "CSV",
+            class = "btn-sm btn-outline-secondary")
+        )
+      ),
       shiny::div(
         class = "p-2",
         shiny::uiOutput(ns("diff_summary")),
@@ -316,8 +323,13 @@ mod_compare_server <- function(id, rv) {
           shiny::div(
             class = "d-flex justify-content-between align-items-center w-100",
             "Reliability Statistics",
-            shiny::actionButton(ns("btn_reliability"), "Compute",
-              class = "btn-sm btn-outline-secondary")
+            shiny::div(
+              class = "d-flex gap-2",
+              shiny::downloadButton(ns("dl_reliability_csv"), "CSV",
+                class = "btn-sm btn-outline-secondary"),
+              shiny::actionButton(ns("btn_reliability"), "Compute",
+                class = "btn-sm btn-outline-secondary")
+            )
           )
         ),
         shiny::div(
@@ -363,6 +375,24 @@ mod_compare_server <- function(id, rv) {
         )
       )
     })
+
+    output$dl_diff_csv <- shiny::downloadHandler(
+      filename = function() paste0("differences_", Sys.Date(), ".csv"),
+      content  = function(file) {
+        df <- diff_rv()
+        utils::write.csv(if (is.null(df)) tibble::tibble() else df,
+                         file, row.names = FALSE)
+      }
+    )
+
+    output$dl_reliability_csv <- shiny::downloadHandler(
+      filename = function() paste0("reliability_", Sys.Date(), ".csv"),
+      content  = function(file) {
+        df <- reliability_rv()
+        utils::write.csv(if (is.null(df)) tibble::tibble() else df,
+                         file, row.names = FALSE)
+      }
+    )
 
     output$tbl_reliability <- DT::renderDataTable({
       df <- reliability_rv()
