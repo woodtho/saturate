@@ -2,55 +2,21 @@ mod_documents_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
-      width = 300,
+      width = 310,
+
+      # ── Import from file ────────────────────────────────────────────────────
       shiny::h5("Import Document"),
       shiny::fileInput(
         ns("file_upload"), NULL,
         accept      = c(".txt", ".docx", ".pdf", ".csv", ".md"),
-        buttonLabel = "Browse..."
+        buttonLabel = "Browse…"
       ),
-      shiny::textInput(ns("doc_name"), "Display name",
-                       placeholder = "Auto from filename"),
-      shiny::textAreaInput(ns("doc_memo"), "Memo", rows = 2),
-      shiny::div(
-        shiny::tags$label("Source type", class = "form-label"),
-        shiny::tags$input(
-          id       = ns("doc_source_type"),
-          class    = "form-control form-control-sm mb-2",
-          type     = "text",
-          list     = ns("source_type_suggestions"),
-          placeholder = "interview, survey, …"
-        ),
-        shiny::tags$datalist(
-          id = ns("source_type_suggestions"),
-          shiny::tags$option(value = "interview"),
-          shiny::tags$option(value = "focus_group"),
-          shiny::tags$option(value = "survey"),
-          shiny::tags$option(value = "observation"),
-          shiny::tags$option(value = "document")
-        )
-      ),
-      shiny::actionButton(ns("btn_import"), "Import",
-                          class = "btn-primary w-100"),
+
       shiny::hr(),
-      shiny::h5("Paste text"),
-      shiny::textAreaInput(ns("paste_content"), NULL, rows = 5,
-                           placeholder = "Paste document text here..."),
-      shiny::textInput(ns("paste_name"), "Name",
-                       placeholder = "Required"),
-      shiny::div(
-        shiny::tags$label("Source type", class = "form-label"),
-        shiny::tags$input(
-          id       = ns("paste_source_type"),
-          class    = "form-control form-control-sm mb-2",
-          type     = "text",
-          list     = ns("source_type_suggestions"),
-          placeholder = "interview, survey, …"
-        )
-      ),
-      shiny::actionButton(ns("btn_paste"), "Add",
-                          class = "btn-outline-primary w-100")
+      shiny::actionButton(ns("btn_open_paste_modal"), "Paste text…",
+        class = "btn-outline-secondary w-100")
     ),
+
     bslib::card(
       bslib::card_header(
         shiny::div(
@@ -85,7 +51,11 @@ mod_documents_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    lv <- shiny::reactiveValues(selected_id = NULL)
+    lv <- shiny::reactiveValues(
+      selected_id      = NULL,
+      pending_content  = NULL,
+      pending_filename = NULL
+    )
 
     docs <- shiny::reactive({
       rv$refresh_docs
@@ -104,7 +74,7 @@ mod_documents_server <- function(id, rv) {
           columnDefs = list(
             list(targets = 0, width = "50px"),
             list(targets = 2, width = "110px", className = "text-muted"),
-            list(targets = 3, width = "80px", className = "text-center"),
+            list(targets = 3, width = "80px",  className = "text-center"),
             list(targets = 4, className = "dt-muted dt-truncate")
           )
         ),
@@ -128,42 +98,171 @@ mod_documents_server <- function(id, rv) {
       )
     })
 
-    # ── Import / paste ─────────────────────────────────────────────────────────
+    # ── File upload: parse then show import preview modal ─────────────────────
 
-    shiny::observeEvent(input$btn_import, {
-      shiny::req(input$file_upload)
-      nm  <- if (nchar(trimws(input$doc_name %||% "")) > 0) input$doc_name else NULL
-      sty <- trimws(input$doc_source_type %||% "")
+    shiny::observeEvent(input$file_upload, {
+      f <- input$file_upload
+      shiny::req(f)
+      ext     <- tolower(fs::path_ext(f$name))
+      content <- tryCatch(
+        .read_file_content(f$datapath, ext),
+        error = function(e) {
+          shiny::showNotification(
+            paste0("Could not read file: ", conditionMessage(e)), type = "error")
+          NULL
+        }
+      )
+      shiny::req(!is.null(content))
+
+      lv$pending_content  <- content
+      lv$pending_filename <- f$name
+
+      n_chars  <- nchar(content)
+      n_words  <- length(strsplit(trimws(content), "\\s+")[[1L]])
+      preview  <- if (n_chars > 800L) paste0(substr(content, 1L, 800L), "…") else content
+      auto_nm  <- fs::path_ext_remove(f$name)
+
+      shiny::showModal(shiny::modalDialog(
+        title     = paste0("Import: ", f$name),
+        size      = "l",
+        easyClose = FALSE,
+
+        shiny::div(
+          class = "qc-import-preview mb-3",
+          shiny::div(
+            class = "qc-preview-header",
+            paste0(
+              formatC(n_chars, format = "d", big.mark = ","), " chars  ·  ",
+              formatC(n_words, format = "d", big.mark = ","), " words"
+            )
+          ),
+          shiny::tags$pre(class = "qc-preview-text", preview)
+        ),
+
+        shiny::textInput(ns("import_modal_name"), "Display name",
+          value       = auto_nm,
+          placeholder = "Required"),
+        shiny::textAreaInput(ns("import_modal_memo"), "Memo",
+          rows  = 2,
+          width = "100%"),
+        shiny::div(
+          shiny::tags$label("Source type", class = "form-label"),
+          shiny::tags$input(
+            id          = ns("import_modal_source_type"),
+            class       = "form-control form-control-sm",
+            type        = "text",
+            list        = ns("import_modal_source_type_list"),
+            placeholder = "interview, survey, …"
+          ),
+          shiny::tags$datalist(
+            id = ns("import_modal_source_type_list"),
+            shiny::tags$option(value = "interview"),
+            shiny::tags$option(value = "focus_group"),
+            shiny::tags$option(value = "survey"),
+            shiny::tags$option(value = "observation"),
+            shiny::tags$option(value = "document")
+          )
+        ),
+
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_confirm_import"), "Import",
+            class = "btn-primary")
+        )
+      ))
+    })
+
+    # ── Confirm import from modal ──────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_confirm_import, {
+      shiny::req(lv$pending_content, input$file_upload)
+      nm  <- trimws(input$import_modal_name %||% "")
+      sty <- trimws(input$import_modal_source_type %||% "")
+      if (nchar(nm) == 0L) nm <- fs::path_ext_remove(lv$pending_filename)
       tryCatch({
         qc_import_document(
           rv$project,
           path        = input$file_upload$datapath,
-          name        = nm %||% input$file_upload$name,
-          memo        = input$doc_memo,
+          name        = nm,
+          memo        = input$import_modal_memo %||% "",
           source_type = sty
         )
+        lv$pending_content  <- NULL
+        lv$pending_filename <- NULL
         rv$refresh_docs <- rv$refresh_docs + 1L
-        shinyjs::reset("doc_name")
-        shinyjs::reset("doc_memo")
+        shiny::removeModal()
+        shinyjs::reset("file_upload")
       }, error = function(e) {
         shiny::showNotification(conditionMessage(e), type = "error")
       })
     })
 
-    shiny::observeEvent(input$btn_paste, {
-      shiny::req(
-        nchar(trimws(input$paste_content %||% "")) > 0,
-        nchar(trimws(input$paste_name    %||% "")) > 0
-      )
-      sty <- trimws(input$paste_source_type %||% "")
+    # ── Paste text modal ───────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_open_paste_modal, {
+      shiny::showModal(shiny::modalDialog(
+        title     = "Import: Paste Text",
+        size      = "l",
+        easyClose = FALSE,
+
+        shiny::textAreaInput(ns("paste_modal_content"), "Text",
+          rows        = 8,
+          width       = "100%",
+          placeholder = "Paste document text here…"),
+        shiny::textInput(ns("paste_modal_name"), "Display name",
+          placeholder = "Required"),
+        shiny::textAreaInput(ns("paste_modal_memo"), "Memo",
+          rows  = 2,
+          width = "100%"),
+        shiny::div(
+          shiny::tags$label("Source type", class = "form-label"),
+          shiny::tags$input(
+            id          = ns("paste_modal_source_type"),
+            class       = "form-control form-control-sm",
+            type        = "text",
+            list        = ns("paste_modal_source_type_list"),
+            placeholder = "interview, survey, …"
+          ),
+          shiny::tags$datalist(
+            id = ns("paste_modal_source_type_list"),
+            shiny::tags$option(value = "interview"),
+            shiny::tags$option(value = "focus_group"),
+            shiny::tags$option(value = "survey"),
+            shiny::tags$option(value = "observation"),
+            shiny::tags$option(value = "document")
+          )
+        ),
+
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_confirm_paste"), "Import",
+            class = "btn-primary")
+        )
+      ))
+    })
+
+    shiny::observeEvent(input$btn_confirm_paste, {
+      nm      <- trimws(input$paste_modal_name    %||% "")
+      content <- input$paste_modal_content %||% ""
+      sty     <- trimws(input$paste_modal_source_type %||% "")
+      memo_v  <- input$paste_modal_memo %||% ""
+      if (nchar(trimws(content)) == 0L) {
+        shiny::showNotification("Text cannot be empty.", type = "warning")
+        return()
+      }
+      if (nchar(nm) == 0L) {
+        shiny::showNotification("Display name is required.", type = "warning")
+        return()
+      }
       tryCatch({
         qc_import_document(rv$project,
-                           content     = input$paste_content,
-                           name        = input$paste_name,
-                           source_type = sty)
+          content     = content,
+          name        = nm,
+          source_type = sty,
+          memo        = memo_v)
         rv$refresh_docs <- rv$refresh_docs + 1L
-        shinyjs::reset("paste_content")
-        shinyjs::reset("paste_name")
+        shiny::removeModal()
+        shiny::showNotification("Document imported.", type = "message")
       }, error = function(e) {
         shiny::showNotification(conditionMessage(e), type = "error")
       })
@@ -186,14 +285,26 @@ mod_documents_server <- function(id, rv) {
         shiny::p(
           class = "text-muted",
           shiny::tags$small(
-            "Use **bold** for emphasis. Changes are versioned and auditable. ",
-            "Existing codings will be flagged for review."
+            "Edit the content below, or upload a new file version. ",
+            "Changes are versioned. Existing codings will be flagged for review."
           )
         ),
         shiny::textAreaInput(ns("edit_doc_content"), "Content",
           value = doc$content,
-          rows  = 20,
+          rows  = 18,
           width = "100%"),
+        shiny::div(
+          class = "mt-2 p-2 border rounded bg-light",
+          shiny::tags$small(
+            shiny::tags$strong("Upload a new version:"),
+            " replaces the content above with the parsed file text."
+          ),
+          shiny::fileInput(ns("edit_doc_file"), NULL,
+            accept      = c(".txt", ".docx", ".pdf", ".csv", ".md"),
+            buttonLabel = "Choose file…",
+            placeholder = "No file chosen"
+          )
+        ),
         shiny::textInput(ns("edit_doc_version_memo"), "Change note (optional)",
           placeholder = "What changed and why?"),
         footer = shiny::tagList(
@@ -204,9 +315,31 @@ mod_documents_server <- function(id, rv) {
       ))
     })
 
+    # When a file is chosen inside the Edit modal, load its content into the textarea
+    shiny::observeEvent(input$edit_doc_file, {
+      f <- input$edit_doc_file
+      shiny::req(f)
+      ext     <- tolower(fs::path_ext(f$name))
+      content <- tryCatch(
+        .read_file_content(f$datapath, ext),
+        error = function(e) {
+          shiny::showNotification(
+            paste0("Could not read file: ", conditionMessage(e)), type = "error")
+          NULL
+        }
+      )
+      shiny::req(!is.null(content))
+      shiny::updateTextAreaInput(session, "edit_doc_content", value = content)
+      shiny::showNotification(
+        paste0("File loaded (", formatC(nchar(content), format="d", big.mark=","),
+               " chars). Review then save."),
+        type = "message"
+      )
+    })
+
     shiny::observeEvent(input$btn_save_edit_doc, {
       shiny::req(lv$selected_id)
-      new_content <- input$edit_doc_content %||% ""
+      new_content  <- input$edit_doc_content %||% ""
       version_memo <- trimws(input$edit_doc_version_memo %||% "")
       tryCatch({
         qc_update_document_content(rv$project, lv$selected_id,

@@ -596,13 +596,14 @@ build_highlighted_html <- function(content, codings,
                                     search_ranges     = NULL) {
   n <- nchar(content)
 
-  make_div <- function(inner_html) {
+  make_div <- function(inner_html, with_ln = FALSE) {
+    cls <- if (with_ln) "qc-text-display qc-line-numbers-on" else "qc-text-display"
     htmltools::div(
-      class       = "qc-text-display",
-      role        = "region",
-      tabindex    = "0",
+      class        = cls,
+      role         = "region",
+      tabindex     = "0",
       `aria-label` = "Document text — select a passage then choose a code to apply",
-      style       = .text_display_style(),
+      style        = .text_display_style(),
       htmltools::HTML(inner_html)
     )
   }
@@ -622,7 +623,7 @@ build_highlighted_html <- function(content, codings,
   if ((no_codings && no_excerpts && no_search) || n == 0L) {
     raw <- .apply_bold(htmltools::htmlEscape(content))
     if (show_line_numbers) raw <- .add_line_numbers(raw)
-    return(make_div(raw))
+    return(make_div(raw, with_ln = show_line_numbers))
   }
 
   # Alpha hex suffix (clamped to [0.05, 1.0])
@@ -634,6 +635,14 @@ build_highlighted_html <- function(content, codings,
   s_breaks <- if (!no_search)   c(search_ranges$selfirst, search_ranges$selast + 1L) else integer(0)
   breaks   <- sort(unique(c(1L, c_breaks, e_breaks, s_breaks, n + 1L)))
   breaks   <- breaks[breaks >= 1L & breaks <= n + 1L]
+
+  if (show_line_numbers) {
+    nl_pos <- .find_newlines(content)
+    if (length(nl_pos) > 0L) {
+      breaks <- sort(unique(c(breaks, nl_pos, nl_pos + 1L)))
+      breaks <- breaks[breaks >= 1L & breaks <= n + 1L]
+    }
+  }
 
   html_parts <- character(length(breaks) - 1L)
   for (i in seq_along(html_parts)) {
@@ -735,7 +744,7 @@ build_highlighted_html <- function(content, codings,
 
   html_out <- paste(html_parts, collapse = "")
   if (show_line_numbers) html_out <- .add_line_numbers(html_out)
-  make_div(html_out)
+  make_div(html_out, with_ln = show_line_numbers)
 }
 
 # Convert **bold** markdown syntax to <strong> within already-HTML-escaped text.
@@ -744,16 +753,26 @@ build_highlighted_html <- function(content, codings,
   gsub("\\*\\*([^*\n]+)\\*\\*", "<strong>\\1</strong>", html, perl = TRUE)
 }
 
-# Wrap each newline-delimited line with a line-number gutter span.
+# Wrap each newline-delimited line in a flex row with a gutter number column.
 .add_line_numbers <- function(html) {
   lines    <- strsplit(html, "\n", fixed = TRUE)[[1L]]
   n_digits <- nchar(as.character(length(lines)))
-  numbered <- vapply(seq_along(lines), function(i) {
+  rows <- vapply(seq_along(lines), function(i) {
     num <- formatC(i, width = n_digits, flag = " ")
-    paste0('<span class="qc-line-num" aria-hidden="true">', num, '</span>',
-           lines[[i]])
+    paste0(
+      '<div class="qc-line">',
+      '<span class="qc-line-num" aria-hidden="true">', num, '</span>',
+      '<span class="qc-line-text">', lines[[i]], '</span>',
+      '</div>'
+    )
   }, character(1L))
-  paste(numbered, collapse = "\n")
+  paste(rows, collapse = "")
+}
+
+.find_newlines <- function(content) {
+  m <- gregexpr("\n", content, fixed = TRUE)[[1L]]
+  if (length(m) == 1L && m[[1L]] == -1L) return(integer(0))
+  as.integer(m)
 }
 
 .text_display_style <- function() "user-select: text;"

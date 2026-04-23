@@ -365,7 +365,35 @@
       PRIMARY KEY (theme_id, code_id)
     )
   ",
-  idx_theme_code = "CREATE INDEX IF NOT EXISTS idx_theme_code ON theme_code_links(theme_id)"
+  idx_theme_code = "CREATE INDEX IF NOT EXISTS idx_theme_code ON theme_code_links(theme_id)",
+
+  # theme_category_links — many-to-many themes ↔ code categories
+  tbl_theme_cat_links = "
+    CREATE TABLE IF NOT EXISTS theme_category_links (
+      theme_id    BIGINT NOT NULL,
+      category_id BIGINT NOT NULL,
+      status      INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (theme_id, category_id)
+    )
+  ",
+  idx_theme_cat_links = "CREATE INDEX IF NOT EXISTS idx_theme_cat_links ON theme_category_links(theme_id)",
+
+  # theme_history — append-only audit log for theme mutations
+  seq_theme_history = "CREATE SEQUENCE IF NOT EXISTS theme_history_id_seq START 1",
+
+  tbl_theme_history = "
+    CREATE TABLE IF NOT EXISTS theme_history (
+      id         BIGINT PRIMARY KEY DEFAULT nextval('theme_history_id_seq'),
+      theme_id   BIGINT NOT NULL,
+      operation  VARCHAR NOT NULL,
+      field      VARCHAR,
+      old_value  VARCHAR,
+      new_value  VARCHAR,
+      changed_by VARCHAR NOT NULL DEFAULT '',
+      changed_at TIMESTAMPTZ DEFAULT now()
+    )
+  ",
+  idx_theme_history = "CREATE INDEX IF NOT EXISTS idx_theme_history ON theme_history(theme_id)"
 )
 
 .bootstrap_schema <- function(con) {
@@ -401,6 +429,8 @@
   .add_column_if_missing(con, "member_checks", "return_by",           "VARCHAR DEFAULT ''")
   .add_column_if_missing(con, "member_checks", "return_to",           "VARCHAR DEFAULT ''")
   .add_column_if_missing(con, "member_checks", "return_instructions",  "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "themes",        "definition",           "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "themes",        "scope",                "VARCHAR DEFAULT ''")
 
   # Seed project_meta if empty
   existing <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM project_meta")$n

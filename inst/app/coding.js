@@ -19,15 +19,16 @@
 
   // ── Scroll to character position ───────────────────────────────────────────
   // msg = { pos: N }  where N is a 1-based character offset.
-  // First looks for a <mark data-selfirst="…"> at or after pos; falls back to
-  // proportional scrolling within the container.
+  // Strategy 1: find a <mark data-selfirst> within 500 chars — scrollIntoView.
+  // Strategy 2: walk text nodes with a Range to get exact viewport coords.
+  // Strategy 3: proportional fallback for empty containers.
   Shiny.addCustomMessageHandler('qc_scroll_to', function (msg) {
     setTimeout(function () {
       var pos       = msg.pos;
       var container = document.querySelector('.qc-text-display');
       if (!container) return;
 
-      // Find the first mark whose selfirst >= pos
+      // Strategy 1: nearby coding mark
       var marks = container.querySelectorAll('mark[data-selfirst]');
       var best  = null;
       var bestDist = Infinity;
@@ -40,15 +41,48 @@
         best.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
-      // Proportional fallback
-      var total = container.textContent.length;
-      if (total > 0) {
-        var frac = pos / total;
-        container.scrollTop =
-          Math.floor(frac * (container.scrollHeight - container.clientHeight));
+
+      // Strategy 2: walk text nodes to the exact char position, then use
+      // Range.getBoundingClientRect() to compute the scroll delta needed
+      // to centre that position within the container — no DOM mutation.
+      var walker = document.createTreeWalker(
+        container, NodeFilter.SHOW_TEXT, null, false);
+      var n, count = 0;
+      while ((n = walker.nextNode())) {
+        var next = count + n.length;
+        if (next >= pos) {
+          try {
+            var range = document.createRange();
+            range.setStart(n, Math.min(pos - count, n.length));
+            range.collapse(true);
+            var rect  = range.getBoundingClientRect();
+            var cRect = container.getBoundingClientRect();
+            // rect.top / cRect.top are viewport-relative; the delta centres
+            // the target in the visible container area.
+            container.scrollTo({
+              top: container.scrollTop + (rect.top - cRect.top) - cRect.height / 2,
+              behavior: 'smooth'
+            });
+          } catch (e) {
+            _scrollProportional(container, pos);
+          }
+          return;
+        }
+        count = next;
       }
+
+      // Strategy 3: proportional fallback
+      _scrollProportional(container, pos);
     }, 120);   // brief delay ensures Shiny has flushed DOM updates first
   });
+
+  function _scrollProportional(container, pos) {
+    var total = container.textContent.length;
+    if (total > 0) {
+      container.scrollTop =
+        Math.floor((pos / total) * (container.scrollHeight - container.clientHeight));
+    }
+  }
 
   // ── Compare-panel scroll sync ──────────────────────────────────────────────
   Shiny.addCustomMessageHandler('qc_compare_sync', function (msg) {

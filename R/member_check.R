@@ -19,7 +19,7 @@
 qc_create_member_check <- function(project, source_id, participant_label,
                                     code_ids = NULL, created_by = NULL,
                                     return_by = "", return_to = "",
-                                    return_instructions = "") {
+                                    return_instructions = "", notes = "") {
   assert_class(project, "qc_project")
   assert_con(project$con)
   .assert_unlocked(project)
@@ -32,17 +32,18 @@ qc_create_member_check <- function(project, source_id, participant_label,
   return_by           <- as.character(return_by %||% "")
   return_to           <- as.character(return_to %||% "")
   return_instructions <- as.character(return_instructions %||% "")
+  notes               <- as.character(notes %||% "")
 
   doc <- qc_get_document(project, source_id)
 
   check_row <- .query(project$con,
     "INSERT INTO member_checks
        (source_id, participant_label, code_ids_filter, created_by,
-        return_by, return_to, return_instructions)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+        return_by, return_to, return_instructions, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      RETURNING id, source_id, participant_label, status, sent_at",
     list(source_id, participant_label, code_ids_str, created_by,
-         return_by, return_to, return_instructions)
+         return_by, return_to, return_instructions, notes)
   )
 
   codings <- qc_list_codings(project, source_id)
@@ -415,52 +416,123 @@ whether each interpretation accurately reflects your experience.</p>
 }
 
 .mc_docx <- function(check, items, proj_info) {
+
   doc <- officer::read_docx()
 
-  add <- function(d, ...) officer::body_add_par(d, ...)
+  .safe_str <- function(x) {
+    v <- tryCatch(x[[1L]], error = function(e) NULL)
+    if (is.null(v) || (length(v) == 1L && is.na(v))) return("")
+    as.character(v)
+  }
 
-  doc <- add(doc, "Member Check", style = "heading 1")
-  doc <- add(doc, paste0("Project: ",     as.character(proj_info$name[[1L]])))
-  doc <- add(doc, paste0("Document: ",    as.character(check$doc_name[[1L]])))
-  doc <- add(doc, paste0("Participant: ", as.character(check$participant_label[[1L]])))
-  doc <- add(doc, paste0("Date: ",        format(check$sent_at[[1L]], "%d %B %Y")))
-  doc <- add(doc, "")
-  doc <- add(doc,
-    "We have identified the following themes in your responses. Please indicate whether each interpretation accurately reflects your experience.")
-  doc <- add(doc, "")
-  doc <- add(doc, "Coded Passages", style = "heading 2")
+  .safe_date <- function(x) {
+    v <- tryCatch(x[[1L]], error = function(e) NULL)
+    if (is.null(v) || (length(v) == 1L && is.na(v)))
+      return(format(Sys.Date(), "%d %B %Y"))
+    tryCatch(format(v, "%d %B %Y"), error = function(e) as.character(v))
+  }
+
+  add_par <- function(d, txt, style = NULL) {
+    if (is.null(style)) officer::body_add_par(d, txt)
+    else officer::body_add_par(d, txt, style = style)
+  }
+
+  add_meta <- function(d, label, value) {
+    officer::body_add_fpar(d, value = officer::fpar(
+      officer::ftext(paste0(label, " "),
+        prop = officer::fp_text(bold = TRUE, font.size = 11L)),
+      officer::ftext(as.character(value),
+        prop = officer::fp_text(font.size = 11L))
+    ))
+  }
+
+  doc <- add_par(doc, "Member Check", style = "heading 1")
+  doc <- add_meta(doc, "Project:",     .safe_str(proj_info$name))
+  doc <- add_meta(doc, "Document:",    .safe_str(check$doc_name))
+  doc <- add_meta(doc, "Participant:", .safe_str(check$participant_label))
+  doc <- add_meta(doc, "Date:",        .safe_date(check$sent_at))
+  doc <- add_par(doc, "")
+  doc <- add_par(doc, paste0(
+    "We have identified the following themes in your responses. Please indicate ",
+    "whether each interpretation accurately reflects your experience."))
+  doc <- add_par(doc, "Coded Passages", style = "heading 1")
+  doc <- add_par(doc, "")
 
   if (nrow(items) == 0L) {
-    doc <- add(doc, "(No coded passages to review.)")
+    doc <- add_par(doc, "(No coded passages to review.)")
   } else {
     for (i in seq_len(nrow(items))) {
       r <- items[i, ]
-      doc <- add(doc, as.character(r$code_name[[1L]]), style = “heading 3”)
-      doc <- add(doc, paste0(““”, trimws(as.character(r$seltext[[1L]])), “””))
-      memo_v <- as.character(r$memo[[1L]] %||% "")
-      if (!is.na(memo_v) && nchar(memo_v) > 0L)
-        doc <- add(doc, paste0("Researcher note: ", memo_v))
-      doc <- add(doc, "Does this interpretation match your experience? Yes / No / Comment:")
-      doc <- add(doc, "")
+
+      code_name <- as.character(r$code_name[[1L]])
+      sel_text  <- trimws(as.character(r$seltext[[1L]]))
+      memo_v    <- as.character(r$memo[[1L]] %||% "")
+      col       <- as.character(r$code_color[[1L]] %||% "#4E79A7")
+      if (!grepl("^#[0-9A-Fa-f]{6}$", col)) col <- "#4E79A7"
+
+      # Code label: small caps, muted
+      doc <- officer::body_add_fpar(doc, value = officer::fpar(
+        officer::ftext(gsub("_"," ", toupper(code_name)),
+          prop = officer::fp_text(bold = TRUE, color = "#666666", font.size = 9L, underlined = TRUE)),
+        fp_p = officer::fp_par()
+      ))
+      doc <- add_par(doc, "")
+
+      # Blockquote: italic, coloured left border
+      doc <- officer::body_add_fpar(doc, value = officer::fpar(
+        officer::ftext(
+          paste0("“", sel_text, "”"),
+          prop = officer::fp_text(italic = TRUE, font.size = 11L, color = "#333333")
+        ),
+        fp_p = officer::fp_par(
+          padding.left = 2L,
+          border.left  = officer::fp_border(color = col, width = 3)
+        )
+      ))
+
+      # Researcher note (optional)
+      if (!is.na(memo_v) && nchar(trimws(memo_v)) > 0L) {
+        doc <- officer::body_add_fpar(doc, value = officer::fpar(
+          officer::ftext("Researcher note: ",
+            prop = officer::fp_text(bold = TRUE, font.size = 10L, color = "#555555")),
+          officer::ftext(memo_v,
+            prop = officer::fp_text(font.size = 10L, color = "#555555")),
+          fp_p = officer::fp_par()
+        ))
+      }
+      doc <- add_par(doc, "")
+
+      # Response prompt
+      doc <- officer::body_add_fpar(doc, value = officer::fpar(
+        officer::ftext("Does this interpretation match your experience?  "),
+        officer::ftext("Yes  /  No  ",
+          prop = officer::fp_text(bold = TRUE)),
+        fp_p = officer::fp_par()
+      ))
+      doc <- add_par(doc, "")
+      doc <- add_par(doc, "Comment:  ___________________________________________")
+      doc <- add_par(doc, "")
     }
   }
 
-  doc <- add(doc, "General Comments", style = "heading 2")
-  doc <- add(doc, "")
-  doc <- add(doc, "")
+  doc <- add_par(doc, "")
+  doc <- add_par(doc, "General Comments", style = "heading 1")
+  for (i in seq_len(3L)) doc <- add_par(doc, "")
 
-  ret_by  <- trimws(check$return_by[[1L]]  %||% "")
-  ret_to  <- trimws(check$return_to[[1L]]  %||% "")
-  ret_ins <- trimws(check$return_instructions[[1L]] %||% "")
+  ret_by  <- trimws(.safe_str(check$return_by))
+  ret_to  <- trimws(.safe_str(check$return_to))
+  ret_ins <- trimws(.safe_str(check$return_instructions))
 
-  doc <- add(doc, "Return Instructions", style = "heading 2")
-  if (nchar(ret_ins) > 0L) doc <- add(doc, ret_ins)
-  doc <- add(doc, if (nchar(ret_by) > 0L)
-    paste0("Return by: ", ret_by) else "Return by: ________________________________")
-  doc <- add(doc, if (nchar(ret_to) > 0L)
-    paste0("Return to: ", ret_to) else "Return to: ________________________________")
-  doc <- add(doc, "")
-  doc <- add(doc,
+  doc <- add_par(doc, "Return Instructions", style = "heading 1")
+  if (nchar(ret_ins) > 0L) doc <- add_par(doc, ret_ins)
+  doc <- add_par(doc,
+    if (nchar(ret_by) > 0L) paste0("Return by: ", ret_by)
+    else "Return by: ____________________________")
+  doc <- add_par(doc,
+    if (nchar(ret_to) > 0L) paste0("Return to: ", ret_to)
+    else "Return to: ____________________________")
+  doc <- add_par(doc, "")
+  doc <- add_par(doc,
     paste0("Generated by saturate • ", format(Sys.time(), "%Y-%m-%d %H:%M")))
 
   doc

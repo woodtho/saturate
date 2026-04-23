@@ -16,58 +16,38 @@ body { font-size: 0.9rem; }
 
 .qc-navbar-session {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  padding: 0.15rem 0;
+  padding: 0.1rem 0;
 }
 
-.qc-navbar-field {
-  min-width: 190px;
+/* ── Coder input ───────────────────────────────────────────────────────────── */
+.qc-coder-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.qc-navbar-field .shiny-input-container,
-.qc-navbar-field .selectize-control {
-  margin-bottom: 0;
-}
-
-.navbar .qc-navbar-field .form-label {
+.qc-coder-label {
   display: block;
-  margin-bottom: 0.22rem;
-  font-size: 0.67rem;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: default;
+  line-height: 1;
+  margin-bottom: 0;
 }
 
-.navbar .qc-navbar-field .selectize-input,
-.navbar .qc-navbar-field .selectize-input.input-active {
-  min-height: 32px;
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 8px;
-  box-shadow: none;
+.navbar .qc-coder-block .shiny-input-container {
+  margin-bottom: 0 !important;
+  width: auto !important;
 }
 
-.navbar .qc-navbar-field .selectize-input.focus {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.55);
-  box-shadow: none;
-}
-
-.navbar .qc-navbar-field .selectize-input > input,
-.navbar .qc-navbar-field .selectize-input .item {
-  color: #fff;
-  font-size: 0.84rem;
-}
-
-.navbar .qc-navbar-field .selectize-dropdown {
-  border-radius: 8px;
-  overflow: hidden;
-  border: none;
-  box-shadow: 0 10px 24px rgba(18, 38, 63, 0.18);
+.navbar .qc-coder-block .form-control {
+  width: 160px;
 }
 
 .qc-navbar-project {
@@ -185,6 +165,76 @@ h6 { font-size: 0.82rem; font-weight: 700; color: #495057; margin-bottom: 0.4rem
 
 /* Compare panels: slightly shorter so both fit on screen */
 .qc-compare-panel .qc-text-display { height: 52vh; }
+
+/* ── Line-number column mode ───────────────────────────────────────────────── */
+/* When show_line_numbers is on, build_highlighted_html adds qc-line-numbers-on  */
+/* and wraps each line in .qc-line / .qc-line-num / .qc-line-text divs.         */
+
+.qc-text-display.qc-line-numbers-on {
+  white-space: normal;
+  padding: 0.6rem 0;
+}
+
+.qc-line {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.9;
+}
+.qc-line:hover { background: rgba(0, 0, 0, 0.012); }
+
+.qc-line-num {
+  flex: 0 0 auto;
+  padding: 0 0.7rem;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.72em;
+  line-height: inherit;
+  color: #adb5bd;
+  background: #f6f8fa;
+  border-right: 1px solid #d8dee4;
+  user-select: none;
+  min-width: 3rem;
+}
+
+.qc-line-text {
+  flex: 1;
+  padding-left: 1rem;
+  padding-right: 1.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 0;
+}
+
+/* ── Import preview ────────────────────────────────────────────────────────── */
+.qc-import-preview {
+  margin: 0.25rem 0 0.6rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.78rem;
+}
+
+.qc-preview-header {
+  padding: 0.25rem 0.6rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.qc-preview-text {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  font-family: Georgia, serif;
+  font-size: 0.8rem;
+  max-height: 260px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #343a40;
+  background: #fff;
+  border: none;
+}
 
 /* ── Selection preview ─────────────────────────────────────────────────────── */
 .qc-selection-preview {

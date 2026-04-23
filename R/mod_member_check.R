@@ -3,50 +3,25 @@ mod_member_check_ui <- function(id) {
   shiny::div(
     class = "p-3",
 
-    bslib::layout_columns(
-      col_widths = c(4, 8),
-
-      # ── Create new check ───────────────────────────────────────────────────
-      bslib::card(
-        bslib::card_header("New member check"),
-        bslib::card_body(
-          shiny::selectInput(ns("mc_source_id"), "Document", choices = NULL),
-          shiny::textInput(ns("mc_participant"), "Participant label",
-            placeholder = "e.g. Participant A"),
-          shiny::selectizeInput(ns("mc_code_ids"),
-            "Restrict to codes (optional — blank = all)",
-            choices = NULL, multiple = TRUE,
-            options = list(placeholder = "All codes")),
-          shiny::hr(),
-          shiny::h6("Return instructions"),
-          shiny::textInput(ns("mc_return_by"), "Return by",
-            placeholder = "e.g. 2026-05-01 or 'within 2 weeks'"),
-          shiny::textInput(ns("mc_return_to"), "Return to (email / contact)",
-            placeholder = "e.g. researcher@university.edu"),
-          shiny::textAreaInput(ns("mc_return_instructions"),
-            "Instructions for participant",
-            rows = 3,
-            placeholder = paste0(
-              "e.g. Please read each passage and note whether the interpretation ",
-              "captures your experience. Return via email.")),
-          shiny::actionButton(ns("btn_create_mc"), "Create check",
-            class = "btn-primary w-100")
+    # ── Checks table ───────────────────────────────────────────────────────────
+    bslib::card(
+      bslib::card_header(
+        shiny::div(
+          class = "d-flex justify-content-between align-items-center w-100",
+          "Member Checks",
+          shiny::actionButton(ns("btn_new_check"), "New Check",
+            class = "btn-sm btn-primary")
         )
       ),
-
-      # ── Existing checks ────────────────────────────────────────────────────
-      bslib::card(
-        bslib::card_header("All member checks"),
-        bslib::card_body(
-          shiny::p(shiny::tags$small(
-            "Click a row to view and record participant responses.",
-            class = "text-muted")),
-          DT::dataTableOutput(ns("tbl_checks"))
-        )
+      bslib::card_body(
+        shiny::p(shiny::tags$small(
+          "Click a row to view and record participant responses.",
+          class = "text-muted mb-0")),
+        DT::dataTableOutput(ns("tbl_checks"))
       )
     ),
 
-    # ── Selected check detail ─────────────────────────────────────────────────
+    # ── Selected check detail ──────────────────────────────────────────────────
     bslib::card(
       class = "mt-3",
       bslib::card_header(shiny::textOutput(ns("detail_title"))),
@@ -55,7 +30,7 @@ mod_member_check_ui <- function(id) {
           class = "d-flex gap-2 mb-3 flex-wrap",
           shiny::downloadButton(ns("btn_dl_html"), "Export HTML",
             class = "btn-sm btn-outline-secondary"),
-          shiny::downloadButton(ns("btn_dl_txt"), "Export TXT",
+          shiny::downloadButton(ns("btn_dl_txt"),  "Export TXT",
             class = "btn-sm btn-outline-secondary"),
           shiny::downloadButton(ns("btn_dl_docx"), "Export Word",
             class = "btn-sm btn-outline-secondary"),
@@ -80,19 +55,6 @@ mod_member_check_server <- function(id, rv) {
       refresh_checks    = 0L
     )
 
-    # ── Populate selects ──────────────────────────────────────────────────────
-
-    shiny::observe({
-      rv$refresh_docs
-      rv$refresh_codes
-      docs  <- qc_list_documents(rv$project)
-      codes <- qc_list_codes(rv$project)
-      shiny::updateSelectInput(session, "mc_source_id",
-        choices = stats::setNames(docs$id, docs$name))
-      shiny::updateSelectizeInput(session, "mc_code_ids",
-        choices = stats::setNames(codes$id, codes$name), server = TRUE)
-    })
-
     # ── Checks table ──────────────────────────────────────────────────────────
 
     checks_rv <- shiny::reactive({
@@ -105,7 +67,7 @@ mod_member_check_server <- function(id, rv) {
       df <- checks_rv()
       if (nrow(df) == 0L) {
         return(DT::datatable(
-          tibble::tibble(message = "No member checks yet. Create one above."),
+          tibble::tibble(message = "No member checks yet. Click 'New Check' to create one."),
           rownames = FALSE, options = list(dom = "t")
         ))
       }
@@ -133,9 +95,61 @@ mod_member_check_server <- function(id, rv) {
       )
     })
 
-    # ── Create new check ──────────────────────────────────────────────────────
+    # ── New Check modal ────────────────────────────────────────────────────────
 
-    shiny::observeEvent(input$btn_create_mc, {
+    shiny::observeEvent(input$btn_new_check, {
+      docs  <- qc_list_documents(rv$project)
+      codes <- qc_list_codes(rv$project)
+      doc_choices  <- stats::setNames(docs$id,  docs$name)
+      code_choices <- stats::setNames(codes$id, codes$name)
+
+      shiny::showModal(shiny::modalDialog(
+        title     = "New Member Check",
+        size      = "l",
+        easyClose = FALSE,
+
+        shiny::selectInput(ns("mc_source_id"), "Document",
+          choices = doc_choices),
+        shiny::textInput(ns("mc_participant"), "Participant label",
+          placeholder = "e.g. Participant A"),
+        shiny::selectizeInput(ns("mc_code_ids"),
+          "Restrict to codes (optional — blank = all)",
+          choices  = code_choices,
+          multiple = TRUE,
+          options  = list(placeholder = "All codes")),
+
+        shiny::hr(),
+        shiny::h6("Return instructions"),
+        shiny::textInput(ns("mc_return_by"), "Return by",
+          placeholder = "e.g. 2026-05-01 or 'within 2 weeks'"),
+        shiny::textInput(ns("mc_return_to"), "Return to (email / contact)",
+          placeholder = "e.g. researcher@university.edu"),
+        shiny::textAreaInput(ns("mc_return_instructions"),
+          "Instructions for participant",
+          rows = 3,
+          placeholder = paste0(
+            "e.g. Please read each passage and note whether the interpretation ",
+            "captures your experience. Return via email.")),
+
+        shiny::hr(),
+        shiny::h6("Participant’s written response (optional)"),
+        shiny::tags$small(
+          class = "text-muted d-block mb-1",
+          "Paste the participant’s reply here to record it alongside the check."
+        ),
+        shiny::textAreaInput(ns("mc_paste_response"), NULL,
+          rows = 5,
+          placeholder = "Paste participant response text…"),
+
+        footer = shiny::tagList(
+          shiny::modalButton("Cancel"),
+          shiny::actionButton(ns("btn_confirm_create_check"), "Create Check",
+            class = "btn-primary")
+        )
+      ))
+    })
+
+    shiny::observeEvent(input$btn_confirm_create_check, {
       shiny::req(
         nchar(trimws(input$mc_participant %||% "")) > 0,
         input$mc_source_id
@@ -151,13 +165,11 @@ mod_member_check_server <- function(id, rv) {
           created_by          = rv$current_coder %||% Sys.info()[["user"]],
           return_by           = trimws(input$mc_return_by           %||% ""),
           return_to           = trimws(input$mc_return_to           %||% ""),
-          return_instructions = trimws(input$mc_return_instructions %||% "")
+          return_instructions = trimws(input$mc_return_instructions %||% ""),
+          notes               = trimws(input$mc_paste_response      %||% "")
         )
+        shiny::removeModal()
         shiny::showNotification("Member check created.", type = "message")
-        shinyjs::reset("mc_participant")
-        shinyjs::reset("mc_return_by")
-        shinyjs::reset("mc_return_to")
-        shinyjs::reset("mc_return_instructions")
         lv$refresh_checks <- lv$refresh_checks + 1L
       }, error = function(e) {
         shiny::showNotification(conditionMessage(e), type = "error")
@@ -177,8 +189,8 @@ mod_member_check_server <- function(id, rv) {
     output$detail_title <- shiny::renderText({
       id_val <- lv$selected_check_id
       if (is.null(id_val)) return("Select a check to view details")
-      checks  <- checks_rv()
-      check   <- checks[checks$id == id_val, ]
+      checks <- checks_rv()
+      check  <- checks[checks$id == id_val, ]
       if (nrow(check) == 0L) return("Check not found")
       paste0("Check #", id_val, " — ",
              check$participant_label, " | ", check$doc_name,
@@ -211,7 +223,7 @@ mod_member_check_server <- function(id, rv) {
       })
     })
 
-    # ── Download handlers ────────────────────────────────────────────────────
+    # ── Download handlers ─────────────────────────────────────────────────────
 
     output$btn_dl_html <- shiny::downloadHandler(
       filename = function() {
@@ -246,15 +258,21 @@ mod_member_check_server <- function(id, rv) {
       },
       content = function(file) {
         id_val <- shiny::isolate(lv$selected_check_id)
-        shiny::req(id_val)
+        if (is.null(id_val)) return()
         if (!requireNamespace("officer", quietly = TRUE)) {
           shiny::showNotification(
             "Install the 'officer' package to export Word documents.",
             type = "error")
           return()
         }
-        tmp <- qc_export_member_check(rv$project, id_val, format = "docx")
-        file.copy(tmp, file)
+        tryCatch({
+          tmp <- qc_export_member_check(rv$project, id_val, format = "docx")
+          file.copy(tmp, file)
+        }, error = function(e) {
+          shiny::showNotification(
+            paste0("DOCX export failed: ", conditionMessage(e)),
+            type = "error")
+        })
       }
     )
 
@@ -268,20 +286,22 @@ mod_member_check_server <- function(id, rv) {
                         "Select a row in the table above to record responses."))
       }
 
-      # Show return instructions for this check
       checks <- checks_rv()
       check  <- checks[checks$id == id_val, ]
+
       ret_hdr <- if (nrow(check) > 0L) {
         ret_by  <- trimws(check$return_by[[1L]]  %||% "")
         ret_to  <- trimws(check$return_to[[1L]]  %||% "")
         ret_ins <- trimws(check$return_instructions[[1L]] %||% "")
+        notes_v <- trimws(check$notes[[1L]] %||% "")
         has_ret <- any(nchar(c(ret_by, ret_to, ret_ins)) > 0L)
+
+        blocks <- list()
         if (has_ret) {
-          shiny::div(
+          blocks <- c(blocks, list(shiny::div(
             class = "alert alert-light border mb-3",
             style = "font-size:0.875rem;",
-            if (nchar(ret_ins) > 0L)
-              shiny::p(class = "mb-1", ret_ins),
+            if (nchar(ret_ins) > 0L) shiny::p(class = "mb-1", ret_ins),
             shiny::div(
               class = "d-flex gap-4",
               if (nchar(ret_by) > 0L)
@@ -289,8 +309,19 @@ mod_member_check_server <- function(id, rv) {
               if (nchar(ret_to) > 0L)
                 shiny::span(shiny::tags$strong("Return to: "), ret_to)
             )
-          )
+          )))
         }
+        if (nchar(notes_v) > 0L) {
+          blocks <- c(blocks, list(shiny::div(
+            class = "qc-code-info mb-3",
+            shiny::tags$strong("Participant response:"),
+            shiny::tags$br(),
+            shiny::tags$span(
+              style = "white-space:pre-wrap;font-size:0.875rem;",
+              notes_v)
+          )))
+        }
+        if (length(blocks) > 0L) do.call(shiny::tagList, blocks)
       }
 
       items <- tryCatch(.query(rv$project$con,
@@ -348,7 +379,7 @@ mod_member_check_server <- function(id, rv) {
               shiny::div(
                 style = "min-width:160px;",
                 shiny::selectInput(ns(paste0(item_pfx, "status")), NULL,
-                  choices  = c("Pending" = "pending",
+                  choices  = c("Pending"   = "pending",
                                "Confirmed" = "confirmed",
                                "Disputed"  = "disputed",
                                "Other"     = "other"),

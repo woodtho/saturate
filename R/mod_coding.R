@@ -394,7 +394,9 @@ mod_coding_server <- function(id, rv, parent_session) {
       coders <- coders[!is.na(coders) & nzchar(coders)]
       selected_coder <- input$filter_display_coder %||% ""
 
-      if (isTRUE(rv$blind_mode)) {
+      # isolate blind_mode so choices/selection changes from blind toggles are
+      # handled exclusively by the observeEvent below — avoids feedback loops
+      if (isTRUE(shiny::isolate(rv$blind_mode))) {
         coder_choices  <- stats::setNames(active_coder, active_coder)
         selected_coder <- active_coder
       } else {
@@ -409,6 +411,26 @@ mod_coding_server <- function(id, rv, parent_session) {
         choices = coder_choices,
         selected = selected_coder)
     })
+
+    # Fires exactly once per blind mode toggle; resets the coder display filter
+    # without the feedback loop that a general observe would create.
+    shiny::observeEvent(rv$blind_mode, {
+      active_coder <- shiny::isolate(rv$current_coder) %||% "default"
+      coders <- tryCatch({
+        x <- qc_list_coders(rv$project)$coder
+        unique(c(active_coder, x[!is.na(x) & nzchar(x)]))
+      }, error = function(e) active_coder)
+
+      if (isTRUE(rv$blind_mode)) {
+        shiny::updateSelectInput(session, "filter_display_coder",
+          choices  = stats::setNames(active_coder, active_coder),
+          selected = active_coder)
+      } else {
+        shiny::updateSelectInput(session, "filter_display_coder",
+          choices  = c("All coders" = "", stats::setNames(coders, coders)),
+          selected = "")
+      }
+    }, ignoreInit = TRUE)
 
     # ── Code info tooltip ──────────────────────────────────────────────────────
 

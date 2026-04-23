@@ -19,6 +19,7 @@ saturate_ui <- function() {
       bslib::nav_panel("Coding",    mod_coding_ui("coding")),
       bslib::nav_panel("Compare",   mod_compare_ui("compare")),
       bslib::nav_panel("Codebook",  mod_codebook_ui("codebook")),
+      bslib::nav_panel("Themes",    mod_themes_ui("themes")),
       bslib::nav_panel("Query",     mod_query_ui("query")),
       bslib::nav_panel("Graph",     mod_graph_ui("graph")),
       bslib::nav_panel("Members",   mod_member_check_ui("members")),
@@ -31,30 +32,22 @@ saturate_ui <- function() {
 
           # ── Active coder ─────────────────────────────────────────────────
           shiny::div(
-            class = "qc-coder-block d-flex flex-column",
-            style = "line-height:1;",
-            shiny::tags$span(
+            class = "qc-coder-block",
+            shiny::tags$label(
               "CODING AS",
-              style = paste0("font-size:0.62rem;font-weight:600;",
-                             "letter-spacing:.07em;color:rgba(255,255,255,.5);",
-                             "margin-bottom:2px;")
+              `for` = "current_coder",
+              class = "qc-coder-label"
             ),
-            shiny::div(
-              class = "d-flex align-items-center gap-1",
-              shiny::selectizeInput(
-                "current_coder",
-                label    = NULL,
-                choices  = stats::setNames(default_coder, default_coder),
-                selected = default_coder,
-                width    = "155px",
-                options  = list(
-                  create           = TRUE,
-                  persist          = TRUE,
-                  maxItems         = 1,
-                  closeAfterSelect = TRUE,
-                  placeholder      = "Type or pick…"
-                )
-              )
+            shiny::textInput(
+              "current_coder",
+              label       = NULL,
+              value       = default_coder,
+              placeholder = "Coder name…",
+              width       = "160px"
+            ),
+            shiny::uiOutput("coder_suggestions_ui", inline = TRUE),
+            shiny::tags$script(
+              'setTimeout(function(){var e=document.getElementById("current_coder");if(e)e.setAttribute("list","coder_sugg");},250);'
             )
           ),
 
@@ -89,21 +82,15 @@ saturate_server <- function(input, output, session, project) {
     rv$current_coder <- coder
   }, ignoreInit = TRUE)
 
-  shiny::observe({
+  output$coder_suggestions_ui <- shiny::renderUI({
     rv$refresh_codes
     coders <- tryCatch(qc_list_coders(rv$project)$coder,
                        error = function(e) character())
-    choices <- unique(c(rv$current_coder %||% default_coder, coders))
-    choices <- choices[!is.na(choices) & nzchar(choices)]
-    selected <- rv$current_coder %||% default_coder
-
-    if (!selected %in% choices) choices <- c(selected, choices)
-
-    shiny::updateSelectizeInput(
-      session, "current_coder",
-      choices  = stats::setNames(choices, choices),
-      selected = selected,
-      server   = FALSE
+    all_coders <- unique(c(rv$current_coder %||% default_coder, coders))
+    all_coders <- all_coders[!is.na(all_coders) & nzchar(all_coders)]
+    shiny::tags$datalist(
+      id = "coder_sugg",
+      lapply(all_coders, function(x) shiny::tags$option(value = x))
     )
   })
 
@@ -135,6 +122,7 @@ saturate_server <- function(input, output, session, project) {
 
   mod_documents_server("docs",     rv)
   mod_codebook_server("codebook",  rv)
+  mod_themes_server("themes",      rv)
   mod_coding_server("coding",      rv, session)
   mod_compare_server("compare",    rv)
   mod_query_server("query",        rv)
