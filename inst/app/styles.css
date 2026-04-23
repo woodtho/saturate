@@ -20,6 +20,14 @@
   --sat-primary-fg:       #ffffff;
   --sat-accent:           #4E79A7;
   --sat-accent-fg:        #ffffff;
+  --sat-button-alt:       #4E79A7;
+  --sat-button-alt-hover: #3f638a;
+  --sat-button-info:      #6f4aa8;
+  --sat-button-info-hover: #5e3e8f;
+  --sat-danger:           #b42318;
+  --sat-danger-hover:     #8f1d14;
+  --sat-blind-locked:     #c45500;
+  --sat-blind-locked-hover: #a94700;
 
   /* Text — all ≥ 7:1 on #ffffff */
   --sat-text:             #1a1a1a;
@@ -102,6 +110,20 @@ body {
   letter-spacing: -.02em;
   font-size: 1.05rem;
   color: var(--sat-primary-fg) !important;
+}
+
+.navbar .nav-link {
+  color: var(--sat-primary-fg) !important;
+  opacity: .9;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link:focus,
+.navbar .nav-link.active {
+  color: var(--sat-primary-fg) !important;
+  opacity: 1;
+}
+.navbar .nav-link.active {
+  font-weight: 700;
 }
 
 .qc-navbar-session {
@@ -190,13 +212,22 @@ body {
 
 /* ── Form labels ──────────────────────────────────────────────────────────────── */
 .form-label,
-label:not(.form-check-label):not(.btn):not([class*="btn"]) {
+label:not(.form-check-label):not(.btn):not([class*="btn"]):not(.qc-coder-label) {
   font-size: .8rem;
   font-weight: 600;
   color: var(--sat-text-label);
   margin-bottom: 3px;
 }
 .form-check-label { font-size: .85rem; color: var(--sat-text); }
+
+.navbar .qc-coder-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: rgba(255, 255, 255, .9);
+  line-height: 1;
+  margin-bottom: 0;
+}
 
 .qc-filter-note {
   margin: -.25rem 0 .55rem;
@@ -235,6 +266,100 @@ label:not(.form-check-label):not(.btn):not([class*="btn"]) {
   background-color: var(--sat-primary-hover);
   border-color: var(--sat-primary-hover);
   color: var(--sat-primary-fg);
+}
+
+/* Avoid Flatly's grey secondary buttons and green/teal success/info buttons. */
+.btn-secondary,
+.btn-default,
+.btn-success {
+  background-color: var(--sat-button-alt);
+  border-color: var(--sat-button-alt);
+  color: #fff;
+}
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-secondary:active,
+.btn-default:hover,
+.btn-default:focus,
+.btn-default:active,
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active {
+  background-color: var(--sat-button-alt-hover);
+  border-color: var(--sat-button-alt-hover);
+  color: #fff;
+}
+.btn-outline-secondary,
+.btn-outline-default,
+.btn-outline-success {
+  background-color: var(--sat-white);
+  border-color: var(--sat-button-alt);
+  color: var(--sat-button-alt);
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active,
+.btn-outline-default:hover,
+.btn-outline-default:focus,
+.btn-outline-default:active,
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:active {
+  background-color: var(--sat-button-alt);
+  border-color: var(--sat-button-alt);
+  color: #fff;
+}
+.btn-info {
+  background-color: var(--sat-button-info);
+  border-color: var(--sat-button-info);
+  color: #fff;
+}
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active {
+  background-color: var(--sat-button-info-hover);
+  border-color: var(--sat-button-info-hover);
+  color: #fff;
+}
+.btn-outline-info {
+  background-color: var(--sat-white);
+  border-color: var(--sat-button-info);
+  color: var(--sat-button-info);
+}
+.btn-outline-info:hover,
+.btn-outline-info:focus,
+.btn-outline-info:active {
+  background-color: var(--sat-button-info);
+  border-color: var(--sat-button-info);
+  color: #fff;
+}
+.btn-danger,
+.btn-outline-danger {
+  background-color: var(--sat-danger);
+  border-color: var(--sat-danger);
+  color: #fff;
+}
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:active,
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active {
+  background-color: var(--sat-danger-hover);
+  border-color: var(--sat-danger-hover);
+  color: #fff;
+}
+.qc-blind-toggle.btn-warning {
+  background-color: var(--sat-blind-locked);
+  border-color: var(--sat-blind-locked);
+  color: #fff;
+}
+.qc-blind-toggle.btn-warning:hover,
+.qc-blind-toggle.btn-warning:focus,
+.qc-blind-toggle.btn-warning:active {
+  background-color: var(--sat-blind-locked-hover);
+  border-color: var(--sat-blind-locked-hover);
+  color: #fff;
 }
 
 /* Replace the Bootstrap outline-removal with a proper focus ring */
@@ -421,6 +546,16 @@ kbd {
 /* ── DataTables — global refinements ─────────────────────────────────────────── */
 table.dataTable { width: 100% !important; }
 
+.dataTables_wrapper,
+.dt-container {
+  --bs-pagination-color: var(--sat-button-alt);
+  --bs-pagination-hover-color: var(--sat-button-alt-hover);
+  --bs-pagination-focus-color: var(--sat-button-alt-hover);
+  --bs-pagination-active-bg: var(--sat-button-alt);
+  --bs-pagination-active-border-color: var(--sat-button-alt);
+  --bs-pagination-active-color: #fff;
+}
+
 table.dataTable thead th {
   font-size: .72rem !important;
   font-weight: 700 !important;
@@ -467,12 +602,66 @@ table.dataTable tbody tr.selected > td {
   border-radius: 4px !important;
   margin: 0 1px !important;
   border: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--sat-button-alt) !important;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-  background: var(--sat-primary) !important;
-  color: var(--sat-primary-fg) !important;
-  border-color: var(--sat-primary) !important;
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover,
+.dataTables_wrapper .dataTables_paginate .page-item.active .page-link,
+.dataTables_wrapper .dataTables_paginate .paginate_button.page-item.active .page-link,
+.dt-container .dt-paging .dt-paging-button.current,
+.dt-container .dt-paging .dt-paging-button.current:hover,
+.dt-container .dt-paging .page-item.active .page-link {
+  background: var(--sat-button-alt) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border-color: var(--sat-button-alt) !important;
+  box-shadow: none !important;
+}
+.dataTables_wrapper .dataTables_paginate .page-link,
+.dt-container .dt-paging .page-link {
+  color: var(--sat-button-alt) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+.dataTables_wrapper .dataTables_paginate .paginate_button.next,
+.dataTables_wrapper .dataTables_paginate .page-item.previous .page-link,
+.dataTables_wrapper .dataTables_paginate .page-item.next .page-link,
+.dt-container .dt-paging .dt-paging-button,
+.dt-container .dt-paging .dt-paging-button.previous,
+.dt-container .dt-paging .dt-paging-button.next,
+.dt-container .dt-paging .page-item.previous .page-link,
+.dt-container .dt-paging .page-item.next .page-link {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: var(--sat-border) !important;
+  color: var(--sat-button-alt) !important;
+}
+.dataTables_wrapper .dataTables_paginate .page-link:hover,
+.dataTables_wrapper .dataTables_paginate .page-link:focus,
+.dataTables_wrapper .dataTables_paginate .paginate_button.previous:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.previous:focus,
+.dataTables_wrapper .dataTables_paginate .paginate_button.next:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.next:focus,
+.dataTables_wrapper .dataTables_paginate .page-item.previous .page-link:hover,
+.dataTables_wrapper .dataTables_paginate .page-item.previous .page-link:focus,
+.dataTables_wrapper .dataTables_paginate .page-item.next .page-link:hover,
+.dataTables_wrapper .dataTables_paginate .page-item.next .page-link:focus,
+.dt-container .dt-paging .page-link:hover,
+.dt-container .dt-paging .page-link:focus,
+.dt-container .dt-paging .dt-paging-button:hover,
+.dt-container .dt-paging .dt-paging-button:focus,
+.dt-container .dt-paging .dt-paging-button.previous:hover,
+.dt-container .dt-paging .dt-paging-button.previous:focus,
+.dt-container .dt-paging .dt-paging-button.next:hover,
+.dt-container .dt-paging .dt-paging-button.next:focus,
+.dt-container .dt-paging .page-item.previous .page-link:hover,
+.dt-container .dt-paging .page-item.previous .page-link:focus,
+.dt-container .dt-paging .page-item.next .page-link:hover,
+.dt-container .dt-paging .page-item.next .page-link:focus {
+  background: var(--sat-hover-bg) !important;
+  color: var(--sat-button-alt-hover) !important;
+  border-color: var(--sat-border) !important;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
   background: var(--sat-hover-bg) !important;
@@ -543,6 +732,116 @@ table.dataTable td.dt-muted {
   text-transform: uppercase;
   letter-spacing: .07em;
   color: var(--sat-text-muted);
+}
+
+/* ── Help text ─────────────────────────────────────────────────────────────── */
+.qc-help-note,
+.qc-help-details {
+  margin: .45rem 0 .75rem;
+  border: 1px solid var(--sat-border-light);
+  border-left: 3px solid var(--sat-button-alt);
+  background: #f6f9fd;
+  color: var(--sat-text-label);
+  border-radius: 0 6px 6px 0;
+  font-size: .83rem;
+  line-height: 1.5;
+}
+.qc-help-note {
+  display: flex;
+  gap: .5rem;
+  padding: .55rem .75rem;
+}
+.qc-help-icon {
+  color: var(--sat-button-alt);
+  flex: 0 0 auto;
+  margin-top: .12rem;
+}
+.qc-help-details > summary {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  cursor: pointer;
+  font-weight: 700;
+  padding: .5rem .75rem;
+  color: var(--sat-text-label);
+  user-select: none;
+}
+.qc-help-details > summary::-webkit-details-marker { display: none; }
+.qc-help-body {
+  padding: 0 .75rem .65rem 1.65rem;
+}
+.qc-help-body p:last-child,
+.qc-help-note-body p:last-child {
+  margin-bottom: 0;
+}
+.qc-help-list,
+.qc-help-steps {
+  margin: .35rem 0 1rem 1.1rem;
+  padding: 0;
+}
+.qc-help-list li,
+.qc-help-steps li {
+  margin-bottom: .35rem;
+}
+.qc-help-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.qc-help-hero {
+  margin-bottom: 1rem;
+  padding: 1rem 0 .5rem;
+}
+.qc-help-hero h4 {
+  color: var(--sat-text);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: .35rem;
+}
+.qc-help-hero p {
+  color: var(--sat-text-label);
+  max-width: 760px;
+  margin-bottom: .75rem;
+}
+.qc-help-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+.qc-help-stat {
+  min-width: 96px;
+  padding: .5rem .7rem;
+  border: 1px solid var(--sat-border);
+  border-radius: 6px;
+  background: var(--sat-white);
+}
+.qc-help-stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sat-button-alt);
+}
+.qc-help-stat-label {
+  margin-top: .2rem;
+  color: var(--sat-text-muted);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.qc-help-section {
+  padding: 1rem;
+}
+.qc-help-section h5 {
+  margin-top: .4rem;
+}
+.qc-help-shortcuts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .45rem 1rem;
+}
+.qc-help-shortcuts dt,
+.qc-help-shortcuts dd {
+  margin: 0;
 }
 
 /* ── Responsive navbar ───────────────────────────────────────────────────────── */

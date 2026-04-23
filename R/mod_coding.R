@@ -73,6 +73,21 @@ mod_coding_ui <- function(id) {
           ),
           shiny::uiOutput(ns("search_match_count"), inline = TRUE)
         ),
+        shiny::div(
+          class = "px-3",
+          qc_help_details(
+            "Document pane help",
+            shiny::p(
+              "Select a passage in the document pane, then use the Code panel ",
+              "to assign a code. Highlighted passages show existing codings."
+            ),
+            qc_help_list(c(
+              "Next and Prev jump between uncoded segments.",
+              "Disputed jumps to draft or contested coding work.",
+              "Search highlights matching text without changing the saved project."
+            ))
+          )
+        ),
         shiny::uiOutput(ns("blind_banner")),
         shiny::uiOutput(ns("text_display"))
       ),
@@ -82,6 +97,18 @@ mod_coding_ui <- function(id) {
         bslib::card_header("Code"),
         shiny::div(
           class = "p-2",
+          qc_help_details(
+            "Code panel help",
+            shiny::p(
+              "Use the selected text preview to confirm the passage before saving. ",
+              "Choose a code, add confidence or a memo if useful, then apply it."
+            ),
+            qc_help_list(c(
+              "Create Excerpt stores a notable passage without changing its code.",
+              "Display filters change what you see in the document; they do not delete codings.",
+              "Click rows in the coding or excerpt tables to review saved work."
+            ))
+          ),
 
           # ── Display filters (collapsible) ──────────────────────────────────
           shiny::tags$details(

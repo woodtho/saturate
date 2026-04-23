@@ -43,6 +43,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       bslib::nav_panel("Members",   mod_member_check_ui("members")),
       bslib::nav_panel("Export",    mod_export_ui("export")),
       bslib::nav_panel("Audit",     mod_audit_ui("audit")),
+      bslib::nav_panel("Help",      mod_help_ui("help")),
 
       bslib::nav_spacer(),
       bslib::nav_item(
@@ -133,7 +134,10 @@ saturate_server <- function(input, output, session, project) {
         shiny::tagList(shiny::icon("lock"),      " Blind ON")
       else
         shiny::tagList(shiny::icon("lock-open"), " Blind"),
-      class      = if (is_blind) "btn-sm btn-warning" else "btn-sm btn-outline-light",
+      class      = if (is_blind)
+        "btn-sm btn-warning qc-blind-toggle"
+      else
+        "btn-sm btn-outline-light qc-blind-toggle",
       `aria-pressed` = if (is_blind) "true" else "false",
       title = paste0(
         "Blind coding mode: hide other coders’ work while coding. ",
@@ -157,6 +161,7 @@ saturate_server <- function(input, output, session, project) {
   mod_member_check_server("members", rv)
   mod_export_server("export",        rv)
   mod_audit_server("audit",          rv)
+  mod_help_server("help",            rv)
 
   shiny::observeEvent(input$btn_project_info, {
     info <- qc_project_info(rv$project)
@@ -185,8 +190,8 @@ saturate_server <- function(input, output, session, project) {
 #' @param brand Optional named list for visual branding. Supported keys:
 #'   \describe{
 #'     \item{`name`}{App title shown in the navbar (default: `"saturate"`).}
-#'     \item{`primary`}{CSS hex colour for the navbar, primary buttons, and
-#'       pagination (e.g. `"#003366"`). Ensure ≥ 4.5:1 contrast with white.}
+#'     \item{`primary`}{CSS hex colour for the navbar and primary buttons
+#'       (e.g. `"#003366"`). Ensure ≥ 4.5:1 contrast with white.}
 #'     \item{`primary_hover`}{Slightly darker version for hover states.}
 #'     \item{`primary_fg`}{Foreground (text) colour on `primary` backgrounds
 #'       (default: `"#ffffff"`).}
@@ -248,11 +253,7 @@ shiny_saturate <- function(project, brand = NULL, ...) {
         ";border-color:", brand$primary, "}",
       ".btn-primary:hover,.btn-primary:active{",
         "background-color:", brand$primary_hover %||% brand$primary,
-        ";border-color:", brand$primary_hover %||% brand$primary, "}",
-      ".dataTables_wrapper .dataTables_paginate .paginate_button.current,",
-      ".dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{",
-        "background:", brand$primary, "!important;",
-        "color:", brand$primary_fg %||% "#fff", "!important}"
+        ";border-color:", brand$primary_hover %||% brand$primary, "}"
     )
   } else ""
 

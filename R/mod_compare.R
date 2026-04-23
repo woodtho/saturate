@@ -29,6 +29,20 @@ mod_compare_ui <- function(id) {
       )
     ),
 
+    qc_help_details(
+      "Compare help",
+      shiny::p(
+        "Use document comparison to inspect how coding differs across sources. ",
+        "Use coder comparison on one document to find agreement, unique work, ",
+        "and conflicting interpretations."
+      ),
+      qc_help_list(c(
+        "Sync scroll keeps the two text panes aligned while reading.",
+        "Refresh reloads the comparison after coding or filter changes.",
+        "The Differences table summarizes code-level or segment-level mismatches."
+      ))
+    ),
+
     # ── Side-by-side text ─────────────────────────────────────────────────────
     bslib::layout_columns(
       col_widths = c(6, 6),

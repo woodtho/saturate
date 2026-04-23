@@ -8,6 +8,18 @@ mod_codebook_ui <- function(id) {
       bslib::card_header(shiny::textOutput(ns("form_header"))),
       shiny::div(
         class = "p-2",
+        qc_help_details(
+          "Codebook form help",
+          shiny::p(
+            "A useful code has a clear name, a definition, and criteria that ",
+            "separate matching passages from near misses."
+          ),
+          qc_help_list(c(
+            "Use categories to group codes for filtering and theme building.",
+            "Optional weights can store direction, intensity, or valence when that is meaningful.",
+            "Editing a code keeps history so changes can be audited."
+          ))
+        ),
         shiny::textInput(ns("code_name"),  "Name"),
         colourpicker::colourInput(ns("code_color"), "Colour",
                                   value = "#4E79A7", showColour = "both"),
@@ -63,10 +75,11 @@ mod_codebook_ui <- function(id) {
           )
         )
       ),
-      shiny::p(shiny::tags$small(
-        "Click a row to edit. Double-click to deselect.",
-        class = "text-muted"
-      )),
+      qc_help_note(
+        "Click a row to edit it. Double-click to deselect. Use History or ",
+        "Review Codings after selecting a code to inspect its change trail or ",
+        "assigned passages."
+      ),
       DT::dataTableOutput(ns("tbl_codes"))
     )
   )

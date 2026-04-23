@@ -50,6 +50,19 @@ mod_audit_ui <- function(id) {
       )
     ),
 
+    qc_help_details(
+      "Audit help",
+      shiny::p(
+        "Use the audit trail to review project changes, reconstruct coding ",
+        "decisions, and export a defensible record of code and coding edits."
+      ),
+      qc_help_list(c(
+        "Event type separates coding changes from codebook changes.",
+        "Operation filters actions such as create, update, delete, and reassign.",
+        "Date filters are inclusive for the selected To day."
+      ))
+    ),
+
     # ── Summary badges ────────────────────────────────────────────────────────
     shiny::uiOutput(ns("summary_badges")),
 

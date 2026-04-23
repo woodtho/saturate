@@ -16,6 +16,14 @@ mod_export_ui <- function(id) {
             "Raw Project Data"   = "table"
           ),
           selected = "report"
+        ),
+        qc_help_details(
+          "Export help",
+          shiny::p(
+            "Choose the export that matches the task: narrative report for ",
+            "analysis, codebook for methods appendices, or raw data for audit ",
+            "and reuse outside the app."
+          )
         )
       ),
       shiny::hr(),
@@ -329,9 +337,7 @@ mod_export_server <- function(id, rv) {
       ),
       bslib::card_body(
         shiny::uiOutput(ns("rpt_stats")),
-        shiny::p(
-          class = "text-muted mb-3",
-          style = "font-size:.85rem",
+        qc_help_note(
           "Exports each theme with its proposition, narrative, linked codes,",
           " and supporting excerpts. Choose a format below."
         ),
@@ -390,9 +396,7 @@ mod_export_server <- function(id, rv) {
     ),
     bslib::card_body(
       shiny::uiOutput(ns("cb_stats")),
-      shiny::p(
-        class = "text-muted mb-3",
-        style = "font-size:.85rem",
+      qc_help_note(
         "Exports all codes with definitions, criteria, and optional examples.",
         " Excel export includes a separate categories sheet."
       ),
@@ -440,9 +444,7 @@ mod_export_server <- function(id, rv) {
       )
     ),
     bslib::card_body(
-      shiny::p(
-        class = "text-muted mb-3",
-        style = "font-size:.85rem",
+      qc_help_note(
         "Export the selected database table as a flat file.",
         " Foreign keys are resolved to human-readable names where possible."
       ),

@@ -6,6 +6,14 @@ mod_documents_ui <- function(id) {
 
       # ── Import from file ────────────────────────────────────────────────────
       shiny::h5("Import Document"),
+      qc_help_details(
+        "Import help",
+        shiny::p(
+          "Add each transcript, note, artifact, or pasted response as a document. ",
+          "Set a source type during import so Query and Triangulation can compare ",
+          "evidence across data sources."
+        )
+      ),
       shiny::fileInput(
         ns("file_upload"), NULL,
         accept      = c(".txt", ".docx", ".pdf", ".csv", ".md"),
@@ -36,12 +44,12 @@ mod_documents_ui <- function(id) {
           )
         )
       ),
-      shiny::p(shiny::tags$small(
+      qc_help_note(
         "Select a row, then click ",
-        shiny::tags$strong("Code →"),
-        " to open it in the Coding panel.",
-        class = "text-muted ps-2 pt-2 mb-0"
-      )),
+        shiny::tags$strong("Code ->"),
+        " to open it in the Coding panel. Use Edit when source text changes; ",
+        "the app keeps a version history."
+      ),
       DT::dataTableOutput(ns("tbl_docs"))
     )
   )

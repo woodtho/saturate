@@ -5,6 +5,18 @@ mod_graph_ui <- function(id) {
       width = 300,
 
       shiny::h5("Graph settings"),
+      qc_help_details(
+        "Graph help",
+        shiny::p(
+          "Graphs show relationships already present in the coded project. ",
+          "Use filters and minimum thresholds to remove weak or noisy links."
+        ),
+        qc_help_list(c(
+          "Document similarity connects documents that share codes.",
+          "Bipartite shows documents and codes in one network.",
+          "Code co-occurrence connects codes that appear in the same documents."
+        ))
+      ),
       shiny::selectInput(ns("graph_type"), "Type",
         choices = c(
           "Document similarity"  = "similarity",
@@ -26,10 +38,12 @@ mod_graph_ui <- function(id) {
       shiny::h6("Selected node"),
       shiny::uiOutput(ns("node_info")),
       shiny::hr(),
-      shiny::div(
-        class = "small text-muted",
+      qc_help_note(
         shiny::p("Node size reflects coding volume."),
-        shiny::p("Edge weight reflects shared codes (similarity) or co-document count (co-occurrence)."),
+        shiny::p(
+          "Edge weight reflects shared codes for similarity graphs or ",
+          "co-document count for co-occurrence graphs."
+        ),
         shiny::p("Requires the ", shiny::tags$code("visNetwork"), " package.")
       )
     ),

@@ -5,6 +5,18 @@ mod_query_ui <- function(id) {
       width = 300,
 
       shiny::h5("Filters"),
+      qc_help_details(
+        "Query filter help",
+        shiny::p(
+          "Filters apply to the Segments table and to analysis tools that use ",
+          "the current query context."
+        ),
+        qc_help_list(c(
+          "Codes is an OR filter: passages can match any selected code.",
+          "Must also have is an AND filter: passages need those additional codes.",
+          "Exclude codes removes passages containing selected codes."
+        ))
+      ),
       shiny::selectizeInput(ns("filter_codes"), "Codes (OR — any of these)",
         choices = NULL, multiple = TRUE,
         options = list(placeholder = "All codes")),
@@ -45,6 +57,10 @@ mod_query_ui <- function(id) {
       bslib::nav_panel("Search",
         shiny::div(
           class = "p-3",
+          qc_help_note(
+            "Search scans document text, not only coded passages. Use Regex ",
+            "for patterns such as word boundaries or alternatives."
+          ),
           shiny::div(
             class = "d-flex gap-2 mb-3",
             shiny::div(
@@ -68,6 +84,10 @@ mod_query_ui <- function(id) {
       bslib::nav_panel("Co-occurrence",
         shiny::div(
           class = "p-3",
+          qc_help_note(
+            "Co-occurrence counts codes that appear in the same document or ",
+            "overlapping segment, depending on the selected unit."
+          ),
           shiny::div(
             class = "d-flex gap-2 align-items-end mb-3",
             shiny::selectInput(ns("cooc_unit"), "Unit",
@@ -89,10 +109,10 @@ mod_query_ui <- function(id) {
       bslib::nav_panel("Saturation",
         shiny::div(
           class = "p-3",
-          shiny::p(shiny::tags$small(
-            "Plots cumulative distinct codes per document. ",
-            "A flattening curve indicates theoretical saturation.",
-            class = "text-muted")),
+          qc_help_note(
+            "Saturation plots cumulative distinct codes per document. A ",
+            "flattening curve suggests fewer new concepts are appearing."
+          ),
           shiny::div(
             class = "d-flex gap-3 align-items-end mb-3",
             shiny::div(
@@ -117,10 +137,10 @@ mod_query_ui <- function(id) {
       bslib::nav_panel("Triangulation",
         shiny::div(
           class = "p-3",
-          shiny::p(shiny::tags$small(
-            "Compares code presence across source types ",
-            "(set source type on documents in the Documents tab).",
-            class = "text-muted")),
+          qc_help_note(
+            "Triangulation compares code presence across source types. Set ",
+            "source type during document import or edit it from Documents."
+          ),
           shiny::div(
             class = "d-flex gap-3 align-items-end mb-3",
             shiny::div(
@@ -142,6 +162,10 @@ mod_query_ui <- function(id) {
       bslib::nav_panel("Cross-tab",
         shiny::div(
           class = "p-3",
+          qc_help_note(
+            "Cross-tabs compare code frequency by a case attribute. Add case ",
+            "attributes before using this view."
+          ),
           shiny::div(
             class = "d-flex gap-2 align-items-end mb-3",
             shiny::div(
@@ -152,9 +176,6 @@ mod_query_ui <- function(id) {
             shiny::actionButton(ns("btn_xtab"), "Compute",
                                 class = "btn-primary")
           ),
-          shiny::p(shiny::tags$small(
-            "Cross-tabulates code frequency (document count) by case attribute.",
-            class = "text-muted")),
           DT::dataTableOutput(ns("tbl_xtab"))
         )
       ),
@@ -163,6 +184,10 @@ mod_query_ui <- function(id) {
       bslib::nav_panel("Word Cloud",
         shiny::div(
           class = "p-3",
+          qc_help_note(
+            "Generate a quick visual summary from code names or from words in ",
+            "passages tied to one code."
+          ),
           shiny::div(
             class = "d-flex gap-3 align-items-end mb-3 flex-wrap",
             shiny::div(

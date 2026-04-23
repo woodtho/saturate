@@ -14,9 +14,11 @@ mod_member_check_ui <- function(id) {
         )
       ),
       bslib::card_body(
-        shiny::p(shiny::tags$small(
-          "Click a row to view and record participant responses.",
-          class = "text-muted mb-0")),
+        qc_help_note(
+          "Create a member check when you want a participant or stakeholder to ",
+          "review coded passages. Select a row to view exported items and record ",
+          "responses."
+        ),
         DT::dataTableOutput(ns("tbl_checks"))
       )
     ),
@@ -26,6 +28,14 @@ mod_member_check_ui <- function(id) {
       class = "mt-3",
       bslib::card_header(shiny::textOutput(ns("detail_title"))),
       bslib::card_body(
+        qc_help_details(
+          "Response recording help",
+          shiny::p(
+            "Export a check for review, then record each item as confirmed, ",
+            "disputed, other, or pending. Bulk actions should only be used when ",
+            "the same status applies to every item in the selected check."
+          )
+        ),
         shiny::div(
           class = "d-flex gap-2 mb-3 flex-wrap",
           shiny::downloadButton(ns("btn_dl_html"), "Export HTML",

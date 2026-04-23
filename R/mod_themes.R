@@ -10,9 +10,13 @@ mod_themes_ui <- function(id) {
         shiny::actionButton(ns("btn_new_theme"), "New",
           class = "btn-sm btn-primary")
       ),
-      shiny::p(shiny::tags$small(
-        "Click a row to view and edit.",
-        class = "text-muted mb-1")),
+      qc_help_details(
+        "Themes help",
+        shiny::p(
+          "Themes collect evidence into analytical claims. Link a theme to ",
+          "categories or direct codes so supporting excerpts appear automatically."
+        )
+      ),
       DT::dataTableOutput(ns("tbl_themes"))
     ),
 
@@ -120,6 +124,11 @@ mod_themes_server <- function(id, rv) {
             )
           ),
           bslib::card_body(
+            qc_help_note(
+              "Write themes as claims about the data. Use the central concept ",
+              "for the organizing idea, the analytical statement for the claim, ",
+              "and scope conditions for boundaries."
+            ),
             shiny::textInput(ns("edit_name"), "Name",
               value = th$name[[1L]] %||% ""),
             shiny::textInput(ns("edit_central_concept"), "Central concept",
