@@ -31,7 +31,7 @@ mod_codebook_ui <- function(id) {
         shiny::tags$details(
           style = "margin-bottom:12px;",
           shiny::tags$summary(
-            style = "cursor:pointer;font-size:0.82rem;color:#6c757d;user-select:none;",
+            style = "cursor:pointer;font-size:0.82rem;color:var(--sat-text-muted);user-select:none;",
             "Weight (optional)"
           ),
           shiny::div(
@@ -65,6 +65,10 @@ mod_codebook_ui <- function(id) {
           "Codebook",
           shiny::div(
             class = "d-flex gap-2 align-items-center",
+            shiny::actionButton(ns("btn_validate"), "Validate",
+                                class = "btn-sm btn-outline-info"),
+            shiny::actionButton(ns("btn_snapshots"), "Snapshots",
+                                class = "btn-sm btn-outline-secondary"),
             shiny::actionButton(ns("btn_import"), "Import",
                                 class = "btn-sm btn-outline-secondary"),
             shiny::selectInput(ns("export_format"), label = NULL,
@@ -118,7 +122,7 @@ mod_codebook_server <- function(id, rv) {
           min = -1, max = 1, value = 0, step = 0.1, ticks = FALSE),
         shiny::div(
           style = paste0(
-            "font-size:0.78rem;color:#6c757d;",
+            "font-size:0.78rem;color:var(--sat-text-muted);",
             "display:flex;justify-content:space-between;",
             "margin-top:-10px;margin-bottom:8px;"),
           shiny::span("−1  strongly negative"),
@@ -177,8 +181,11 @@ mod_codebook_server <- function(id, rv) {
     # ── Codes table ───────────────────────────────────────────────────────
 
     output$tbl_codes <- DT::renderDataTable({
-      df <- dplyr::select(codes(), id, name, color, weight, n_codings,
-                          categories, definition, criteria, memo)
+      all_codes <- codes()
+      df <- dplyr::select(all_codes, id, name, color, weight, n_codings,
+                          categories, definition, criteria, memo, parent_id)
+      df$name  <- .indent_code_names(df$name, df$id, df$parent_id)
+      df       <- dplyr::select(df, -parent_id)
       df$color <- sprintf(
         '<span class="qc-swatch" style="background:%s;" title="%s"></span>',
         df$color, df$color
@@ -501,6 +508,187 @@ mod_codebook_server <- function(id, rv) {
       shiny::removeModal()
     })
 
+    # ── Validate codebook ─────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_validate, {
+      issues <- tryCatch(
+        qc_validate_codebook(rv$project),
+        error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error")
+          return(NULL)
+        }
+      )
+      if (is.null(issues)) return()
+
+      output$tbl_validation <- DT::renderDataTable({
+        if (nrow(issues) == 0L) {
+          return(DT::datatable(
+            tibble::tibble(result = "No issues found — codebook looks good!"),
+            rownames = FALSE, options = list(dom = "t")
+          ))
+        }
+        df <- dplyr::select(issues, severity, code_name, issue_type, message)
+        DT::datatable(
+          df,
+          rownames = FALSE,
+          options  = list(pageLength = 30, dom = "tp",
+                          order = list(list(0, "asc"))),
+          colnames = c("Severity", "Code", "Issue type", "Message")
+        ) |>
+          DT::formatStyle("severity",
+            target          = "row",
+            backgroundColor = DT::styleEqual(
+              c("error", "warning", "info"),
+              c("#fce4e4", "#fff3cd", "#e8f4fd")
+            )
+          )
+      })
+
+      n_errors   <- sum(issues$severity == "error",   na.rm = TRUE)
+      n_warnings <- sum(issues$severity == "warning",  na.rm = TRUE)
+      n_info     <- sum(issues$severity == "info",     na.rm = TRUE)
+
+      shiny::showModal(shiny::modalDialog(
+        title = "Codebook Validation",
+        size  = "l",
+        easyClose = TRUE,
+        if (nrow(issues) > 0L) shiny::div(
+          class = "d-flex gap-2 mb-3",
+          shiny::span(class = "badge bg-danger",  paste0(n_errors,   " error(s)")),
+          shiny::span(class = "badge bg-warning text-dark", paste0(n_warnings, " warning(s)")),
+          shiny::span(class = "badge bg-info text-dark",    paste0(n_info,     " info"))
+        ),
+        DT::dataTableOutput(ns("tbl_validation")),
+        footer = shiny::modalButton("Close")
+      ))
+    })
+
+    # ── Snapshots modal ────────────────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_snapshots, {
+      snaps <- tryCatch(qc_list_snapshots(rv$project),
+                        error = function(e) NULL)
+      snap_choices <- if (!is.null(snaps) && nrow(snaps) > 0L) {
+        lbl <- paste0(format(as.POSIXct(snaps$created_at), "%d %b %Y %H:%M"),
+                      " — ", ifelse(nchar(snaps$label) > 0, snaps$label, "(no label)"),
+                      " (", snaps$n_codes, " codes)")
+        stats::setNames(snaps$id, lbl)
+      } else {
+        c("No snapshots yet" = "")
+      }
+
+      output$tbl_snaps <- DT::renderDataTable({
+        if (is.null(snaps) || nrow(snaps) == 0L) {
+          return(DT::datatable(
+            tibble::tibble(message = "No snapshots yet."),
+            rownames = FALSE, options = list(dom = "t")
+          ))
+        }
+        DT::datatable(
+          dplyr::select(snaps, id, label, n_codes, created_at),
+          rownames = FALSE,
+          options  = list(pageLength = 15, dom = "tp",
+                          order = list(list(3, "desc"))),
+          colnames = c("ID", "Label", "Codes", "Created at")
+        )
+      })
+
+      shiny::showModal(shiny::modalDialog(
+        title     = "Codebook Snapshots",
+        size      = "l",
+        easyClose = TRUE,
+        shiny::h6("Existing snapshots"),
+        DT::dataTableOutput(ns("tbl_snaps")),
+        shiny::hr(),
+        shiny::h6("Take a snapshot"),
+        shiny::div(
+          class = "d-flex gap-2 align-items-end",
+          shiny::div(
+            class = "flex-grow-1",
+            shiny::textInput(ns("snap_label"), "Label",
+                             placeholder = "e.g. after round 1 coding")
+          ),
+          shiny::actionButton(ns("btn_take_snapshot"), "Take snapshot",
+                              class = "btn-primary")
+        ),
+        shiny::hr(),
+        shiny::h6("Diff two snapshots"),
+        bslib::layout_columns(
+          col_widths = c(5, 5, 2),
+          shiny::selectInput(ns("diff_snap1"), "Baseline", choices = snap_choices),
+          shiny::selectInput(ns("diff_snap2"), "Comparison", choices = snap_choices),
+          shiny::div(
+            class = "mt-4",
+            shiny::actionButton(ns("btn_diff_snaps"), "Diff",
+                                class = "btn-outline-secondary")
+          )
+        ),
+        shiny::uiOutput(ns("diff_result")),
+        footer = shiny::modalButton("Close")
+      ))
+    })
+
+    shiny::observeEvent(input$btn_take_snapshot, {
+      label <- trimws(input$snap_label %||% "")
+      tryCatch({
+        row <- qc_snapshot_codebook(rv$project, label = label)
+        shiny::showNotification(
+          paste0("Snapshot saved (id ", row$id, ")."), type = "message")
+        shiny::updateTextInput(session, "snap_label", value = "")
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    shiny::observeEvent(input$btn_diff_snaps, {
+      id1 <- as.integer(input$diff_snap1)
+      id2 <- as.integer(input$diff_snap2)
+      if (is.na(id1) || is.na(id2)) {
+        shiny::showNotification("Select two snapshots to compare.", type = "warning")
+        return()
+      }
+      if (id1 == id2) {
+        shiny::showNotification("Select two different snapshots.", type = "warning")
+        return()
+      }
+      diff <- tryCatch(
+        qc_diff_snapshots(rv$project, id1, id2),
+        error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error")
+          NULL
+        }
+      )
+      if (is.null(diff)) return()
+
+      output$diff_result <- shiny::renderUI({
+        if (nrow(diff) == 0L) {
+          return(shiny::p(class = "text-success mt-2",
+                          "No differences — snapshots are identical."))
+        }
+        output$tbl_diff <- DT::renderDataTable({
+          DT::datatable(
+            dplyr::select(diff, change_type, code_name, field,
+                          old_value, new_value),
+            rownames = FALSE,
+            options  = list(pageLength = 20, dom = "ftp", scrollX = TRUE),
+            colnames = c("Change", "Code", "Field", "Before", "After")
+          ) |>
+            DT::formatStyle("change_type",
+              target          = "row",
+              backgroundColor = DT::styleEqual(
+                c("added", "removed", "changed"),
+                c("#d4edda", "#f8d7da", "#fff3cd")
+              )
+            )
+        })
+        shiny::tagList(
+          shiny::hr(),
+          shiny::h6(paste0(nrow(diff), " difference(s) found")),
+          DT::dataTableOutput(ns("tbl_diff"))
+        )
+      })
+    })
+
     # ── Import modal ──────────────────────────────────────────────────────
 
     shiny::observeEvent(input$btn_import, {
@@ -585,6 +773,25 @@ mod_codebook_server <- function(id, rv) {
       rv$refresh_codes <- rv$refresh_codes + 1L
     })
   })
+}
+
+# Prefix code names with indent markers based on parent_id depth.
+.indent_code_names <- function(names, ids, parent_ids) {
+  depth <- integer(length(ids))
+  id_map <- stats::setNames(seq_along(ids), as.character(ids))
+  for (i in seq_along(ids)) {
+    pid <- parent_ids[i]
+    d   <- 0L
+    while (!is.na(pid) && !is.null(pid) && as.character(pid) %in% names(id_map)) {
+      d   <- d + 1L
+      idx <- id_map[[as.character(pid)]]
+      pid <- parent_ids[idx]
+      if (d > 10L) break  # guard against circular refs
+    }
+    depth[i] <- d
+  }
+  ifelse(depth == 0L, names,
+    paste0(strrep("   ", depth), "└ ", names))
 }
 
 # Clear all form inputs and return to add-mode defaults

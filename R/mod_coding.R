@@ -114,7 +114,7 @@ mod_coding_ui <- function(id) {
           shiny::tags$details(
             style = "margin-bottom:12px;",
             shiny::tags$summary(
-              style = paste0("cursor:pointer;font-size:0.82rem;color:#6c757d;",
+              style = paste0("cursor:pointer;font-size:0.82rem;color:var(--sat-text-muted);",
                              "user-select:none;"),
               "Display filters"
             ),
@@ -203,6 +203,15 @@ mod_coding_server <- function(id, rv, parent_session) {
       pending_sel       = NULL,  # code id to pre-select after next refresh
       editing_excerpt_id = NULL
     )
+
+    shiny::observeEvent(rv$profile_state, {
+      settings <- .profile_state_settings(rv$profile_state)
+      lv$highlight_op <- settings$highlightOpacity
+      shiny::updateSliderInput(session, "highlight_opacity",
+        value = settings$highlightOpacity)
+      shiny::updateCheckboxInput(session, "show_line_numbers",
+        value = isTRUE(settings$showLineNumbers))
+    }, ignoreInit = FALSE, ignoreNULL = FALSE)
 
     # ── Core reactives ─────────────────────────────────────────────────────────
 
@@ -313,7 +322,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       shiny::div(
         class = "qc-selection-preview",
         if (nchar(txt) > 0L) txt
-        else shiny::span("No text selected", style = "color:#adb5bd;font-style:normal;")
+        else shiny::span("No text selected", style = "color:var(--sat-text-muted);font-style:normal;")
       )
     })
 
@@ -471,15 +480,15 @@ mod_coding_server <- function(id, rv, parent_session) {
       if (nchar(def) == 0L && nchar(crit) == 0L) return(NULL)
       shiny::tags$details(
         style = paste0("margin-bottom:8px;font-size:0.82rem;",
-                       "color:#495057;line-height:1.5;"),
+                       "color:var(--sat-text-label);line-height:1.5;"),
         shiny::tags$summary(
-          style = "cursor:pointer;color:#6c757d;user-select:none;",
+          style = "cursor:pointer;color:var(--sat-text-muted);user-select:none;",
           "Code reference"
         ),
         shiny::div(
           style = paste0("margin-top:6px;padding:8px 10px;",
-                         "background:#f8f9fa;border-radius:4px;",
-                         "border-left:3px solid #dee2e6;"),
+                         "background:var(--sat-surface-card);border-radius:4px;",
+                         "border-left:3px solid var(--sat-border);"),
           if (nchar(def) > 0L) shiny::div(
             style = "margin-bottom:4px;",
             shiny::tags$strong("Definition: "), def
@@ -554,7 +563,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       output$sel_preview <- shiny::renderUI({
         shiny::div(
           class = "qc-selection-preview",
-          shiny::span("No text selected", style = "color:#adb5bd;font-style:normal;")
+          shiny::span("No text selected", style = "color:var(--sat-text-muted);font-style:normal;")
         )
       })
     })
@@ -791,7 +800,7 @@ mod_coding_server <- function(id, rv, parent_session) {
         shiny::div(
           class = "qc-selection-preview mb-2",
           if (nchar(sel$text %||% "") > 0L) sel$text
-          else shiny::span("(selected passage)", style = "color:#adb5bd;")
+          else shiny::span("(selected passage)", style = "color:var(--sat-text-muted);")
         ),
         shiny::textAreaInput(ns("excerpt_memo_input"), "Memo (optional)",
           rows = 3, placeholder = "Why is this passage notable?"),

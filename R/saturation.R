@@ -83,26 +83,30 @@ qc_saturation_curve <- function(project,
 #' Requires `ggplot2`.
 #'
 #' @param project A `qc_project` object.
+#' @param dark Logical. Apply dark-mode plot colours.
 #' @param ... Additional arguments passed to [qc_saturation_curve()].
 #'
 #' @return A `ggplot` object.
 #' @export
-qc_plot_saturation <- function(project, ...) {
+qc_plot_saturation <- function(project, ..., dark = FALSE) {
   if (!requireNamespace("ggplot2", quietly = TRUE))
     rlang::abort("Install `ggplot2` to use `qc_plot_saturation()`.")
   df <- qc_saturation_curve(project, ...)
   if (nrow(df) == 0L) rlang::abort("No coded documents to plot.")
 
+  line_colour   <- if (isTRUE(dark)) "#8cc4ee" else "#4E79A7"
+  smooth_colour <- if (isTRUE(dark)) "#fbbf24" else "#F28E2B"
+
   ggplot2::ggplot(df,
     ggplot2::aes(x = doc_index, y = cumulative_codes)) +
-    ggplot2::geom_line(colour = "#4E79A7", linewidth = 1) +
+    ggplot2::geom_line(colour = line_colour, linewidth = 1) +
     ggplot2::geom_point(
       ggplot2::aes(size = new_codes, colour = source_type),
       alpha = 0.85) +
     ggplot2::geom_smooth(
       method  = "loess", formula = y ~ x,
       se      = FALSE,
-      colour  = "#F28E2B",
+      colour  = smooth_colour,
       linetype = "dashed",
       linewidth = 0.8) +
     ggplot2::scale_size_continuous(name = "New codes", range = c(2, 8)) +
@@ -113,6 +117,6 @@ qc_plot_saturation <- function(project, ...) {
       x        = "Document (in order)",
       y        = "Cumulative distinct codes"
     ) +
-    ggplot2::theme_minimal(base_size = 13) +
+    .qc_plot_theme(dark, base_size = 13) +
     ggplot2::theme(legend.position = "right")
 }

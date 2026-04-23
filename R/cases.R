@@ -98,6 +98,84 @@ qc_set_case_attribute <- function(project, case_id, variable, value) {
   invisible(TRUE)
 }
 
+#' Update a case name and/or memo
+#'
+#' @param project A `qc_project` object.
+#' @param case_id Integer.
+#' @param name Character. New name (or `NULL` to leave unchanged).
+#' @param memo Character. New memo (or `NULL` to leave unchanged).
+#'
+#' @return Invisibly, `TRUE`.
+#' @export
+qc_update_case <- function(project, case_id, name = NULL, memo = NULL) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  if (!is.null(name)) {
+    if (!is_string(name)) rlang::abort("`name` must be a single string.")
+    .exec(project$con,
+      "UPDATE cases SET name = ? WHERE id = ? AND status = 1",
+      list(trimws(name), as.integer(case_id))
+    )
+  }
+  if (!is.null(memo)) {
+    .exec(project$con,
+      "UPDATE cases SET memo = ? WHERE id = ? AND status = 1",
+      list(as.character(memo), as.integer(case_id))
+    )
+  }
+  invisible(TRUE)
+}
+
+#' Soft-delete a case
+#'
+#' @param project A `qc_project` object.
+#' @param case_id Integer.
+#'
+#' @return Invisibly, `TRUE`.
+#' @export
+qc_delete_case <- function(project, case_id) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .soft_delete(project$con, "cases", as.integer(case_id))
+  invisible(TRUE)
+}
+
+#' List attributes for one case (long format)
+#'
+#' @param project A `qc_project` object.
+#' @param case_id Integer.
+#'
+#' @return A tibble: `variable`, `value`.
+#' @export
+qc_list_case_attributes <- function(project, case_id) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .query(project$con,
+    "SELECT variable, value FROM case_attributes
+     WHERE case_id = ? AND status = 1
+     ORDER BY variable",
+    list(as.integer(case_id))
+  )
+}
+
+#' Delete a case attribute
+#'
+#' @param project A `qc_project` object.
+#' @param case_id Integer.
+#' @param variable Character. Attribute name to remove.
+#'
+#' @return Invisibly, `TRUE`.
+#' @export
+qc_delete_case_attribute <- function(project, case_id, variable) {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  .exec(project$con,
+    "UPDATE case_attributes SET status = 0 WHERE case_id = ? AND variable = ?",
+    list(as.integer(case_id), as.character(variable))
+  )
+  invisible(TRUE)
+}
+
 #' Get all case attributes as a wide tibble
 #'
 #' Pivots the EAV `case_attributes` table into one column per variable name.

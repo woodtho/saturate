@@ -74,7 +74,10 @@ mod_compare_ui <- function(id) {
         shiny::uiOutput(ns("diff_summary")),
         DT::dataTableOutput(ns("tbl_diff"))
       )
-    )
+    ),
+
+    # ── Reliability statistics (coders mode only) ─────────────────────────────
+    shiny::uiOutput(ns("reliability_card"))
   )
 }
 
@@ -301,6 +304,105 @@ mod_compare_server <- function(id, rv) {
         rownames = FALSE,
         options  = list(pageLength = 20, dom = "ftp", scrollX = TRUE)
       )
+    })
+
+    # ── Reliability statistics ─────────────────────────────────────────────────
+
+    output$reliability_card <- shiny::renderUI({
+      if (input$mode != "coders") return(NULL)
+      bslib::card(
+        class = "mt-3",
+        bslib::card_header(
+          shiny::div(
+            class = "d-flex justify-content-between align-items-center w-100",
+            "Reliability Statistics",
+            shiny::actionButton(ns("btn_reliability"), "Compute",
+              class = "btn-sm btn-outline-secondary")
+          )
+        ),
+        shiny::div(
+          class = "p-2",
+          qc_help_note(
+            "Cohen's Kappa measures agreement between two coders on a single code, ",
+            "beyond chance. Values > 0.6 suggest substantial agreement."
+          ),
+          shiny::uiOutput(ns("reliability_summary")),
+          DT::dataTableOutput(ns("tbl_reliability"))
+        )
+      )
+    })
+
+    reliability_rv <- shiny::eventReactive(input$btn_reliability, {
+      tryCatch({
+        qc_agreement_matrix(rv$project)
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+        NULL
+      })
+    }, ignoreNULL = FALSE)
+
+    output$reliability_summary <- shiny::renderUI({
+      df <- reliability_rv()
+      if (is.null(df) || nrow(df) == 0L) return(NULL)
+      mean_kappa  <- round(mean(df$kappa, na.rm = TRUE), 3L)
+      mean_pct    <- round(mean(df$pct_agree, na.rm = TRUE), 1L)
+      n_pairs     <- nrow(df)
+      shiny::div(
+        class = "d-flex gap-3 mb-3 flex-wrap",
+        shiny::div(class = "qc-stat-pill",
+          shiny::span(class = "qc-stat-value", mean_kappa),
+          shiny::span(class = "qc-stat-label", "mean kappa")
+        ),
+        shiny::div(class = "qc-stat-pill",
+          shiny::span(class = "qc-stat-value", paste0(mean_pct, "%")),
+          shiny::span(class = "qc-stat-label", "mean % agreement")
+        ),
+        shiny::div(class = "qc-stat-pill",
+          shiny::span(class = "qc-stat-value", n_pairs),
+          shiny::span(class = "qc-stat-label", "code-pair comparisons")
+        )
+      )
+    })
+
+    output$tbl_reliability <- DT::renderDataTable({
+      df <- reliability_rv()
+      if (is.null(df)) return(NULL)
+      if (nrow(df) == 0L) {
+        return(DT::datatable(
+          tibble::tibble(message = paste0(
+            "No shared codings found. Both coders need to have coded ",
+            "the same documents for statistics to be computed."
+          )),
+          rownames = FALSE, options = list(dom = "t")
+        ))
+      }
+      display <- dplyr::select(df, code_name, coder1, coder2,
+                                n_docs, pct_agree, kappa, n11, n10, n01)
+      DT::datatable(
+        display,
+        class    = "table table-hover table-sm",
+        rownames = FALSE,
+        options  = list(
+          pageLength = 25, dom = "ftp",
+          order = list(list(5, "asc")),
+          columnDefs = list(
+            list(targets = c(3, 6, 7, 8), width = "70px",
+                 className = "text-center"),
+            list(targets = 4, width = "80px", className = "text-center")
+          )
+        ),
+        colnames = c("Code", "Coder 1", "Coder 2",
+                     "Docs", "% Agree", "Kappa",
+                     "Both", "Coder 1 only", "Coder 2 only")
+      ) |>
+        DT::formatRound("kappa", digits = 3L) |>
+        DT::formatRound("pct_agree", digits = 1L) |>
+        DT::formatStyle("kappa",
+          backgroundColor = DT::styleInterval(
+            c(0.4, 0.6, 0.8),
+            c("#fce4e4", "#fff3cd", "#d4edda", "#c3e6cb")
+          )
+        )
     })
   })
 }

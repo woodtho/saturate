@@ -49,7 +49,7 @@ utils::globalVariables(c(
   "event_type",
   # document metadata
   "filename", "source_system", "language", "doc_version",
-  "content_hash", "word_count",
+  "content_hash", "word_count", "char_count",
   # duplicate detection
   "source_id_1", "name_1", "source_id_2", "name_2", "similarity", "type",
   # version history

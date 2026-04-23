@@ -39,5 +39,9 @@ Suggests:
     officer (>= 0.6.0),
     readxl (>= 1.4.0),
     testthat (>= 3.0.0),
-    withr (>= 2.5.0)
+    withr (>= 2.5.0),
+    knitr (>= 1.43),
+    rmarkdown (>= 2.25),
+    pkgdown (>= 2.0.0)
+VignetteBuilder: knitr
 Config/testthat/edition: 3

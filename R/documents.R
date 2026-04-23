@@ -163,7 +163,8 @@ qc_import_document <- function(project,
 #'   [qc_segment_document()].
 #'
 #' @return A tibble: `id`, `name`, `memo`, `filename`, `source_system`,
-#'   `language`, `doc_version`, `word_count`, `parent_id`, `n_codings`,
+#'   `language`, `source_type`, `doc_version`, `word_count`, `char_count`,
+#'   `parent_id`, `n_codings`, `n_coders`,
 #'   `created_at` (and `content` when `include_content = TRUE`).
 #' @export
 qc_list_documents <- function(project, include_content = FALSE,
@@ -176,15 +177,17 @@ qc_list_documents <- function(project, include_content = FALSE,
   .query(project$con, paste0("
     SELECT s.id, s.name, ", content_col, " s.memo,
            s.filename, s.source_system, s.language, s.source_type,
-           s.doc_version, s.word_count, s.parent_id,
-           COUNT(c.id) AS n_codings,
+           s.doc_version, s.word_count, LENGTH(s.content) AS char_count,
+           s.parent_id,
+           COUNT(c.id)            AS n_codings,
+           COUNT(DISTINCT c.coder) AS n_coders,
            s.created_at
     FROM   sources s
     LEFT   JOIN codings c ON c.source_id = s.id AND c.status = 1
     WHERE  s.status = 1 ", w_parent, "
     GROUP  BY s.id, s.name, ", content_grp,
     "s.memo, s.filename, s.source_system, s.language, s.source_type,
-     s.doc_version, s.word_count, s.parent_id, s.created_at
+     s.doc_version, s.word_count, LENGTH(s.content), s.parent_id, s.created_at
     ORDER  BY s.created_at
   "))
 }

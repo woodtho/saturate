@@ -734,7 +734,7 @@ build_highlighted_html <- function(content, codings,
       html_parts[[i]] <- paste0(
         s_open,
         '<span class="qc-excerpt" title="', exc_tip, '"',
-        ' style="border-bottom:2px dashed #6c757d;cursor:default;">',
+        ' style="border-bottom:2px dashed var(--sat-text-muted);cursor:default;">',
         seg_html, memo_icon,
         '</span>',
         s_close

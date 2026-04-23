@@ -73,9 +73,14 @@ mod_query_ui <- function(id) {
             shiny::checkboxInput(ns("search_icase"),
                                  "Ignore case", value = TRUE)
           ),
-          shiny::actionButton(ns("btn_search"), "Search",
-                              class = "btn-primary"),
-          shiny::br(), shiny::br(),
+          shiny::div(
+            class = "d-flex gap-2 align-items-center",
+            shiny::actionButton(ns("btn_search"), "Search",
+                                class = "btn-primary"),
+            shiny::downloadButton(ns("dl_search_csv"), "CSV",
+                                  class = "btn-outline-secondary")
+          ),
+          shiny::br(),
           DT::dataTableOutput(ns("tbl_search"))
         )
       ),
@@ -151,7 +156,9 @@ mod_query_ui <- function(id) {
                 width = "160px")
             ),
             shiny::actionButton(ns("btn_triangulate"), "Compute",
-                                class = "btn-primary")
+                                class = "btn-primary"),
+            shiny::downloadButton(ns("dl_tri_csv"), "CSV",
+                                  class = "btn-outline-secondary")
           ),
           shiny::uiOutput(ns("tri_summary")),
           DT::dataTableOutput(ns("tbl_triangulate"))
@@ -170,14 +177,24 @@ mod_query_ui <- function(id) {
             class = "d-flex gap-2 align-items-end mb-3",
             shiny::div(
               class = "flex-grow-1",
-              shiny::textInput(ns("xtab_attr"), "Case attribute variable",
-                               placeholder = "e.g. industry")
+              shiny::selectizeInput(ns("xtab_attr"), "Case attribute variable",
+                choices = NULL,
+                options = list(
+                  placeholder  = "Select or type a variable…",
+                  create       = TRUE,
+                  createOnBlur = TRUE
+                ))
             ),
             shiny::actionButton(ns("btn_xtab"), "Compute",
                                 class = "btn-primary")
           ),
           DT::dataTableOutput(ns("tbl_xtab"))
         )
+      ),
+
+      # ── Graph ────────────────────────────────────────────────────────────
+      bslib::nav_panel("Graph",
+        mod_graph_ui(ns("graph"))
       ),
 
       # ── Word Cloud ───────────────────────────────────────────────────────
@@ -215,6 +232,7 @@ mod_query_ui <- function(id) {
 mod_query_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    is_dark <- shiny::reactive(.qc_app_dark_mode(rv))
 
     shiny::observe({
       rv$refresh_codes
@@ -241,6 +259,15 @@ mod_query_server <- function(id, rv) {
         choices = stats::setNames(cats$id,  cats$name), server = TRUE)
       shiny::updateSelectInput(session, "filter_coder",
         choices = c("All" = "", stats::setNames(coders, coders)))
+
+      attr_vars <- tryCatch(
+        .query(rv$project$con,
+          "SELECT DISTINCT variable FROM case_attributes WHERE status = 1 ORDER BY variable"
+        )$variable,
+        error = function(e) character()
+      )
+      shiny::updateSelectizeInput(session, "xtab_attr",
+        choices = stats::setNames(attr_vars, attr_vars), server = TRUE)
     })
 
     int_or_null <- function(x) if (length(x) > 0L) as.integer(x) else NULL
@@ -266,7 +293,7 @@ mod_query_server <- function(id, rv) {
         shiny::br(),
         shiny::span(
           paste0(dplyr::n_distinct(d$source_id), " documents"),
-          style = "color:#6c757d; font-size:0.85rem;"
+          style = "color:var(--sat-text-muted); font-size:0.85rem;"
         )
       )
     })
@@ -332,6 +359,14 @@ mod_query_server <- function(id, rv) {
       )
     })
 
+    output$dl_search_csv <- shiny::downloadHandler(
+      filename = function() paste0("search_results_", format(Sys.Date(), "%Y%m%d"), ".csv"),
+      content  = function(file) {
+        df <- tryCatch(search_results(), error = function(e) tibble::tibble())
+        utils::write.csv(df, file, row.names = FALSE)
+      }
+    )
+
     # ── Co-occurrence ──────────────────────────────────────────────────────
 
     cooc_results <- shiny::eventReactive(input$btn_cooc, {
@@ -346,7 +381,9 @@ mod_query_server <- function(id, rv) {
                        cex = 1.2, col = "grey40")
         return(invisible(NULL))
       }
-      qc_plot_cooccurrence(rv$project, unit = input$cooc_unit %||% "document")
+      qc_plot_cooccurrence(rv$project,
+        unit = input$cooc_unit %||% "document",
+        dark = is_dark())
     })
 
     output$tbl_cooc <- DT::renderDataTable({
@@ -372,14 +409,17 @@ mod_query_server <- function(id, rv) {
           return()
         }
         p <- tryCatch(
-          qc_plot_cooccurrence(rv$project, unit = input$cooc_unit %||% "document"),
+          qc_plot_cooccurrence(rv$project,
+            unit = input$cooc_unit %||% "document",
+            dark = is_dark()),
           error = function(e) NULL
         )
         if (is.null(p)) {
           shiny::showNotification("No co-occurrence data to export.", type = "warning")
           return()
         }
-        ggplot2::ggsave(file, plot = p, width = 8, height = 6, dpi = 150)
+        ggplot2::ggsave(file, plot = p, width = 8, height = 6, dpi = 150,
+          device = "png", bg = .qc_plot_bg(is_dark()))
       }
     )
 
@@ -407,7 +447,8 @@ mod_query_server <- function(id, rv) {
       }
       qc_plot_saturation(rv$project,
                          order_by = input$sat_order %||% "import_order",
-                         code_ids = int_or_null(input$filter_codes))
+                         code_ids = int_or_null(input$filter_codes),
+                         dark = is_dark())
     })
 
     output$tbl_saturation <- DT::renderDataTable({
@@ -432,6 +473,29 @@ mod_query_server <- function(id, rv) {
                         ))
       )
     })
+
+    output$dl_saturation <- shiny::downloadHandler(
+      filename = function() paste0("saturation_", format(Sys.Date(), "%Y%m%d"), ".png"),
+      content  = function(file) {
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+          shiny::showNotification("Install ggplot2 to export this chart.", type = "error")
+          return()
+        }
+        p <- tryCatch(
+          qc_plot_saturation(rv$project,
+            order_by = input$sat_order %||% "import_order",
+            code_ids = int_or_null(input$filter_codes),
+            dark = is_dark()),
+          error = function(e) NULL
+        )
+        if (is.null(p)) {
+          shiny::showNotification("No saturation data to export.", type = "warning")
+          return()
+        }
+        ggplot2::ggsave(file, plot = p, width = 8, height = 5, dpi = 150,
+          device = "png", bg = .qc_plot_bg(is_dark()))
+      }
+    )
 
     # ── Triangulation ──────────────────────────────────────────────────────
 
@@ -483,13 +547,23 @@ mod_query_server <- function(id, rv) {
       )
     })
 
+    output$dl_tri_csv <- shiny::downloadHandler(
+      filename = function() paste0("triangulation_", format(Sys.Date(), "%Y%m%d"), ".csv"),
+      content  = function(file) {
+        df <- tryCatch(tri_rv(), error = function(e) tibble::tibble())
+        if (is.null(df)) df <- tibble::tibble()
+        utils::write.csv(df, file, row.names = FALSE)
+      }
+    )
+
     # ── Cross-tabulation ───────────────────────────────────────────────────
 
     xtab_results <- shiny::eventReactive(input$btn_xtab, {
-      shiny::req(nchar(trimws(input$xtab_attr)) > 0)
+      attr_val <- trimws(input$xtab_attr[[1L]] %||% "")
+      shiny::req(nchar(attr_val) > 0L)
       tryCatch(
         qc_cross_tabulate(rv$project,
-                          attribute = trimws(input$xtab_attr),
+                          attribute = attr_val,
                           code_ids  = int_or_null(input$filter_codes)),
         error = function(e) {
           shiny::showNotification(conditionMessage(e), type = "error")
@@ -593,25 +667,87 @@ mod_query_server <- function(id, rv) {
         d <- wc_data()
         shiny::req(!is.null(d))
         top <- head(d$words[order(-d$words$freq), ], 150L)
-        wordcloud2::wordcloud2(top, size = 0.6, color = "random-dark")
+        wordcloud2::wordcloud2(top,
+          size = 0.6,
+          color = if (is_dark()) "random-light" else "random-dark",
+          backgroundColor = .qc_plot_bg(is_dark()),
+          fontFamily = "Segoe UI")
       })
     }
 
     output$wc_fallback_plot <- shiny::renderPlot({
       d <- wc_data()
       shiny::req(!is.null(d))
-      top <- head(d$words[order(-d$words$freq), ], 30L)
-      top <- top[order(top$freq), ]
-      op <- graphics::par(mar = c(4, 10, 2, 1))
-      graphics::barplot(top$freq,
-        names.arg = top$word,
-        horiz     = TRUE,
-        las       = 1,
-        col       = "#4E79A7",
-        border    = NA,
-        xlab      = "Count"
-      )
-      graphics::par(op)
+      .qc_draw_word_bar(d$words, dark = is_dark())
     })
+
+    output$dl_wordcloud <- shiny::downloadHandler(
+      filename = function() {paste0("word_cloud_", format(Sys.Date(), "%Y%m%d"), ".png")},
+      content  = function(file) {
+        d <- wc_data()
+        if (is.null(d)) {
+          shiny::showNotification("No word cloud data to export.", type = "warning")
+          return()
+        }
+        grDevices::png(file, width = 1200, height = 800, res = 150,
+          bg = .qc_plot_bg(is_dark()))
+        on.exit(grDevices::dev.off(), add = TRUE)
+        if (requireNamespace("wordcloud", quietly = TRUE)) {
+          .qc_draw_wordcloud(d$words, dark = is_dark())
+        } else {
+          .qc_draw_word_bar(d$words, dark = is_dark())
+        }
+      }
+    )
+
+    # ── Graph (nested module) ──────────────────────────────────────────────
+    mod_graph_server("graph", rv)
+
   })
+}
+
+.qc_word_top <- function(words, n = 30L) {
+  top <- head(words[order(-words$freq), ], n)
+  top[order(top$freq), ]
+}
+
+.qc_draw_word_bar <- function(words, dark = FALSE) {
+  top <- .qc_word_top(words, 30L)
+  fg  <- .qc_plot_fg(dark)
+  bg  <- .qc_plot_bg(dark)
+  bar <- if (isTRUE(dark)) "#8cc4ee" else "#4E79A7"
+  op <- graphics::par(
+    mar = c(4, 10, 2, 1),
+    bg = bg,
+    fg = fg,
+    col.axis = fg,
+    col.lab = fg,
+    col.main = fg
+  )
+  on.exit(graphics::par(op), add = TRUE)
+  graphics::barplot(top$freq,
+    names.arg = top$word,
+    horiz     = TRUE,
+    las       = 1,
+    col       = bar,
+    border    = NA,
+    xlab      = "Count"
+  )
+}
+
+.qc_draw_wordcloud <- function(words, dark = FALSE) {
+  top <- head(words[order(-words$freq), ], 150L)
+  fg  <- .qc_plot_fg(dark)
+  bg  <- .qc_plot_bg(dark)
+  op <- graphics::par(bg = bg, fg = fg)
+  on.exit(graphics::par(op), add = TRUE)
+  wordcloud::wordcloud(
+    words = top$word,
+    freq = top$freq,
+    random.order = FALSE,
+    colors = if (isTRUE(dark))
+      c("#f8fafc", "#d0b5ff", "#8cc4ee", "#fbbf24")
+    else
+      c("#2c3e50", "#4E79A7", "#6f4aa8", "#c45500")
+  )
 }

@@ -72,8 +72,9 @@ mod_documents_server <- function(id, rv) {
 
     output$tbl_docs <- DT::renderDataTable({
       df <- docs()
-      DT::datatable(
-        dplyr::select(df, id, name, source_type, n_codings, memo),
+      tbl <- DT::datatable(
+        dplyr::select(df, id, name, source_type, word_count, char_count,
+          n_codings, n_coders, memo),
         class     = "table table-hover",
         selection = "single",
         rownames  = FALSE,
@@ -82,12 +83,16 @@ mod_documents_server <- function(id, rv) {
           columnDefs = list(
             list(targets = 0, width = "50px"),
             list(targets = 2, width = "110px", className = "text-muted"),
-            list(targets = 3, width = "80px",  className = "text-center"),
-            list(targets = 4, className = "dt-muted dt-truncate")
+            list(targets = c(3, 4, 5, 6), width = "80px",
+              className = "text-center"),
+            list(targets = 7, className = "dt-muted dt-truncate")
           )
         ),
-        colnames = c("ID", "Name", "Type", "Codings", "Memo")
+        colnames = c("ID", "Name", "Type", "Words", "Chars",
+          "Codings", "Coders", "Memo")
       )
+      DT::formatRound(tbl, columns = c("word_count", "char_count"),
+        digits = 0, mark = ",")
     })
 
     # Track selected row

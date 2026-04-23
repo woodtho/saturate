@@ -69,7 +69,14 @@ mod_help_ui <- function(id) {
             shiny::strong("Tip: "),
             "Start with a few broad codes, then refine definitions and criteria ",
             "as patterns become clearer."
-          )
+          ),
+          shiny::h5("Profiles and settings"),
+          qc_help_list(c(
+            "Choose or create a profile before coding; the profile name is saved as the coder.",
+            "Use Settings in the header to switch profiles without restarting the app.",
+            "Colour profile, fonts, text size, table density, document height, and coding defaults are remembered in this browser.",
+            "Restore defaults resets display and coding preferences without deleting profiles or project data."
+          ))
         )
       ),
 

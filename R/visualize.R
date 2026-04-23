@@ -8,6 +8,31 @@ utils::globalVariables(c(
   "period", "n_codings"
 ))
 
+.qc_plot_theme <- function(dark = FALSE, base_size = 12) {
+  if (!isTRUE(dark))
+    return(ggplot2::theme_minimal(base_size = base_size))
+
+  ggplot2::theme_minimal(base_size = base_size) +
+    ggplot2::theme(
+      plot.background  = ggplot2::element_rect(fill = "#0b1118", colour = NA),
+      panel.background = ggplot2::element_rect(fill = "#0b1118", colour = NA),
+      panel.grid.major = ggplot2::element_line(colour = "#334155", linewidth = .25),
+      panel.grid.minor = ggplot2::element_line(colour = "#263445", linewidth = .2),
+      text             = ggplot2::element_text(colour = "#f4f7fb"),
+      axis.text        = ggplot2::element_text(colour = "#d9e2ec"),
+      axis.title       = ggplot2::element_text(colour = "#f4f7fb"),
+      plot.title       = ggplot2::element_text(colour = "#f4f7fb", face = "bold"),
+      plot.subtitle    = ggplot2::element_text(colour = "#b5c1cc"),
+      legend.background = ggplot2::element_rect(fill = "#0b1118", colour = NA),
+      legend.key       = ggplot2::element_rect(fill = "#0b1118", colour = NA),
+      legend.text      = ggplot2::element_text(colour = "#d9e2ec"),
+      legend.title     = ggplot2::element_text(colour = "#f4f7fb")
+    )
+}
+
+.qc_plot_bg <- function(dark = FALSE) if (isTRUE(dark)) "#0b1118" else "white"
+.qc_plot_fg <- function(dark = FALSE) if (isTRUE(dark)) "#f4f7fb" else "#1a1a1a"
+
 # ---- qc_plot_codes -----------------------------------------------------------
 
 #' Horizontal bar chart of code frequency
@@ -81,6 +106,7 @@ qc_plot_codes <- function(project, top_n = 20L,
 #'
 #' @param project A `qc_project` object.
 #' @param code_ids Integer vector or `NULL`. Restrict to these codes.
+#' @param dark Logical. Apply dark-mode plot colours.
 #' @param unit One of `"document"` (default) or `"segment"`.
 #' @param ... Unused. Reserved for future arguments.
 #'
@@ -90,6 +116,7 @@ qc_plot_codes <- function(project, top_n = 20L,
 qc_plot_cooccurrence <- function(project,
                                   code_ids = NULL,
                                   unit     = c("document", "segment"),
+                                  dark     = FALSE,
                                   ...) {
   if (!requireNamespace("ggplot2", quietly = TRUE))
     rlang::abort(
@@ -130,16 +157,21 @@ qc_plot_cooccurrence <- function(project,
   df$code_x  <- factor(df$code_x, levels = lvls)
   df$code_y  <- factor(df$code_y, levels = lvls)
 
+  tile_border <- if (isTRUE(dark)) "#334155" else "white"
+  text_colour <- if (isTRUE(dark)) "#f8fafc" else "grey30"
+  fill_low    <- if (isTRUE(dark)) "#172231" else "#e8f4f8"
+  fill_high   <- if (isTRUE(dark)) "#2563eb" else "#1565c0"
+
   ggplot2::ggplot(df, ggplot2::aes(x = code_x, y = code_y, fill = n)) +
-    ggplot2::geom_tile(colour = "white") +
-    ggplot2::geom_text(ggplot2::aes(label = n), colour = "grey30", size = 3) +
+    ggplot2::geom_tile(colour = tile_border) +
+    ggplot2::geom_text(ggplot2::aes(label = n), colour = text_colour, size = 3) +
     ggplot2::scale_fill_gradient(
-      low  = "#e8f4f8",
-      high = "#1565c0",
+      low  = fill_low,
+      high = fill_high,
       name = "Co-occurrences"
     ) +
     ggplot2::labs(x = NULL, y = NULL, title = "Code Co-occurrence") +
-    ggplot2::theme_minimal() +
+    .qc_plot_theme(dark, base_size = 12) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
     )

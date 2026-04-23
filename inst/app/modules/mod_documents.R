@@ -36,13 +36,15 @@ mod_documents_server <- function(id, rv) {
 
     output$tbl_docs <- DT::renderDataTable({
       d <- docs()
-      DT::datatable(
-        dplyr::select(d, id, name, n_codings, memo),
+      tbl <- DT::datatable(
+        dplyr::select(d, id, name, word_count, char_count, n_codings, memo),
         selection  = "single",
         rownames   = FALSE,
         options    = list(pageLength = 15, dom = "ftp"),
-        colnames   = c("ID", "Name", "Codings", "Memo")
+        colnames   = c("ID", "Name", "Words", "Characters", "Codings", "Memo")
       )
+      DT::formatRound(tbl, columns = c("word_count", "char_count"),
+        digits = 0, mark = ",")
     })
 
     # Import from file

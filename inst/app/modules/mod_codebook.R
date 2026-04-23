@@ -12,7 +12,7 @@ mod_codebook_ui <- function(id) {
         shiny::div(
           style = "display:flex; gap:8px; align-items:center; margin-bottom:8px;",
           shiny::uiOutput(ns("color_preview")),
-          shiny::span("Preview", style = "font-size:0.85rem; color:#6c757d;")
+          shiny::span("Preview", style = "font-size:0.85rem; color:var(--sat-text-muted);")
         ),
         shiny::textAreaInput(ns("code_memo"), "Memo", rows = 2),
         shiny::actionButton(ns("btn_add_code"), "Add Code",

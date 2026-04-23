@@ -367,7 +367,7 @@ mod_member_check_server <- function(id, rv) {
           shiny::div(
             class = "mb-3 p-2",
             style = paste0("border-left:3px solid ", col,
-                           ";background:#fafafa;border-radius:4px;"),
+                           ";background:var(--sat-surface-card);border-radius:4px;"),
             shiny::div(
               class = "d-flex justify-content-between align-items-center mb-1",
               shiny::tags$small(

@@ -1,0 +1,223 @@
+url: ~
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2d6a9f"
+    base_font: {google: "Inter"}
+    heading_font: {google: "Inter"}
+    code_font: {google: "JetBrains Mono"}
+
+home:
+  title: "saturate — Qualitative Data Analysis for R"
+  description: >
+    A modern open-source replacement for RQDA. Code interview transcripts in a
+    Shiny GUI, run reliability statistics, track theoretical saturation, and
+    export results — all backed by a portable DuckDB file.
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/your-org/saturate
+      aria-label: GitHub
+
+articles:
+  - title: "Getting Started"
+    navbar: ~
+    contents:
+      - user-guide
+
+reference:
+  - title: "Project management"
+    desc: "Create, open, and close projects; manage versions and locking."
+    contents:
+      - qc_new
+      - qc_open
+      - qc_close
+      - qc_project_info
+      - qc_is_locked
+      - qc_lock_project
+      - qc_unlock_project
+      - qc_get_version
+      - qc_list_versions
+      - qc_restore_version
+      - qc_list_coders
+      - saturate-package
+
+  - title: "Documents"
+    desc: "Import and manage source documents."
+    contents:
+      - qc_import_document
+      - qc_import_batch
+      - qc_list_documents
+      - qc_get_document
+      - qc_update_document_content
+      - qc_update_document_memo
+      - qc_delete_document
+      - qc_set_source_type
+      - qc_segment_document
+
+  - title: "Codes and codebook"
+    desc: "Create and manage codes, categories, and codebook snapshots."
+    contents:
+      - qc_add_code
+      - qc_update_code
+      - qc_list_codes
+      - qc_delete_code
+      - qc_deprecate_code
+      - qc_undeprecate_code
+      - qc_merge_codes
+      - qc_split_code
+      - qc_set_code_key
+      - qc_code_history
+      - qc_validate_codebook
+      - qc_import_codebook
+      - qc_export_codebook
+      - qc_export_codebook_full
+      - qc_snapshot_codebook
+      - qc_list_snapshots
+      - qc_get_snapshot
+      - qc_diff_snapshots
+      - qc_add_code_relation
+      - qc_list_code_relations
+      - qc_delete_code_relation
+
+  - title: "Categories"
+    desc: "Group codes laterally across the code hierarchy."
+    contents:
+      - qc_add_category
+      - qc_list_categories
+      - qc_link_code_category
+      - qc_unlink_code_category
+
+  - title: "Codings"
+    desc: "Apply, retrieve, and manage coded passages."
+    contents:
+      - qc_add_coding
+      - qc_list_codings
+      - qc_get_coded_segments
+      - qc_delete_coding
+      - qc_reassign_coding
+      - qc_split_coding
+      - qc_merge_codings
+      - qc_update_coding_confidence
+      - qc_update_coding_memo
+      - qc_uncoded_segments
+      - qc_disputed_segments
+      - qc_proximity_query
+      - qc_coding_audit
+      - qc_detect_duplicates
+
+  - title: "Search and auto-coding"
+    desc: "Full-text search and regex-based automatic coding."
+    contents:
+      - qc_search_documents
+      - qc_auto_code
+
+  - title: "Cases"
+    desc: "Units of analysis with structured attributes and document links."
+    contents:
+      - qc_add_case
+      - qc_update_case
+      - qc_delete_case
+      - qc_list_cases
+      - qc_set_case_attribute
+      - qc_list_case_attributes
+      - qc_delete_case_attribute
+      - qc_case_attributes_wide
+      - qc_link_case_source
+      - qc_unlink_case_source
+
+  - title: "Themes"
+    desc: "Higher-level thematic synthesis above codes."
+    contents:
+      - qc_add_theme
+      - qc_update_theme
+      - qc_get_theme
+      - qc_list_themes
+      - qc_delete_theme
+      - qc_link_theme_codes
+      - qc_link_theme_categories
+      - qc_unlink_theme_code
+      - qc_unlink_theme_category
+      - qc_theme_excerpts
+      - qc_export_themes_report
+
+  - title: "Memos and annotations"
+    desc: "Project memos, reflexive journal entries, and passage annotations."
+    contents:
+      - qc_add_project_memo
+      - qc_get_memos
+      - qc_list_project_memos
+      - qc_delete_project_memo
+      - qc_add_annotation
+      - qc_list_annotations
+      - qc_update_annotation
+      - qc_delete_annotation
+      - qc_add_excerpt
+      - qc_list_excerpts
+      - qc_update_excerpt_memo
+      - qc_delete_excerpt
+
+  - title: "Member checking"
+    desc: "Generate summaries for participants and record their responses."
+    contents:
+      - qc_create_member_check
+      - qc_list_member_checks
+      - qc_record_member_response
+      - qc_bulk_set_member_status
+      - qc_export_member_check
+
+  - title: "Reliability and agreement"
+    desc: "Inter-rater reliability statistics."
+    contents:
+      - qc_agreement
+      - qc_agreement_matrix
+      - qc_krippendorff
+
+  - title: "Analysis and summaries"
+    desc: "Code metrics, co-occurrence, saturation, and cross-tabulation."
+    contents:
+      - qc_code_summary
+      - qc_code_metrics
+      - qc_code_by_unit
+      - qc_code_matrix
+      - qc_code_cooccurrence
+      - qc_saturation_curve
+      - qc_triangulate
+      - qc_cross_tabulate
+      - qc_temporal_analysis
+
+  - title: "Visualisation"
+    desc: "Charts and network graphs."
+    contents:
+      - qc_plot_codes
+      - qc_plot_saturation
+      - qc_plot_cooccurrence
+      - qc_plot_network
+      - qc_plot_overlap
+      - qc_plot_timeline
+      - qc_document_graph
+      - qc_as_igraph
+
+  - title: "Export"
+    desc: "Export data in structured formats."
+    contents:
+      - qc_export
+      - qc_export_project_data
+      - qc_summary_report
+
+  - title: "Shiny GUI"
+    desc: "Launch the interactive browser-based interface."
+    contents:
+      - shiny_saturate
+      - shiny_saturate
+
+  - title: "Utilities"
+    desc: "Helper functions."
+    contents:
+      - qc_cb_palette

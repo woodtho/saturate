@@ -73,7 +73,7 @@ mod_query_server <- function(id, rv) {
         shiny::strong(paste0(nrow(d), " segments")),
         shiny::br(),
         shiny::span(paste0(dplyr::n_distinct(d$source_id), " documents"),
-                    style = "color:#6c757d; font-size:0.85rem;")
+                    style = "color:var(--sat-text-muted); font-size:0.85rem;")
       )
     })
 

@@ -171,7 +171,7 @@ mod_graph_server <- function(id, rv) {
         shiny::br(),
         shiny::span(
           paste0("Group: ", row$group[[1L]]),
-          style = "color:#6c757d; font-size:0.85rem;"
+          style = "color:var(--sat-text-muted); font-size:0.85rem;"
         ),
         if (!is.null(row$value) && !is.na(row$value[[1L]])) {
           shiny::div(

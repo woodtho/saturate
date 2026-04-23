@@ -11,11 +11,13 @@ test_that("qc_import_document from content returns correct columns", {
 test_that("qc_list_documents shows imported doc with n_codings = 0", {
   proj <- make_test_project()
   on.exit(qc_close(proj))
-  qc_import_document(proj, content = "text", name = "doc1")
+  qc_import_document(proj, content = "Hello world", name = "doc1")
 
   docs <- qc_list_documents(proj)
   expect_equal(nrow(docs), 1L)
   expect_equal(docs$n_codings[[1L]], 0L)
+  expect_equal(docs$word_count[[1L]], 2L)
+  expect_equal(docs$char_count[[1L]], 11L)
 })
 
 test_that("qc_get_document returns content", {
