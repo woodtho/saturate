@@ -166,11 +166,37 @@ saturate_server <- function(input, output, session, project) {
     rv$profile_state <- input$profile_state
   }, ignoreInit = FALSE)
 
+  # ── Push DB profiles to JS on first flush ─────────────────────────────────
+  session$onFlushed(function() {
+    profiles_df <- tryCatch(.db_list_profiles(rv$project), error = function(e) NULL)
+    if (is.null(profiles_df) || nrow(profiles_df) == 0L) return()
+    has_json <- requireNamespace("jsonlite", quietly = TRUE)
+    profiles_list <- lapply(seq_len(nrow(profiles_df)), function(i) {
+      row       <- profiles_df[i, , drop = FALSE]
+      settings  <- if (has_json)
+        tryCatch(jsonlite::fromJSON(row$settings_json %||% "{}", simplifyVector = FALSE),
+                 error = function(e) list())
+      else list()
+      list(
+        name       = row$name,
+        createdAt  = format(row$created_at,  "%Y-%m-%dT%H:%M:%SZ"),
+        lastUsedAt = if (!is.na(row$last_used_at))
+          format(row$last_used_at, "%Y-%m-%dT%H:%M:%SZ") else NULL,
+        settings   = settings
+      )
+    })
+    session$sendCustomMessage("qc_load_profiles", list(profiles = profiles_list))
+  }, once = TRUE)
+
   shiny::observeEvent(input$profile_selected, {
     coder <- .profile_payload_name(input$profile_selected)
     if (nchar(coder) == 0L) return()
     rv$current_coder <- coder
     shiny::updateTextInput(session, "current_coder", value = coder)
+    tryCatch({
+      .db_upsert_profile(rv$project, coder)
+      .db_touch_profile(rv$project, coder)
+    }, error = function(e) NULL)
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input$current_coder, {
@@ -233,6 +259,10 @@ saturate_server <- function(input, output, session, project) {
     }
     session$sendCustomMessage("qc_profile_action",
       list(action = "switch", name = profile))
+    tryCatch({
+      .db_upsert_profile(rv$project, profile)
+      .db_touch_profile(rv$project, profile)
+    }, error = function(e) NULL)
     shiny::removeModal()
   })
 
@@ -244,6 +274,7 @@ saturate_server <- function(input, output, session, project) {
     }
     session$sendCustomMessage("qc_profile_action",
       list(action = "create", name = profile))
+    tryCatch(.db_upsert_profile(rv$project, profile), error = function(e) NULL)
     shiny::removeModal()
   })
 
@@ -255,6 +286,7 @@ saturate_server <- function(input, output, session, project) {
     }
     session$sendCustomMessage("qc_profile_action",
       list(action = "delete", name = profile))
+    tryCatch(.db_delete_profile(rv$project, profile), error = function(e) NULL)
     shiny::removeModal()
   })
 
@@ -274,6 +306,10 @@ saturate_server <- function(input, output, session, project) {
     )
     session$sendCustomMessage("qc_profile_action",
       list(action = "settings", settings = settings))
+    tryCatch(
+      .db_save_profile_settings(rv$project, rv$current_coder %||% "default", settings),
+      error = function(e) NULL
+    )
     shiny::showNotification("Settings saved.", type = "message")
   })
 

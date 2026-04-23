@@ -19,6 +19,7 @@
   seq_coding_audit      = "CREATE SEQUENCE IF NOT EXISTS coding_audit_id_seq START 1",
   seq_member_checks     = "CREATE SEQUENCE IF NOT EXISTS member_checks_id_seq START 1",
   seq_member_check_items = "CREATE SEQUENCE IF NOT EXISTS member_check_items_id_seq START 1",
+  seq_profiles           = "CREATE SEQUENCE IF NOT EXISTS profiles_id_seq START 1",
 
   # project_meta — single-row KV store
   tbl_meta = "
@@ -393,7 +394,19 @@
       changed_at TIMESTAMPTZ DEFAULT now()
     )
   ",
-  idx_theme_history = "CREATE INDEX IF NOT EXISTS idx_theme_history ON theme_history(theme_id)"
+  idx_theme_history = "CREATE INDEX IF NOT EXISTS idx_theme_history ON theme_history(theme_id)",
+
+  # profiles — per-coder identity and display settings
+  tbl_profiles = "
+    CREATE TABLE IF NOT EXISTS profiles (
+      id            BIGINT PRIMARY KEY DEFAULT nextval('profiles_id_seq'),
+      name          VARCHAR NOT NULL,
+      settings_json VARCHAR NOT NULL DEFAULT '{}',
+      created_at    TIMESTAMPTZ DEFAULT now(),
+      last_used_at  TIMESTAMPTZ,
+      status        INTEGER NOT NULL DEFAULT 1
+    )
+  "
 )
 
 .bootstrap_schema <- function(con) {

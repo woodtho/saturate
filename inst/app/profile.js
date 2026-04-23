@@ -353,6 +353,40 @@
     }
   }
 
+  function handleLoadProfiles(message) {
+    if (!message || !Array.isArray(message.profiles)) return;
+
+    // Seed localStorage from DB (DB is the authoritative source)
+    var dbProfiles = message.profiles.map(function(p) {
+      return {
+        name:       cleanName(p.name),
+        createdAt:  p.createdAt  || new Date().toISOString(),
+        lastUsedAt: p.lastUsedAt || null
+      };
+    });
+    saveProfiles(dbProfiles);
+
+    // Apply settings for whichever profile is active (or most recently used)
+    var active = activeProfile();
+    var target = message.profiles.find(function(p) {
+      return active && cleanName(p.name).toLowerCase() === active.toLowerCase();
+    });
+    if (!target) {
+      var sorted = message.profiles.slice().sort(function(a, b) {
+        return String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""));
+      });
+      if (sorted.length > 0 && sorted[0].lastUsedAt) target = sorted[0];
+    }
+    if (target && target.settings && Object.keys(target.settings).length > 0) {
+      var merged = Object.assign({}, defaultSettings, target.settings);
+      saveSettings(merged);
+      applySettings(merged);
+    }
+
+    renderGate();
+    sendState("db_sync");
+  }
+
   function initShinyBridge() {
     function registerHandler() {
       if (
@@ -363,6 +397,7 @@
         return;
       }
       window.Shiny.addCustomMessageHandler("qc_profile_action", handleProfileAction);
+      window.Shiny.addCustomMessageHandler("qc_load_profiles",  handleLoadProfiles);
       handlerRegistered = true;
     }
 
