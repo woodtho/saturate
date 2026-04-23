@@ -4,7 +4,7 @@ devtools::load_all()
 
 proj <- qc_new("test_study.duckdb",
                name  = "Firm Innovation Study",
-               owner = "Thomas",
+               owner = "Researcher",
                overwrite = TRUE)
 qc_close(proj)
 proj <- qc_open("test_study.duckdb")
@@ -136,48 +136,48 @@ qc_link_code_category(proj, code_id("regulatory_environment"),cat_id("External E
 qc_link_code_category(proj, code_id("government_programs"),   cat_id("External Environment"))
 qc_link_code_category(proj, code_id("supply_chain_disruption"),cat_id("External Environment"))
 
-# ── 5. Programmatic codings (coder = "thomas") ───────────────────────────────
+# ── 5. Programmatic codings (coder = "coder_a") ───────────────────────────────
 
 # Small Tech Firm
 d <- doc_id("Small Tech Firm")
-qc_add_coding(proj, d, code_id("talent_constraints"),   27, 175, coder = "thomas",
+qc_add_coding(proj, d, code_id("talent_constraints"),   27, 175, coder = "coder_a",
   memo = "Hiring bottleneck explicitly named as the main constraint on growth")
-qc_add_coding(proj, d, code_id("rd_investment"),       266, 382, coder = "thomas")
-qc_add_coding(proj, d, code_id("government_programs"), 384, 498, coder = "thomas",
+qc_add_coding(proj, d, code_id("rd_investment"),       266, 382, coder = "coder_a")
+qc_add_coding(proj, d, code_id("government_programs"), 384, 498, coder = "coder_a",
   memo = "Long lag on funding decisions makes program timing useless")
-qc_add_coding(proj, d, code_id("collaboration"),       499, 584, coder = "thomas")
-qc_add_coding(proj, d, code_id("scaling_challenges"),   27, 226, coder = "thomas")
+qc_add_coding(proj, d, code_id("collaboration"),       499, 584, coder = "coder_a")
+qc_add_coding(proj, d, code_id("scaling_challenges"),   27, 226, coder = "coder_a")
 
 # Manufacturing Firm
 d <- doc_id("Manufacturing Firm")
-qc_add_coding(proj, d, code_id("rd_investment"),         59, 175, coder = "thomas",
+qc_add_coding(proj, d, code_id("rd_investment"),         59, 175, coder = "coder_a",
   memo = "Automation capex as process innovation — not product innovation")
-qc_add_coding(proj, d, code_id("supply_chain_disruption"),245, 319, coder = "thomas")
-qc_add_coding(proj, d, code_id("talent_constraints"),    320, 410, coder = "thomas")
-qc_add_coding(proj, d, code_id("government_programs"),   411, 497, coder = "thomas")
+qc_add_coding(proj, d, code_id("supply_chain_disruption"),245, 319, coder = "coder_a")
+qc_add_coding(proj, d, code_id("talent_constraints"),    320, 410, coder = "coder_a")
+qc_add_coding(proj, d, code_id("government_programs"),   411, 497, coder = "coder_a")
 
 # Life Sciences
 d <- doc_id("Life Sciences Company")
-qc_add_coding(proj, d, code_id("rd_investment"),          1,  87, coder = "thomas")
-qc_add_coding(proj, d, code_id("regulatory_environment"), 88, 183, coder = "thomas",
+qc_add_coding(proj, d, code_id("rd_investment"),          1,  87, coder = "coder_a")
+qc_add_coding(proj, d, code_id("regulatory_environment"), 88, 183, coder = "coder_a",
   memo = "Approval uncertainty named alongside long R&D timelines")
-qc_add_coding(proj, d, code_id("talent_constraints"),    254, 342, coder = "thomas")
-qc_add_coding(proj, d, code_id("collaboration"),         343, 447, coder = "thomas")
+qc_add_coding(proj, d, code_id("talent_constraints"),    254, 342, coder = "coder_a")
+qc_add_coding(proj, d, code_id("collaboration"),         343, 447, coder = "coder_a")
 
 # Service Firm
 d <- doc_id("Service Firm")
-qc_add_coding(proj, d, code_id("digital_transformation"),  1, 119, coder = "thomas")
-qc_add_coding(proj, d, code_id("talent_constraints"),    120, 249, coder = "thomas",
+qc_add_coding(proj, d, code_id("digital_transformation"),  1, 119, coder = "coder_a")
+qc_add_coding(proj, d, code_id("talent_constraints"),    120, 249, coder = "coder_a",
   memo = "Workforce adaptation framed as retraining burden, not hiring")
-qc_add_coding(proj, d, code_id("scaling_challenges"),    390, 450, coder = "thomas")
+qc_add_coding(proj, d, code_id("scaling_challenges"),    390, 450, coder = "coder_a")
 
 # Large Multinational
 d <- doc_id("Large Multinational")
-qc_add_coding(proj, d, code_id("scaling_challenges"),      1, 143, coder = "thomas",
+qc_add_coding(proj, d, code_id("scaling_challenges"),      1, 143, coder = "coder_a",
   memo = "Coordination failure as a scaling problem specific to multinationals")
-qc_add_coding(proj, d, code_id("regulatory_environment"), 144, 246, coder = "thomas")
-qc_add_coding(proj, d, code_id("rd_investment"),          247, 338, coder = "thomas")
-qc_add_coding(proj, d, code_id("collaboration"),          450, 534, coder = "thomas")
+qc_add_coding(proj, d, code_id("regulatory_environment"), 144, 246, coder = "coder_a")
+qc_add_coding(proj, d, code_id("rd_investment"),          247, 338, coder = "coder_a")
+qc_add_coding(proj, d, code_id("collaboration"),          450, 534, coder = "coder_a")
 
 # ── 6. Cases with attributes ──────────────────────────────────────────────────
 

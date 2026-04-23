@@ -74,7 +74,7 @@ saturate fills that gap. It stores all project data in a single DuckDB file, whi
 
 ### The running example
 
-Throughout this guide you will follow Dr. Sarah Chen, a researcher at a university's School of Organisational Psychology. Sarah is studying remote working and wellbeing. She has conducted twelve semi-structured interviews with knowledge workers across three organisations — Alpha Corp, Beta Dynamics, and Gamma Solutions — covering topics such as work-life boundaries, isolation, productivity, management practices, and mental health. Her transcripts are saved as plain-text files. She has a research assistant, James, who will independently code a subset of the data so she can calculate inter-rater reliability.
+Throughout this guide you will follow Researcher A, a qualitative researcher studying remote working and wellbeing. Researcher A has conducted twelve semi-structured interviews with knowledge workers across three organisations — Organisation A, Organisation B, and Organisation C — covering topics such as work-life boundaries, isolation, productivity, management practices, and mental health. Their transcripts are saved as plain-text files. They have a research assistant, Researcher B, who will independently code a subset of the data so they can calculate inter-rater reliability.
 
 ---
 
@@ -130,7 +130,7 @@ In R, create a new project with `qc_new()`:
 proj <- qc_new(
   path  = "~/research/remote_work/remote_wellbeing.duckdb",
   name  = "Remote Working and Wellbeing",
-  owner = "Dr. Sarah Chen"
+  owner = "Researcher A"
 )
 ```
 
@@ -213,7 +213,7 @@ The first time you open a project in a new browser session, saturate displays a 
 
 A profile is a named coder identity. When you select a profile, saturate sets the **Coding As** text to that profile's name and applies that profile's saved interface preferences. Every coding you apply and every memo you write is stored with this coder name.
 
-For Sarah's study, she creates a profile called "Sarah Chen" and her research assistant creates one called "James Liu".
+For Researcher A's study, they create a profile called "Researcher A" and their research assistant creates one called "Researcher B".
 
 ### Managing profiles
 
@@ -249,7 +249,7 @@ Click the **Settings** button in the navbar. In the **Profile** section:
 
 In saturate, a **document** (also called a **source**) is any piece of text you want to analyse — interview transcripts, focus group transcripts, open-ended survey responses, field notes, policy documents, or any other textual material.
 
-Sarah imports twelve documents — one per interview — each named with the participant's pseudonym and organisation.
+Researcher A imports twelve documents — one per interview — each named with the participant's pseudonym and organisation.
 
 ### Importing documents
 
@@ -289,7 +289,7 @@ Click the document's row and then click **Delete**. You will be asked to confirm
 
 A **case** is the unit of analysis in your study — typically a participant, but it could be a site, an organisation, or any other bounded entity you are comparing. Cases allow you to group documents together and attach structured descriptive attributes that you can later use for triangulation.
 
-In Sarah's study, each case is one participant. She records attributes including organisation, role level, age group, working arrangement, and months remote.
+In Researcher A's study, each case is one participant. They record attributes including organisation, role level, age group, working arrangement, and months remote.
 
 ### Creating a case
 
@@ -299,10 +299,10 @@ Navigate to the **Cases** tab. In the sidebar, type a name in the **Name** field
 
 Click a case row to open its detail panel. In the **Attributes** sub-panel, type a variable name (e.g., `working_arrangement`) and a value (e.g., `fully remote`), then click **Set attribute**.
 
-Sarah adds:
+Researcher A adds:
 
 ```
-organisation        = Alpha Corp
+organisation        = Organisation A
 role_level          = senior
 age_group           = 40s+
 working_arrangement = fully remote
@@ -331,7 +331,7 @@ Click **Attributes CSV** at the top of the Cases tab. saturate generates a wide-
 
 A **code** is a short label you apply to a passage of text to indicate that the passage represents a particular concept, theme, or phenomenon.
 
-In Sarah's study, early codes include `boundary_blurring`, `isolation_felt`, `flexibility_valued`, `manager_unavailability`, `home_interruptions`, and `digital_fatigue`.
+In Researcher A's study, early codes include `boundary_blurring`, `isolation_felt`, `flexibility_valued`, `manager_unavailability`, `home_interruptions`, and `digital_fatigue`.
 
 ### Creating a code
 
@@ -347,7 +347,7 @@ Click the **New Code** button. The creation form has these fields:
 
 ### Code hierarchy
 
-saturate supports parent-child hierarchies. Sarah creates a parent code `wellbeing_impact` and beneath it: `isolation_felt`, `digital_fatigue`, `anxiety_work_performance`, and `positive_affect_flexibility`. Child codes appear indented beneath their parent in the codebook table.
+saturate supports parent-child hierarchies. Researcher A creates a parent code `wellbeing_impact` and beneath it: `isolation_felt`, `digital_fatigue`, `anxiety_work_performance`, and `positive_affect_flexibility`. Child codes appear indented beneath their parent in the codebook table.
 
 A code can only have one parent, but a parent can have any number of children.
 
@@ -400,7 +400,7 @@ Overlapping codes are handled correctly in saturate. The highlighting engine cal
 
 The **Blind** button in the navbar hides other coders' highlights so you see only your own work. This allows independent coding without being anchored by a colleague's existing highlights.
 
-Sarah asks James to turn Blind mode on before coding any document, ensuring his codes reflect his independent interpretation. After both have coded a document, she turns Blind mode off to compare their work in the **Compare** tab.
+Researcher A asks Researcher B to turn Blind mode on before coding any document, ensuring their codes reflect their independent interpretation. After both have coded a document, Researcher A turns Blind mode off to compare their work in the **Compare** tab.
 
 ### Removing a coding
 
@@ -442,7 +442,7 @@ The **Compare** tab places two coders' work on the same document side by side, h
 
 Navigate to the **Compare** tab. Choose the **Document**, **Coder A**, and **Coder B** from the selectors at the top.
 
-*[Screenshot: The Compare tab with Sarah's coding in the left column and James's in the right]*
+*[Screenshot: The Compare tab with Researcher A's coding in the left column and Researcher B's in the right]*
 
 ### The differences card
 
@@ -475,7 +475,7 @@ A **theme** is a higher-level interpretive structure synthesising several codes 
 
 ### Creating a theme
 
-Navigate to the **Themes** tab. Click **New Theme**. Give the theme a **Name** and write a substantive **Description**. Sarah creates "Temporal Boundary Erosion": *"Remote workers describe the boundaries of their workday becoming progressively undefined, with evening and weekend work normalised through always-on digital communication."*
+Navigate to the **Themes** tab. Click **New Theme**. Give the theme a **Name** and write a substantive **Description**. Researcher A creates "Temporal Boundary Erosion": *"Remote workers describe the boundaries of their workday becoming progressively undefined, with evening and weekend work normalised through always-on digital communication."*
 
 ### Linking codes and categories to a theme
 
@@ -511,7 +511,7 @@ Click **CSV** to download all results.
 
 Cross-tabulate your codes against case attributes to reveal patterns across participant groups. Select codes or categories and choose a **Case attribute** to cross-tabulate against (e.g., `working_arrangement`).
 
-Sarah finds that `boundary_blurring` appears far more frequently in fully-remote participants than hybrid participants, while `flexibility_valued` appears at similar rates across both groups.
+Researcher A finds that `boundary_blurring` appears far more frequently in fully-remote participants than hybrid participants, while `flexibility_valued` appears at similar rates across both groups.
 
 Click **CSV** to export the triangulation table.
 
@@ -534,7 +534,7 @@ plot(curve)
 
 The function works through your documents in import order and counts how many new codes appear with each successive document. The curve typically rises steeply for the first few documents and then flattens.
 
-Sarah's curve flattens after document 9, providing empirical evidence of saturation that she includes as a supplementary figure. The saturation curve is a descriptive tool — use it alongside analytical judgment and reflexive writing.
+Researcher A's curve flattens after document 9, providing empirical evidence of saturation included as a supplementary figure. The saturation curve is a descriptive tool — use it alongside analytical judgment and reflexive writing.
 
 ---
 
@@ -671,8 +671,8 @@ Always call this when you finish a session.
 ```{r}
 qc_import_document(
   proj,
-  path = "~/transcripts/P01_AlphaCorp.txt",
-  name = "P01 — Alpha Corp",
+  path = "~/transcripts/P01_OrgA.txt",
+  name = "P01 — Organisation A",
   type = "interview"
 )
 ```
@@ -725,7 +725,7 @@ qc_add_coding(
   code_id   = 7,
   selfirst  = 1452,
   selast    = 1598,
-  coder     = "Sarah Chen"
+  coder     = "Researcher A"
 )
 ```
 
@@ -735,7 +735,7 @@ qc_add_coding(
 
 ```{r}
 all_codings   <- qc_list_codings(proj)
-sarah_codings <- qc_list_codings(proj, coder = "Sarah Chen")
+coder_a_codings <- qc_list_codings(proj, coder = "Researcher A")
 ```
 
 ### `qc_get_coded_segments()` — Retrieve coded text
@@ -798,8 +798,8 @@ One row per code: total count, documents, coders, mean coding length.
 ```{r}
 agreement <- qc_agreement(
   proj,
-  coder_a = "Sarah Chen",
-  coder_b = "James Liu"
+  coder_a = "Researcher A",
+  coder_b = "Researcher B"
 )
 ```
 
@@ -863,7 +863,7 @@ tri <- qc_triangulate(proj, attribute = "working_arrangement")
 ### `qc_add_case()` — Create a case
 
 ```{r}
-case    <- qc_add_case(proj, name = "P01", memo = "Senior developer, Alpha Corp.")
+case    <- qc_add_case(proj, name = "P01", memo = "Senior developer, Organisation A.")
 case_id <- case$id
 ```
 
@@ -895,7 +895,7 @@ qc_add_project_memo(
   proj,
   content    = "Ethical approval granted by Faculty Ethics Committee, ref EA-2025-1042.",
   type       = "methodological",
-  created_by = "Sarah Chen"
+  created_by = "Researcher A"
 )
 ```
 
