@@ -338,19 +338,163 @@ saturate_server <- function(input, output, session, project) {
   mod_audit_server("audit",          rv)
   mod_help_server("help",            rv)
 
+  # ── Split download (static registration — button lives in renderUI) ──────────
+  output$dl_split <- shiny::downloadHandler(
+    filename = function() {
+      info <- tryCatch(qc_project_info(rv$project),
+                       error = function(e) list(name = "project"))
+      base <- gsub("[^A-Za-z0-9_-]", "_", info$name %||% "project")
+      paste0(base, "_split_", Sys.Date(), ".duckdb")
+    },
+    content = function(file) {
+      ids <- if (!isTRUE(input$split_scope == "all") &&
+                 length(input$split_source_ids) > 0L)
+        as.integer(input$split_source_ids)
+      else NULL
+      dest <- qc_split_project(
+        rv$project, file,
+        source_ids      = ids,
+        include_codings = isTRUE(input$split_include_codings),
+        overwrite       = TRUE
+      )
+      qc_close(dest)
+    }
+  )
+
+  output$split_docs_ui <- shiny::renderUI({
+    shiny::req(rv$project)
+    docs <- tryCatch(
+      .query(rv$project$con,
+             "SELECT id, name FROM sources WHERE status = 1 ORDER BY name"),
+      error = function(e) tibble::tibble(id = integer(), name = character())
+    )
+    shiny::tagList(
+      shiny::radioButtons("split_scope", "Documents to include",
+        choices  = c("All documents" = "all", "Select documents" = "select"),
+        selected = "all"),
+      shiny::conditionalPanel(
+        "input.split_scope == 'select'",
+        shiny::checkboxGroupInput("split_source_ids", NULL,
+          choices = if (nrow(docs) > 0L)
+            setNames(as.character(docs$id), docs$name)
+          else character())
+      ),
+      shiny::checkboxInput("split_include_codings",
+        "Include existing codings", value = FALSE),
+      shiny::div(
+        class = "mt-3",
+        shiny::downloadButton("dl_split", "Download split project (.duckdb)",
+          class = "btn-primary btn-sm")
+      )
+    )
+  })
+
+  # ── Merge state + observers ───────────────────────────────────────────────────
+  merge_preview_rv <- shiny::reactiveVal(NULL)
+
+  output$merge_preview_ui <- shiny::renderUI({
+    preview <- merge_preview_rv()
+    if (is.null(preview)) return(NULL)
+    if (!is.null(preview$error)) {
+      return(shiny::div(class = "alert alert-danger mt-2",
+        shiny::icon("circle-exclamation"), " ", preview$error))
+    }
+    shiny::tagList(
+      shiny::hr(),
+      shiny::tags$p(shiny::strong("Contributor file contains:")),
+      shiny::tags$ul(
+        shiny::tags$li(preview$n_codes,  " codes"),
+        shiny::tags$li(preview$n_srcs,   " documents"),
+        shiny::tags$li(preview$n_cods,   " codings"),
+        shiny::tags$li(preview$n_themes, " themes"),
+        shiny::tags$li(preview$n_memos,  " memos")
+      ),
+      shiny::radioButtons("merge_on_conflict", "On duplicate codings",
+        choices  = c("Skip existing" = "skip", "Replace existing" = "replace"),
+        selected = "skip", inline = TRUE),
+      shiny::actionButton("btn_merge_confirm", "Merge into project",
+        class = "btn-primary btn-sm mt-1")
+    )
+  })
+
+  shiny::observeEvent(input$btn_merge_preview, {
+    shiny::req(input$merge_file)
+    path <- input$merge_file$datapath
+    tryCatch({
+      con_b <- DBI::dbConnect(duckdb::duckdb(), dbdir = path, read_only = TRUE)
+      on.exit(try(DBI::dbDisconnect(con_b, shutdown = TRUE), silent = TRUE))
+      merge_preview_rv(list(
+        path     = path,
+        n_codes  = .query(con_b, "SELECT COUNT(*) AS n FROM codes  WHERE status = 1")$n,
+        n_srcs   = .query(con_b, "SELECT COUNT(*) AS n FROM sources WHERE status = 1")$n,
+        n_cods   = .query(con_b, "SELECT COUNT(*) AS n FROM codings WHERE status = 1")$n,
+        n_themes = .query(con_b, "SELECT COUNT(*) AS n FROM themes  WHERE status = 1")$n,
+        n_memos  = .query(con_b,
+          "SELECT COUNT(*) AS n FROM project_memos WHERE status = 1")$n
+      ))
+    }, error = function(e) {
+      merge_preview_rv(list(error = conditionMessage(e)))
+    })
+  })
+
+  shiny::observeEvent(input$btn_merge_confirm, {
+    preview <- merge_preview_rv()
+    shiny::req(preview, is.null(preview$error))
+    tryCatch({
+      result <- qc_merge_project(
+        rv$project, preview$path,
+        on_conflict = input$merge_on_conflict %||% "skip"
+      )
+      shiny::removeModal()
+      merge_preview_rv(NULL)
+      rv$refresh_codes <- rv$refresh_codes + 1L
+      rv$refresh_docs  <- rv$refresh_docs  + 1L
+      shiny::showNotification(paste0(
+        "Merge complete — ",
+        result$codings_added, " coding(s), ",
+        result$codes_added,   " code(s), ",
+        result$sources_added, " document(s) added; ",
+        result$codings_skip,  " duplicate(s) skipped."
+      ), type = "message", duration = 8)
+    }, error = function(e) {
+      shiny::showNotification(conditionMessage(e), type = "error", duration = NULL)
+    })
+  })
+
   shiny::observeEvent(input$btn_project_info, {
+    merge_preview_rv(NULL)
     info <- qc_project_info(rv$project)
     shiny::showModal(shiny::modalDialog(
-      title      = "Project Info",
+      title      = "Project",
+      size       = "l",
       `aria-modal` = "true",
-      shiny::tags$dl(
-        shiny::tags$dt("Name"),  shiny::tags$dd(info$name),
-        shiny::tags$dt("Owner"), shiny::tags$dd(info$owner),
-        shiny::tags$dt("Path"),  shiny::tags$dd(rv$project$path),
-        shiny::tags$dt("Memo"),  shiny::tags$dd(info$memo)
-      ),
-      easyClose = TRUE,
-      footer    = shiny::modalButton("Close")
+      easyClose  = TRUE,
+      footer     = shiny::modalButton("Close"),
+      shiny::tabsetPanel(
+        shiny::tabPanel("Info",
+          shiny::tags$dl(
+            class = "mt-3",
+            shiny::tags$dt("Name"),  shiny::tags$dd(info$name),
+            shiny::tags$dt("Owner"), shiny::tags$dd(info$owner),
+            shiny::tags$dt("Path"),  shiny::tags$dd(rv$project$path),
+            shiny::tags$dt("Memo"),  shiny::tags$dd(info$memo)
+          )
+        ),
+        shiny::tabPanel("Split",
+          shiny::div(class = "mt-3", shiny::uiOutput("split_docs_ui"))
+        ),
+        shiny::tabPanel("Merge",
+          shiny::div(
+            class = "mt-3",
+            shiny::fileInput("merge_file",
+              "Contributor project file (.duckdb)",
+              accept = ".duckdb", width = "100%"),
+            shiny::actionButton("btn_merge_preview", "Preview",
+              class = "btn-secondary btn-sm"),
+            shiny::uiOutput("merge_preview_ui")
+          )
+        )
+      )
     ))
   })
 }
@@ -373,13 +517,16 @@ saturate_server <- function(input, output, session, project) {
 #'     \item{`accent`}{Accent colour used in charts and sparklines.}
 #'     \item{`custom_css`}{A raw CSS string appended last — override anything.}
 #'   }
+#' @param max_upload_mb Integer. Maximum file size (MB) accepted by the Merge
+#'   file-upload input (default: 500 MB).
 #' @param ... Additional arguments passed to [shiny::runApp()].
 #'
 #' @return Called for its side effect; does not return normally.
 #' @export
-shiny_saturate <- function(project, brand = NULL, ...) {
+shiny_saturate <- function(project, brand = NULL, max_upload_mb = 500L, ...) {
   assert_class(project, "qc_project")
   assert_con(project$con)
+  options(shiny.maxRequestSize = max_upload_mb * 1024^2)
 
   app_name  <- (brand$name %||% "saturate")
   brand_css <- .build_brand_css(brand)

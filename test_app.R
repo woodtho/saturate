@@ -221,5 +221,6 @@ cat("\n--- Summary ---\n"); print(qc_code_summary(proj))
 # ── 8. Launch GUI ─────────────────────────────────────────────────────────────
 
 proj <- qc_open("test_study.duckdb")
+proj <- qc_open("C:/Users/aThom/Downloads/Firm_Innovation_Study_split_2026-04-23.duckdb")
 devtools::load_all()
 shiny_saturate(proj)

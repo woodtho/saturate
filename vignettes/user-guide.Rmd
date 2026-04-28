@@ -17,47 +17,6 @@ knitr::opts_chunk$set(
 
 *Qualitative Data Analysis for R* — Version 1.0
 
----
-
-## Table of Contents
-
-- [Part 1 — Getting Started](#part-1--getting-started)
-  - [Chapter 1: What Is saturate?](#chapter-1-what-is-saturate)
-  - [Chapter 2: Installation](#chapter-2-installation)
-  - [Chapter 3: Creating and Managing Projects](#chapter-3-creating-and-managing-projects)
-  - [Chapter 4: The saturate Interface](#chapter-4-the-saturate-interface)
-  - [Chapter 5: Settings and Profiles](#chapter-5-settings-and-profiles)
-- [Part 2 — Building Your Dataset](#part-2--building-your-dataset)
-  - [Chapter 6: The Documents Tab](#chapter-6-the-documents-tab)
-  - [Chapter 7: The Cases Tab](#chapter-7-the-cases-tab)
-- [Part 3 — Coding](#part-3--coding)
-  - [Chapter 8: The Codebook Tab](#chapter-8-the-codebook-tab)
-  - [Chapter 9: The Coding Tab](#chapter-9-the-coding-tab)
-  - [Chapter 10: Auto-Coding (R API)](#chapter-10-auto-coding-r-api)
-- [Part 4 — Analysis](#part-4--analysis)
-  - [Chapter 11: The Compare Tab](#chapter-11-the-compare-tab)
-  - [Chapter 12: The Themes Tab](#chapter-12-the-themes-tab)
-  - [Chapter 13: The Query Tab](#chapter-13-the-query-tab)
-  - [Chapter 14: Saturation Analysis (R API)](#chapter-14-saturation-analysis-r-api)
-- [Part 5 — Quality and Output](#part-5--quality-and-output)
-  - [Chapter 15: The Members Tab](#chapter-15-the-members-tab)
-  - [Chapter 16: The Journal Tab](#chapter-16-the-journal-tab)
-  - [Chapter 17: The Export Tab](#chapter-17-the-export-tab)
-  - [Chapter 18: The Audit Tab](#chapter-18-the-audit-tab)
-  - [Chapter 19: The Help Tab](#chapter-19-the-help-tab)
-- [Part 6 — R API Reference](#part-6--r-api-reference)
-  - [Chapter 20: Core Project Functions](#chapter-20-core-project-functions)
-  - [Chapter 21: Documents and Codings](#chapter-21-documents-and-codings)
-  - [Chapter 22: Analysis Functions](#chapter-22-analysis-functions)
-  - [Chapter 23: Cases, Memos, and Export](#chapter-23-cases-memos-and-export)
-- [Appendices](#appendices)
-  - [Appendix A: Glossary](#appendix-a-glossary)
-  - [Appendix B: Keyboard Shortcuts and Workflow Tips](#appendix-b-keyboard-shortcuts-and-workflow-tips)
-  - [Appendix C: Troubleshooting](#appendix-c-troubleshooting)
-  - [Appendix D: Methodological Background](#appendix-d-methodological-background)
-
----
-
 # Part 1 — Getting Started
 
 ## Chapter 1: What Is saturate?
@@ -68,7 +27,7 @@ The name reflects a core concept in qualitative research: theoretical saturation
 
 ### Why saturate exists
 
-For many years, the most widely used free qualitative analysis tool in R was RQDA. It was archived by CRAN in 2021 because it depended on an outdated version of the GTK graphics library that could no longer be distributed reliably. Thousands of researchers who had built workflows around RQDA found themselves without a replacement that was free, open source, and integrated with R.
+For many years, the most widely used free qualitative analysis tool in R was RQDA. It was archived by CRAN because it depended on an outdated version of the GTK graphics library that could no longer be distributed reliably. This left a gap in the R ecosystem for qualitative researchers.
 
 saturate fills that gap. It stores all project data in a single DuckDB file, which is portable, fast, and requires no database server. The Shiny interface runs in your browser, so it looks and behaves consistently on Windows, macOS, and Linux. And because every operation is also available as an R function, you can automate imports, run reliability statistics, and integrate qualitative data with quantitative analyses in a single script.
 
@@ -199,7 +158,7 @@ When you launch `shiny_saturate(proj)`, the browser window opens to the **Docume
 
 **Settings** button: Opens the Settings panel.
 
-**Project** button: Displays project metadata (name, owner, document count, code count, coding count).
+**Project** button: Opens the Project panel, which has three tabs — **Info** (project metadata), **Split** (create a contributor copy for independent coding), and **Merge** (import a contributor's work back into the master). See Chapter 11.
 
 ### The profile gate
 
@@ -430,9 +389,125 @@ Review auto-codings after applying them — they are a scanning tool, not a subs
 
 ---
 
+## Chapter 11: Multi-Coder Workflows: Split and Merge
+
+### Overview
+
+saturate supports file-based collaboration: one researcher holds the **master** project file, creates **contributor copies** for team members, and consolidates everyone's work back into the master when analysis is complete. No shared server or network drive is required — files are exchanged by email, cloud storage, or any other file-transfer method.
+
+The workflow has three steps:
+
+1. **Split**: The lead researcher creates one contributor copy per team member — each a complete, self-contained `.duckdb` file — and distributes them.
+2. **Code**: Each team member opens their copy and codes independently, then returns the file.
+3. **Merge**: The lead researcher uploads each returned file. saturate adds any new codes, codings, themes, and memos to the master automatically, skipping items that are already there.
+
+### Splitting a project
+
+Click the **Project** button in the navbar and select the **Split** tab.
+
+**Documents to include:**
+
+- **All documents** — every active document is copied to the contributor file.
+- **Select documents** — choose specific documents from the list. Use this when you want Researcher B to code only a subset of documents for reliability checking.
+
+**Include existing codings:** If unchecked (the default), the contributor file contains only the codebook and documents — the coder starts fresh. Check this box only when the coder needs to continue or review existing work.
+
+Click **Download split project (.duckdb)**. Your browser saves a `.duckdb` file named after the project and today's date (e.g., `remote_wellbeing_split_2026-04-24.duckdb`). Send this file to the coder.
+
+Researcher A creates a contributor file for Researcher B containing Documents 3, 7, and 11 with **Include existing codings** unchecked — Researcher B will code those three documents independently, producing a separate set of codings for inter-rater reliability analysis.
+
+### What is in a contributor file
+
+The contributor file contains:
+
+- The complete codebook (all active codes, categories, hierarchies, code relations)
+- All cases and case attributes
+- All themes and theme-code links
+- The selected documents and their metadata
+- Existing codings only if **Include existing codings** was checked
+- Project name, owner, and settings
+
+What is **not** copied: member checks, codebook snapshots, and the project lock state.
+
+### Merging a contributor file
+
+When the coder returns their file, click the **Project** button and select the **Merge** tab.
+
+Click **Choose contributor file (.duckdb)** and upload the returned file. Then click **Preview**.
+
+saturate scans the contributor file and shows what would be imported before anything is changed:
+
+```
+Would import:
+ • 2 new codes
+ • 0 new documents
+ • 47 codings  (3 duplicates will be skipped)
+ • 0 new themes
+ • 1 new memo
+```
+
+Under **On conflict**, choose what happens if the same coding — matched on document, code, character range, and coder name — already exists in the master:
+
+- **Skip existing** (default): leave the master's version untouched.
+- **Replace existing**: soft-delete the master's version and insert the contributor's.
+
+Click **Merge into project** to confirm. A notification shows the final counts. The master project is updated immediately.
+
+### What gets merged
+
+| Data type | Merged? | How duplicates are detected |
+|---|---|---|
+| Codes | Yes — new codes only | Matched by name (case-insensitive) |
+| Code categories | Yes — new only | Matched by name |
+| Documents | Yes — new only | Matched by content hash, then by name |
+| Codings | Yes | Same document + code + start + end + coder |
+| Themes | Yes — new themes only | Matched by name |
+| Project memos | Yes — new only | Same content + author + type |
+| Member checks | **No** | Always kept in the master only |
+| Codebook snapshots | **No** | Not copied or merged |
+
+New codes that exist in the contributor file but not in the master are always added before codings are imported. This means a coder can introduce new codes in their file and those codes — along with any codings using them — will propagate into the master on merge.
+
+### Merging multiple contributor files
+
+Run the Merge step once per contributor file. Subsequent merges deduplicate correctly — if two contributors applied the same coding independently, it is added on the first merge and skipped on the second.
+
+### Using the R API
+
+```{r}
+# Split: create a contributor copy with Documents 3, 7, and 11
+contrib <- qc_split_project(
+  master,
+  path       = "~/collab/contrib_B_2026-04.duckdb",
+  source_ids = c(3L, 7L, 11L)
+)
+qc_close(contrib)
+
+# Merge: import the returned file into master
+result <- qc_merge_project(
+  master,
+  contributor_path = "~/collab/contrib_B_returned.duckdb"
+)
+result$codings_added  # new codings imported
+result$codings_skip   # duplicate codings skipped
+result$codes_added    # new codes propagated from contributor
+```
+
+To import codings from a specific coder only:
+
+```{r}
+qc_merge_project(
+  master,
+  contributor_path = "~/collab/contrib_B_returned.duckdb",
+  coders           = "Researcher B"
+)
+```
+
+---
+
 # Part 4 — Analysis
 
-## Chapter 11: The Compare Tab
+## Chapter 12: The Compare Tab
 
 ### What the Compare tab is for
 
@@ -467,7 +542,7 @@ Kappa values are colour-coded: green (> 0.61), yellow (0.41–0.60), red (< 0.40
 
 ---
 
-## Chapter 12: The Themes Tab
+## Chapter 13: The Themes Tab
 
 ### What a theme is
 
@@ -491,7 +566,7 @@ Click **Export themes report**. saturate generates a structured document with on
 
 ---
 
-## Chapter 13: The Query Tab
+## Chapter 14: The Query Tab
 
 The **Query** tab contains three panels: **Search**, **Triangulation**, and **Graph**.
 
@@ -523,7 +598,7 @@ Use the graph to identify clusters of related codes that may belong together in 
 
 ---
 
-## Chapter 14: Saturation Analysis (R API)
+## Chapter 15: Saturation Analysis (R API)
 
 Theoretical saturation is the point at which new data stops producing new codes. Demonstrating saturation is increasingly expected in published qualitative research.
 
@@ -540,7 +615,7 @@ Researcher A's curve flattens after document 9, providing empirical evidence of 
 
 # Part 5 — Quality and Output
 
-## Chapter 15: The Members Tab
+## Chapter 16: The Members Tab
 
 ### What member checking is
 
@@ -565,7 +640,7 @@ After sending the summary to the participant, click the member check row, enter 
 
 ---
 
-## Chapter 16: The Journal Tab
+## Chapter 17: The Journal Tab
 
 ### Why the journal matters
 
@@ -596,7 +671,7 @@ Use the type filter dropdown and the search box in the card header to find speci
 
 ---
 
-## Chapter 17: The Export Tab
+## Chapter 18: The Export Tab
 
 Navigate to the **Export** tab for all structured data export options:
 
@@ -608,7 +683,7 @@ Navigate to the **Export** tab for all structured data export options:
 
 ---
 
-## Chapter 18: The Audit Tab
+## Chapter 19: The Audit Tab
 
 ### What the audit log is
 
@@ -626,7 +701,7 @@ The table is sortable and filterable by timestamp, coder, operation type (create
 
 ---
 
-## Chapter 19: The Help Tab
+## Chapter 20: The Help Tab
 
 The **Help** tab contains built-in reference documentation organised by tab and feature area. Navigate to it at any time to look up how a specific feature works or what the expected input format is for a given field.
 
@@ -636,7 +711,7 @@ The **Help** tab contains built-in reference documentation organised by tab and 
 
 The R API gives you programmatic access to everything in the project database, enables automation and batch processing, and connects saturate's data to the full R ecosystem.
 
-## Chapter 20: Core Project Functions
+## Chapter 21: Core Project Functions
 
 ### `qc_new()` — Create a project
 
@@ -662,9 +737,50 @@ qc_close(proj)
 
 Always call this when you finish a session.
 
+### `qc_split_project()` — Create a contributor copy
+
+Creates a new standalone `.duckdb` file containing the codebook, cases, themes, and a subset (or all) of documents. The contributor file is completely independent — it can be coded offline and on a different computer.
+
+```{r}
+contrib <- qc_split_project(
+  proj,
+  path            = "~/collab/contrib_B.duckdb",
+  source_ids      = c(3L, 7L, 11L),  # NULL copies all documents
+  include_codings = FALSE,
+  overwrite       = FALSE
+)
+qc_close(contrib)
+```
+
+`source_ids` is a vector of document IDs from `qc_list_documents(proj)$id`. Pass `NULL` (the default) to include all active documents.
+
+Returns the new `qc_project` invisibly. Always close it with `qc_close()`.
+
+### `qc_merge_project()` — Import a contributor's work
+
+Reads new codes, documents, codings, themes, and memos from a contributor file and inserts them into the master. Existing items are identified by name or content hash and skipped, so the function is safe to run multiple times on the same file.
+
+```{r}
+result <- qc_merge_project(
+  proj,
+  contributor_path = "~/collab/contrib_B_returned.duckdb",
+  on_conflict      = "skip",   # or "replace"
+  coders           = NULL      # or character vector, e.g. c("Researcher B")
+)
+
+result$codes_added    # new codes inserted into master
+result$sources_added  # new documents inserted into master
+result$codings_added  # new codings inserted
+result$codings_skip   # duplicate codings skipped
+result$themes_added   # new themes inserted
+result$memos_added    # new journal entries inserted
+```
+
+`on_conflict = "replace"` soft-deletes any existing coding that matches on (document, code, start, end, coder) and re-inserts the contributor's version. Use this to update codings the contributor has revised.
+
 ---
 
-## Chapter 21: Documents and Codings
+## Chapter 22: Documents and Codings
 
 ### `qc_import_document()` — Import a document
 
@@ -734,7 +850,7 @@ qc_add_coding(
 ### `qc_list_codings()` — List codings
 
 ```{r}
-all_codings   <- qc_list_codings(proj)
+all_codings     <- qc_list_codings(proj)
 coder_a_codings <- qc_list_codings(proj, coder = "Researcher A")
 ```
 
@@ -775,7 +891,7 @@ qc_auto_code(
 
 ---
 
-## Chapter 22: Analysis Functions
+## Chapter 23: Analysis Functions
 
 ### `qc_code_cooccurrence()` — Code co-occurrence matrix
 
@@ -858,7 +974,7 @@ tri <- qc_triangulate(proj, attribute = "working_arrangement")
 
 ---
 
-## Chapter 23: Cases, Memos, and Export
+## Chapter 24: Cases, Memos, and Export
 
 ### `qc_add_case()` — Create a case
 
@@ -945,15 +1061,23 @@ qc_summary_report(
 
 **Cohen's kappa**: A statistic measuring inter-rater agreement, corrected for chance. Values: below 0.40 = poor; 0.41–0.60 = moderate; 0.61–0.80 = good; above 0.80 = very good.
 
+**Contributor file**: A copy of a project created with `qc_split_project()` and sent to a coder for independent analysis. The file is a complete, self-contained `.duckdb` database. New codes and codings added in this file can be merged back into the master.
+
 **Excerpt**: A specific passage of text with its associated code or codes.
 
 **Krippendorff's alpha**: A reliability coefficient handling multiple coders, missing data, and different measurement levels. Values above 0.80 are generally accepted.
 
+**Master file**: The central project file managed by the lead researcher. Contributor files are split from it and merged back into it after independent coding is complete.
+
 **Member check**: Returning a summary of your findings or interpretation to a participant for their feedback.
+
+**Merge**: Importing new codes, codings, themes, and memos from a contributor file into the master project. Existing items are matched and skipped; only genuinely new items are inserted. See Chapter 11.
 
 **Saturation**: The point at which new data stops producing new codes or insights.
 
 **selfirst / selast**: 1-based inclusive character positions of a coding. `substr(content, selfirst, selast)` extracts the coded passage.
+
+**Split**: Creating a standalone copy of a project for a coder to work in independently. The copy contains the full codebook and selected (or all) documents. See Chapter 11.
 
 **Theme**: A higher-level interpretive synthesis of multiple codes and categories — an analytical argument or finding.
 
@@ -976,6 +1100,8 @@ qc_summary_report(
 **Back up your `.duckdb` file before any bulk auto-code operation.** Auto-code creates many codings at once; if you apply the wrong pattern, restoring a backup is faster than removing hundreds of codings.
 
 **Keep attribute names consistent across cases.** `organisation` and `org` are treated as different variables.
+
+**When using split/merge, keep the master file closed while contributors are coding.** There is no requirement to do so, but editing the codebook in the master while a contributor has a copy can cause name conflicts on merge.
 
 ---
 
@@ -1009,27 +1135,15 @@ Supported extensions are `.txt`, `.docx`, `.pdf`, `.csv`. Convert `.doc`, `.odt`
 
 Stop the app (`Ctrl + C`), run `devtools::load_all()` if working from source, and relaunch with `shiny_saturate(proj)`. Try a different browser if the problem persists.
 
----
+### "Maximum upload size exceeded" when merging a contributor file
 
-## Appendix D: Methodological Background
+The default Shiny upload limit is 5 MB. Raise it by passing `max_upload_mb` to `shiny_saturate()`:
 
-saturate is method-agnostic. This appendix describes how its features map onto four widely used qualitative frameworks.
+```{r}
+shiny_saturate(proj, max_upload_mb = 500L)
+```
 
-### Grounded theory
-
-Grounded theory involves open coding (many provisional codes applied freely), axial coding (examining code relationships), and selective coding (identifying integrating core categories). saturate's code hierarchy accommodates axial relationships; the co-occurrence analysis surfaces code clusters; the saturation curve operationalises theoretical saturation directly. The audit log documents how your categories evolved — important for demonstrating theoretical sensitivity.
-
-### Thematic analysis
-
-Thematic analysis (Braun and Clarke) moves from initial codes to themes through review, definition, and naming. saturate's code hierarchy supports the distinction between granular initial codes and broader thematic groupings. The Themes tab is purpose-built for reviewing all excerpts relevant to a putative theme and deciding whether it holds together. The Journal tab is the natural home for the reflexive analytical memos that Braun and Clarke place at the centre of the method.
-
-### Framework analysis
-
-Framework analysis, developed for applied policy research, involves a matrix cross-tabulating cases against themes. saturate's Triangulation panel produces this matrix directly: select themes (codes or categories) and cross-tabulate against case attributes (organisations, roles, demographic groups). The Cases and Attributes system is designed precisely for the structured case comparison that framework analysis demands.
-
-### Interpretive Phenomenological Analysis (IPA)
-
-IPA focuses on detailed idiographic analysis of individual cases before moving to cross-case patterns. saturate supports this by allowing you to filter all views (Coding, Compare, Excerpts, Query) by individual document or case. Code each transcript independently, write case-specific memos in the Journal, then compare themes across cases in a second pass. The Members tab is particularly relevant to IPA, where returning interpretations to participants for their response is a recognised quality practice.
+The default when launching with `shiny_saturate()` is already 500 MB, so this error should not appear unless your project file is unusually large.
 
 ---
 
