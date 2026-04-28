@@ -1,4 +1,4 @@
-mod_codebook_ui <- function(id) {
+﻿mod_codebook_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_columns(
     col_widths = c(4, 8),
@@ -21,6 +21,7 @@ mod_codebook_ui <- function(id) {
           ))
         ),
         shiny::textInput(ns("code_name"),  "Name"),
+        shiny::uiOutput(ns("name_validation")),
         colourpicker::colourInput(ns("code_color"), "Colour",
                                   value = "#4E79A7", showColour = "both"),
         shiny::textAreaInput(ns("code_definition"), "Definition", rows = 3),
@@ -32,7 +33,7 @@ mod_codebook_ui <- function(id) {
           style = "margin-bottom:12px;",
           shiny::tags$summary(
             style = "cursor:pointer;font-size:0.82rem;color:var(--sat-text-muted);user-select:none;",
-            "Weight (optional)"
+            shiny::textOutput(ns("weight_summary"), inline = TRUE)
           ),
           shiny::div(
             style = "padding-top:8px;",
@@ -65,6 +66,10 @@ mod_codebook_ui <- function(id) {
           "Codebook",
           shiny::div(
             class = "d-flex gap-2 align-items-center",
+            shiny::actionButton(ns("btn_new_code_hdr"),
+                                shiny::icon("plus"),
+                                class = "btn-sm btn-outline-success",
+                                title = "New code — clear current selection"),
             shiny::actionButton(ns("btn_validate"), "Validate",
                                 class = "btn-sm btn-outline-info"),
             shiny::actionButton(ns("btn_snapshots"), "Snapshots",
@@ -93,10 +98,13 @@ mod_codebook_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    tbl_codes_proxy <- DT::dataTableProxy("tbl_codes")
+
     lv <- shiny::reactiveValues(
       selected_id   = NULL,
       selected_name = NULL,
-      review_segs   = NULL
+      review_segs   = NULL,
+      name_error    = NULL
     )
 
     # ── Data reactives ────────────────────────────────────────────────────
@@ -135,6 +143,27 @@ mod_codebook_server <- function(id, rv) {
         )
       )
     })
+
+    output$weight_summary <- shiny::renderText({
+      if (!isTRUE(input$weight_enabled)) return("Weight (optional)")
+      wt <- input$code_weight
+      if (is.null(wt)) return("Weight (optional)")
+      paste0("Weight: ", wt)
+    })
+
+    output$name_validation <- shiny::renderUI({
+      msg <- lv$name_error
+      if (is.null(msg)) return(NULL)
+      shiny::div(
+        class = "text-danger",
+        style = "font-size:0.8rem;margin-top:-6px;margin-bottom:6px;",
+        msg
+      )
+    })
+
+    shiny::observeEvent(input$code_name, {
+      lv$name_error <- NULL
+    }, ignoreNULL = FALSE)
 
     # ── Form header ───────────────────────────────────────────────────────
 
@@ -247,13 +276,22 @@ mod_codebook_server <- function(id, rv) {
     # ── Add code ──────────────────────────────────────────────────────────
 
     shiny::observeEvent(input$btn_add_code, {
-      shiny::req(nchar(trimws(input$code_name)) > 0)
+      nm <- trimws(input$code_name %||% "")
+      if (nchar(nm) == 0L) {
+        lv$name_error <- "Name is required."
+        return()
+      }
+      if (tolower(nm) %in% tolower(codes()$name)) {
+        lv$name_error <- paste0("'", nm, "' already exists.")
+        return()
+      }
+      lv$name_error <- NULL
       wt <- if (isTRUE(input$weight_enabled)) input$code_weight %||% NULL else NULL
       wd <- if (isTRUE(input$weight_enabled))
         trimws(input$code_weight_desc %||% "") else ""
       tryCatch({
         qc_add_code(rv$project,
-                    name               = trimws(input$code_name),
+                    name               = nm,
                     color              = input$code_color,
                     definition         = input$code_definition,
                     criteria           = input$code_criteria,
@@ -270,13 +308,24 @@ mod_codebook_server <- function(id, rv) {
     # ── Save edits ────────────────────────────────────────────────────────
 
     shiny::observeEvent(input$btn_save_code, {
-      shiny::req(lv$selected_id, nchar(trimws(input$code_name)) > 0)
+      shiny::req(lv$selected_id)
+      nm <- trimws(input$code_name %||% "")
+      if (nchar(nm) == 0L) {
+        lv$name_error <- "Name is required."
+        return()
+      }
+      existing_lower <- tolower(codes()$name[codes()$id != lv$selected_id])
+      if (tolower(nm) %in% existing_lower) {
+        lv$name_error <- paste0("'", nm, "' already exists.")
+        return()
+      }
+      lv$name_error <- NULL
       wt <- if (isTRUE(input$weight_enabled)) input$code_weight %||% NA else NA
       wd <- if (isTRUE(input$weight_enabled))
         trimws(input$code_weight_desc %||% "") else ""
       tryCatch({
         qc_update_code(rv$project, lv$selected_id,
-                       name               = trimws(input$code_name),
+                       name               = nm,
                        color              = input$code_color,
                        definition         = input$code_definition,
                        criteria           = input$code_criteria,
@@ -292,12 +341,23 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
+    # ── New / clear selection ─────────────────────────────────────────────
+
+    shiny::observeEvent(input$btn_new_code_hdr, {
+      lv$selected_id   <- NULL
+      lv$selected_name <- NULL
+      lv$name_error    <- NULL
+      .reset_form(session)
+      DT::selectRows(tbl_codes_proxy, NULL)
+    })
+
     # ── Cancel edit ───────────────────────────────────────────────────────
 
     shiny::observeEvent(input$btn_cancel_edit, {
       lv$selected_id   <- NULL
       lv$selected_name <- NULL
       .reset_form(session)
+      DT::selectRows(tbl_codes_proxy, NULL)
     })
 
     # ── View history modal ────────────────────────────────────────────────
@@ -408,10 +468,13 @@ mod_codebook_server <- function(id, rv) {
           "No other codes to merge into.", type = "warning")
         return()
       }
+      n_segs <- codes()$n_codings[codes()$id == lv$selected_id]
+      n_segs <- if (length(n_segs) == 0L || is.na(n_segs[[1L]])) 0L else as.integer(n_segs[[1L]])
       shiny::showModal(shiny::modalDialog(
         title = paste0('Merge "', lv$selected_name, '" into another code'),
         shiny::p(paste0(
-          'All passages tagged as "', lv$selected_name, '" will move to ',
+          n_segs, if (n_segs == 1L) ' passage' else ' passages',
+          ' tagged as "', lv$selected_name, '" will move to ',
           'the target code. "', lv$selected_name, '" will then be deleted. ',
           'This cannot be undone.'
         )),
@@ -447,12 +510,15 @@ mod_codebook_server <- function(id, rv) {
 
     shiny::observeEvent(input$btn_split, {
       shiny::req(lv$selected_id)
+      n_segs <- codes()$n_codings[codes()$id == lv$selected_id]
+      n_segs <- if (length(n_segs) == 0L || is.na(n_segs[[1L]])) 0L else as.integer(n_segs[[1L]])
       shiny::showModal(shiny::modalDialog(
         title = paste0('Split "', lv$selected_name, '" into new codes'),
         shiny::p(paste0(
-          'Two new codes will be created. "', lv$selected_name, '" is kept ',
-          'intact — use "Review Codings" to reassign its passages to the ',
-          'new codes, then delete it when done.'
+          'Two new codes will be created. "', lv$selected_name, '" (',
+          n_segs, if (n_segs == 1L) ' passage' else ' passages',
+          ') is kept intact — use "Review Codings" to reassign its passages ',
+          'to the new codes, then delete it when done.'
         )),
         shiny::textInput(ns("split_name1"), "New code 1 name"),
         shiny::textInput(ns("split_name2"), "New code 2 name"),

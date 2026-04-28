@@ -45,7 +45,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       bslib::nav_panel("Query",     mod_query_ui("query")),
       bslib::nav_panel("Cases",     mod_cases_ui("cases")),
       bslib::nav_panel("Journal",   mod_memos_ui("memos")),
-      bslib::nav_panel("Members",   mod_member_check_ui("members")),
+      bslib::nav_panel("Member Checks", mod_member_check_ui("members")),
       bslib::nav_panel("Export",    mod_export_ui("export")),
       bslib::nav_panel("Audit",     mod_audit_ui("audit")),
       bslib::nav_panel("Help",      mod_help_ui("help")),
@@ -60,32 +60,36 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
             class = "qc-coder-block",
             shiny::tags$label(
               "CODING AS",
-              `for`  = "current_coder",
+              `for`  = "current_coder-selectized",
               class  = "qc-coder-label",
               id     = "lbl-current-coder"
             ),
-            shiny::textInput(
+            shiny::selectizeInput(
               "current_coder",
-              label       = NULL,
-              value       = default_coder,
-              placeholder = "Coder name…",
-              width       = "160px"
-            ),
-            shiny::uiOutput("coder_suggestions_ui", inline = TRUE),
-            shiny::tags$script(
-              'setTimeout(function(){
-                 var e = document.getElementById("current_coder");
-                 if (e) {
-                   e.setAttribute("list", "coder_sugg");
-                   e.setAttribute("aria-label", "Current coder name");
-                   e.setAttribute("autocomplete", "off");
-                 }
-               }, 250);'
+              label   = NULL,
+              choices = default_coder,
+              selected = default_coder,
+              width   = "160px",
+              options = list(
+                create         = TRUE,
+                createOnBlur   = TRUE,
+                persist        = FALSE,
+                placeholder    = "Coder name…",
+                selectOnTab    = TRUE,
+                openOnFocus    = TRUE
+              )
             )
           ),
 
           # ── Blind mode toggle ─────────────────────────────────────────────
           shiny::uiOutput("ui_blind_btn", inline = TRUE),
+
+          shiny::actionButton("btn_help_modal",
+            shiny::icon("circle-question"),
+            class = "btn-sm btn-outline-light qc-navbar-help",
+            title = "Help",
+            `aria-label` = "Open help reference"
+          ),
 
           shiny::actionButton("btn_settings",
             shiny::tagList(shiny::icon("gear"), "Settings"),
@@ -159,7 +163,8 @@ saturate_server <- function(input, output, session, project) {
     active_source_id = NULL,
     current_coder    = default_coder,
     profile_state    = NULL,
-    blind_mode       = FALSE
+    blind_mode       = FALSE,
+    colorblind_mode  = FALSE
   )
 
   shiny::observeEvent(input$profile_state, {
@@ -192,7 +197,7 @@ saturate_server <- function(input, output, session, project) {
     coder <- .profile_payload_name(input$profile_selected)
     if (nchar(coder) == 0L) return()
     rv$current_coder <- coder
-    shiny::updateTextInput(session, "current_coder", value = coder)
+    shiny::updateSelectizeInput(session, "current_coder", selected = coder)
     tryCatch({
       .db_upsert_profile(rv$project, coder)
       .db_touch_profile(rv$project, coder)
@@ -205,16 +210,16 @@ saturate_server <- function(input, output, session, project) {
     rv$current_coder <- coder
   }, ignoreInit = TRUE)
 
-  output$coder_suggestions_ui <- shiny::renderUI({
+  shiny::observe({
     rv$refresh_codes
     coders     <- tryCatch(qc_list_coders(rv$project)$coder,
                            error = function(e) character())
     profiles   <- .profile_state_names(rv$profile_state, character())
     all_coders <- unique(c(rv$current_coder %||% default_coder, profiles, coders))
     all_coders <- all_coders[!is.na(all_coders) & nzchar(all_coders)]
-    shiny::tags$datalist(
-      id = "coder_sugg",
-      lapply(all_coders, function(x) shiny::tags$option(value = x))
+    shiny::updateSelectizeInput(session, "current_coder",
+      choices  = all_coders,
+      selected = rv$current_coder %||% default_coder
     )
   })
 
@@ -323,6 +328,12 @@ saturate_server <- function(input, output, session, project) {
   shiny::observeEvent(input$btn_profile_signout, {
     session$sendCustomMessage("qc_profile_action", list(action = "logout"))
     shiny::removeModal()
+  })
+
+  shiny::observeEvent(input$btn_help_modal, {
+    shinyjs::runjs(
+      "$('.navbar-nav .nav-link').filter(function(){ return $(this).text().trim()==='Help'; }).click();"
+    )
   })
 
   mod_documents_server("docs",       rv)

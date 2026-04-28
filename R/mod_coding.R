@@ -1,4 +1,4 @@
-mod_coding_ui <- function(id) {
+﻿mod_coding_ui <- function(id) {
   ns       <- shiny::NS(id)
   js_file  <- system.file("app", "coding.js",  package = "saturate")
   shiny::tagList(
@@ -196,12 +196,13 @@ mod_coding_server <- function(id, rv, parent_session) {
     session$sendCustomMessage("qc_set_ns", list(ns_prefix = ns("")))
 
     lv <- shiny::reactiveValues(
-      nav_targets       = NULL,  # tibble(start, end, text) of uncoded segments
-      nav_cursor        = 0L,    # current position in nav_targets
-      highlight_op      = 0.33,
-      cb_mode           = FALSE,
-      pending_sel       = NULL,  # code id to pre-select after next refresh
-      editing_excerpt_id = NULL
+      nav_targets        = NULL,  # tibble(start, end, text) of uncoded segments
+      nav_cursor         = 0L,    # current position in nav_targets
+      highlight_op       = 0.33,
+      cb_mode            = FALSE,
+      pending_sel        = NULL,  # code id to pre-select after next refresh
+      editing_excerpt_id = NULL,
+      last_coding_id     = NULL
     )
 
     shiny::observeEvent(rv$profile_state, {
@@ -509,7 +510,7 @@ mod_coding_server <- function(id, rv, parent_session) {
         conf_raw <- input$confidence
         conf     <- if (!is.null(conf_raw) && nchar(conf_raw) > 0L)
                       as.integer(conf_raw) else NULL
-        qc_add_coding(
+        new_coding <- qc_add_coding(
           project    = rv$project,
           source_id  = rv$active_source_id,
           code_id    = as.integer(input$sel_code),
@@ -519,9 +520,22 @@ mod_coding_server <- function(id, rv, parent_session) {
           coder      = rv$current_coder %||% "default",
           confidence = conf
         )
-        rv$refresh_codes <- rv$refresh_codes + 1L
+        lv$last_coding_id <- new_coding$id
+        rv$refresh_codes  <- rv$refresh_codes + 1L
         shinyjs::reset("seg_memo")
-        shiny::updateSelectInput(session, "confidence", selected = "")
+        codes_now <- shiny::isolate(codes_rv())
+        code_nm <- codes_now$name[codes_now$id == as.integer(input$sel_code)]
+        code_nm <- if (length(code_nm) > 0L) code_nm[[1L]] else "code"
+        shiny::showNotification(
+          shiny::tagList(
+            shiny::span(paste0('"', code_nm, '" applied')),
+            shiny::actionLink(ns("undo_last_apply"), " Undo",
+              style = "color:inherit;text-decoration:underline;cursor:pointer;margin-left:8px;")
+          ),
+          duration = 4,
+          type     = "message",
+          id       = ns("apply_toast")
+        )
       }, error = function(e) {
         shiny::showNotification(conditionMessage(e), type = "error")
       })
@@ -529,6 +543,19 @@ mod_coding_server <- function(id, rv, parent_session) {
 
     shiny::observeEvent(input$btn_apply,    .do_apply())
     shiny::observeEvent(input$hotkey_apply, .do_apply())
+
+    shiny::observeEvent(input$undo_last_apply, {
+      shiny::req(!is.null(lv$last_coding_id))
+      tryCatch({
+        qc_delete_coding(rv$project, lv$last_coding_id)
+        rv$refresh_codes  <- rv$refresh_codes + 1L
+        lv$last_coding_id <- NULL
+        shiny::removeNotification(ns("apply_toast"))
+        shiny::showNotification("Coding removed.", type = "message", duration = 2)
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
 
     # ── Digit hotkey: select Nth code and apply immediately ────────────────────
 
@@ -631,8 +658,15 @@ mod_coding_server <- function(id, rv, parent_session) {
       lv$highlight_op <- input$highlight_opacity
     })
     shiny::observeEvent(input$cb_mode, {
-      lv$cb_mode <- isTRUE(input$cb_mode)
+      lv$cb_mode          <- isTRUE(input$cb_mode)
+      rv$colorblind_mode  <- isTRUE(input$cb_mode)
     })
+
+    shiny::observeEvent(rv$colorblind_mode, {
+      lv$cb_mode <- isTRUE(rv$colorblind_mode)
+      shiny::updateCheckboxInput(session, "cb_mode",
+                                 value = isTRUE(rv$colorblind_mode))
+    }, ignoreInit = TRUE)
 
     # ── Keyboard shortcuts help modal ──────────────────────────────────────────
 
@@ -714,8 +748,8 @@ mod_coding_server <- function(id, rv, parent_session) {
         # Disambiguation: multiple codings overlap at the clicked point
         choices <- stats::setNames(
           relevant$id,
-          paste0(relevant$code_name, ' — “',
-                 substr(relevant$seltext, 1L, 50L), '”')
+          paste0(relevant$code_name, ' — "',
+                 substr(relevant$seltext, 1L, 50L), '"')
         )
         lv$disambiguation <- relevant
         shiny::showModal(shiny::modalDialog(

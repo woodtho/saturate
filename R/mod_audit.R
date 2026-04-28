@@ -65,6 +65,7 @@ mod_audit_ui <- function(id) {
 
     # ── Summary badges ────────────────────────────────────────────────────────
     shiny::uiOutput(ns("summary_badges")),
+    shiny::uiOutput(ns("filter_summary")),
 
     # ── Unified audit table ───────────────────────────────────────────────────
     bslib::card(
@@ -212,6 +213,38 @@ mod_audit_server <- function(id, rv) {
         lapply(badges, function(b)
           shiny::tags$span(class = "badge bg-secondary", b)
         )
+      )
+    })
+
+    # ── Filter summary bar ────────────────────────────────────────────────
+
+    output$filter_summary <- shiny::renderUI({
+      df <- audit_rv()
+      n  <- nrow(df)
+      if (n == 0L) return(NULL)
+
+      type_lbl <- switch(input$filter_type %||% "all",
+        "all"    = "all types",
+        "coding" = "coding events",
+        "code"   = "code events",
+        "all types"
+      )
+      op_lbl <- if (nchar(input$filter_op %||% "") > 0L)
+        paste0(" · ", input$filter_op) else ""
+
+      date_parts <- character(0)
+      if (!is.null(input$filter_from) && !is.na(input$filter_from))
+        date_parts <- c(date_parts, paste0("from ", format(input$filter_from, "%d %b %Y")))
+      if (!is.null(input$filter_to) && !is.na(input$filter_to))
+        date_parts <- c(date_parts, paste0("to ", format(input$filter_to, "%d %b %Y")))
+      date_lbl <- if (length(date_parts) > 0L)
+        paste0(" · ", paste(date_parts, collapse = " ")) else ""
+
+      shiny::div(
+        class = "text-muted mb-2",
+        style = "font-size:0.82rem;",
+        paste0("Showing ", n, " event", if (n != 1L) "s" else "",
+               " · ", type_lbl, op_lbl, date_lbl)
       )
     })
 
