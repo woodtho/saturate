@@ -142,8 +142,12 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       class = "qc-profile-panel",
       shiny::div(
         class = "qc-profile-brand",
-        shiny::span(class = "qc-profile-mark", "s"),
-        shiny::span("saturate")
+        shiny::tags$img(
+          src   = "saturate-assets/logo.png",
+          height = "60",
+          alt   = "saturate",
+          style = "display:block;margin:0 auto 1rem;"
+        )
       ),
       shiny::h1(id = "qc-profile-title", "Choose a profile"),
       shiny::p(
