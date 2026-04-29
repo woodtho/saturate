@@ -1153,9 +1153,11 @@ table.dataTable tbody tr {
 table.dataTable tbody tr:hover > td {
   background-color: var(--sat-hover-bg) !important;
 }
-table.dataTable tbody tr.selected > td {
+table.dataTable tbody tr.selected > td,
+table.dataTable tbody tr.selected > td.sorting_1 {
   background-color: var(--sat-selected-bg) !important;
   color: var(--sat-selected-fg) !important;
+  box-shadow: none !important;
 }
 
 .dataTables_wrapper .dataTables_filter input {

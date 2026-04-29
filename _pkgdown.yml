@@ -1,9 +1,10 @@
-url: ~
+url: https://thomaswood.github.io/saturate
 
 template:
   bootstrap: 5
   bslib:
-    primary: "#2d6a9f"
+    primary: "#1D3D35"
+    link-color: "#3E8C7A"
     base_font: {google: "Inter"}
     heading_font: {google: "Inter"}
     code_font: {google: "JetBrains Mono"}
@@ -22,7 +23,7 @@ navbar:
   components:
     github:
       icon: fab fa-github
-      href: https://github.com/your-org/saturate
+      href: https://github.com/thomaswood/saturate
       aria-label: GitHub
 
 articles:
@@ -45,8 +46,14 @@ reference:
       - qc_get_version
       - qc_list_versions
       - qc_restore_version
+
+  - title: "Multi-coder collaboration"
+    desc: "Split a project for independent coders, then merge results back."
+    contents:
+      - qc_split_project
+      - qc_merge_project
       - qc_list_coders
-      - saturate-package
+      - qc_list_profiles
 
   - title: "Documents"
     desc: "Import and manage source documents."
@@ -214,7 +221,6 @@ reference:
   - title: "Shiny GUI"
     desc: "Launch the interactive browser-based interface."
     contents:
-      - shiny_saturate
       - shiny_saturate
 
   - title: "Utilities"

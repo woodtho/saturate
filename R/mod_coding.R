@@ -13,9 +13,19 @@
         bslib::card_header(
           shiny::div(
             class = "d-flex justify-content-between align-items-center w-100",
-            shiny::textOutput(ns("doc_title")),
             shiny::div(
-              class = "d-flex gap-1 flex-shrink-0align-items-center",
+              class = "flex-grow-1 me-2",
+              style = "min-width:0;",
+              shiny::selectizeInput(
+                ns("open_doc"),
+                label   = NULL,
+                choices = character(0),
+                width   = "100%",
+                options = list(placeholder = "Open document…")
+              )
+            ),
+            shiny::div(
+              class = "d-flex gap-1 flex-shrink-0 align-items-center",
               shiny::div(
                 class = "form-check form-switch d-flex align-items-center gap-1 me-1",
                 style = "margin-bottom:0;",
@@ -216,6 +226,29 @@ mod_coding_server <- function(id, rv, parent_session) {
 
     # ── Core reactives ─────────────────────────────────────────────────────────
 
+    docs_rv <- shiny::reactive({
+      rv$refresh_docs
+      qc_list_documents(rv$project)
+    })
+
+    shiny::observe({
+      docs <- docs_rv()
+      choices <- stats::setNames(as.character(docs$id), docs$name)
+      shiny::updateSelectizeInput(session, "open_doc", choices = choices,
+        selected = if (!is.null(rv$active_source_id)) as.character(rv$active_source_id) else character(0))
+    })
+
+    shiny::observeEvent(rv$active_source_id, {
+      shiny::updateSelectizeInput(session, "open_doc",
+        selected = if (!is.null(rv$active_source_id)) as.character(rv$active_source_id) else character(0))
+    }, ignoreNULL = FALSE)
+
+    shiny::observeEvent(input$open_doc, {
+      id <- suppressWarnings(as.integer(input$open_doc))
+      if (!is.na(id) && !identical(rv$active_source_id, id))
+        rv$active_source_id <- id
+    }, ignoreInit = TRUE, ignoreNULL = TRUE)
+
     codes_rv <- shiny::reactive({
       rv$refresh_codes
       qc_list_codes(rv$project)
@@ -263,10 +296,7 @@ mod_coding_server <- function(id, rv, parent_session) {
 
     # ── Output rendering ───────────────────────────────────────────────────────
 
-    output$doc_title <- shiny::renderText({
-      shiny::req(doc_rv())
-      doc_rv()$name
-    })
+
 
     search_rv <- shiny::reactive({
       pattern <- trimws(input$doc_search %||% "")
