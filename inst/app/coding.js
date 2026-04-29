@@ -383,7 +383,7 @@
     if (playBtn)  playBtn.disabled  = !_tts.supported || !hasText;
     if (pauseBtn) {
       pauseBtn.disabled    = !_tts.supported || !_tts.isSpeaking;
-      pauseBtn.textContent = _tts.isPaused ? '▶ Resume' : '⏸';
+      pauseBtn.textContent = _tts.isPaused ? '▶' : '⏸';
       pauseBtn.title       = _tts.isPaused ? 'Resume the current narration' : 'Pause the current narration';
       pauseBtn.setAttribute('aria-label', _tts.isPaused ? 'Resume narration' : 'Pause narration');
     }

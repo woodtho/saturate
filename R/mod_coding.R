@@ -101,7 +101,7 @@
         shiny::uiOutput(ns("text_display")),
         bslib::card_footer(
           shiny::div(
-            class = "qc-tts-controls d-flex gap-2 align-items-center",
+            class = "qc-tts-controls d-flex gap-2 align-items-center justify-content-center",
             shiny::tags$button(
               id = ns("tts_play"),
               type = "button",
@@ -109,7 +109,7 @@
               `aria-label` = "Read aloud",
               title = "Read selected text, or read the whole document",
               `data-qc-tts-action` = "play",
-              "▶ Read"
+              "▶"
             ),
             shiny::tags$button(
               id = ns("tts_pause"),
