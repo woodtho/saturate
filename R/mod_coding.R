@@ -103,23 +103,13 @@
           shiny::div(
             class = "qc-tts-controls d-flex gap-2 align-items-center justify-content-center",
             shiny::tags$button(
-              id = ns("tts_play"),
+              id = ns("tts_playpause"),
               type = "button",
               class = "btn btn-sm btn-outline-secondary",
               `aria-label` = "Read aloud",
-              title = "Read selected text, or read the whole document",
-              `data-qc-tts-action` = "play",
-              "▶"
-            ),
-            shiny::tags$button(
-              id = ns("tts_pause"),
-              type = "button",
-              class = "btn btn-sm btn-outline-secondary",
-              `aria-label` = "Pause narration",
-              title = "Pause the current narration",
-              `data-qc-tts-action` = "pause",
-              disabled = "disabled",
-              "⏸"
+              title = "Read aloud (or pause/resume)",
+              `data-qc-tts-action` = "playpause",
+              "⏯"
             ),
             shiny::tags$button(
               id = ns("tts_stop"),

@@ -374,20 +374,19 @@
 
   function _syncTtsControls() {
     if (!window._qc_ns) return;
-    var playBtn  = document.getElementById(window._qc_ns + 'tts_play');
-    var pauseBtn = document.getElementById(window._qc_ns + 'tts_pause');
-    var stopBtn  = document.getElementById(window._qc_ns + 'tts_stop');
+    var ppBtn   = document.getElementById(window._qc_ns + 'tts_playpause');
+    var stopBtn = document.getElementById(window._qc_ns + 'tts_stop');
     var container = _getTtsContainer();
     var hasText = !!_getDocumentSpeechText(container);
 
-    if (playBtn)  playBtn.disabled  = !_tts.supported || !hasText;
-    if (pauseBtn) {
-      pauseBtn.disabled    = !_tts.supported || !_tts.isSpeaking;
-      pauseBtn.textContent = _tts.isPaused ? '▶' : '⏸';
-      pauseBtn.title       = _tts.isPaused ? 'Resume the current narration' : 'Pause the current narration';
-      pauseBtn.setAttribute('aria-label', _tts.isPaused ? 'Resume narration' : 'Pause narration');
+    if (ppBtn) {
+      ppBtn.disabled = !_tts.supported || !hasText;
+      var label = _tts.isSpeaking && !_tts.isPaused ? 'Pause' :
+                  _tts.isPaused ? 'Resume' : 'Read aloud';
+      ppBtn.title = label;
+      ppBtn.setAttribute('aria-label', label);
     }
-    if (stopBtn)  stopBtn.disabled  = !_tts.supported || !_tts.isSpeaking;
+    if (stopBtn) stopBtn.disabled = !_tts.supported || !_tts.isSpeaking;
   }
 
   // ── Core TTS control ───────────────────────────────────────────────────────
@@ -645,9 +644,11 @@
     e.preventDefault();
     if (!window._qc_ns || (this.id && this.id.indexOf(window._qc_ns) !== 0)) return;
     switch (this.getAttribute('data-qc-tts-action')) {
-      case 'play':  _startTts();       break;
-      case 'pause': _toggleTtsPause(); break;
-      case 'stop':  _stopTts();        break;
+      case 'playpause':
+        if (!_tts.isSpeaking) { _startTts(); }
+        else { _toggleTtsPause(); }
+        break;
+      case 'stop': _stopTts(); break;
     }
   });
 
