@@ -1402,6 +1402,7 @@ fieldset legend {
   padding: 1.5rem 2rem;
   height: var(--sat-document-height);
   overflow-y: auto;
+  position: relative; /* anchors .qc-tts-needle */
   white-space: pre-wrap;
   word-break: break-word;
   background: var(--sat-white);
@@ -1485,6 +1486,35 @@ html[data-sat-theme="dark"] .qc-tts-active-line {
 html[data-sat-theme="contrast"] .qc-tts-active-line {
   background: var(--sat-hover-bg) !important;
   border-left-color: var(--sat-accent);
+}
+
+/* Thin horizontal needle — visible in both line and non-line modes.
+ * In line mode it spans the full line height; in free-text mode it's 2px. */
+.qc-tts-needle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--sat-accent);
+  opacity: .55;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 1px;
+  display: none;
+  transition: top .12s ease, height .1s ease;
+}
+.qc-tts-needle--line {
+  background: transparent;
+  border-left: 3px solid var(--sat-accent);
+  border-radius: 0;
+  opacity: .8;
+}
+html[data-sat-theme="dark"] .qc-tts-needle {
+  opacity: .7;
+}
+html[data-sat-theme="contrast"] .qc-tts-needle {
+  opacity: 1;
+  background: var(--sat-accent);
 }
 .qc-line-text {
   flex: 1;

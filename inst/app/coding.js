@@ -169,37 +169,104 @@
     return Math.min(lo, map.length - 1);
   }
 
-  // ── Reading cursor: highlight the .qc-line being spoken ───────────────────
+  // ── Reading cursor ─────────────────────────────────────────────────────────
+
+  // Returns (or creates) the needle <div> inside the container.
+  // The needle is position:absolute so the container must be position:relative.
+  function _getOrCreateNeedle(container) {
+    var needle = container.querySelector('.qc-tts-needle');
+    if (!needle) {
+      needle = document.createElement('div');
+      needle.className = 'qc-tts-needle';
+      needle.setAttribute('aria-hidden', 'true');
+      container.appendChild(needle);
+    }
+    return needle;
+  }
+
+  // Walk live text nodes to find the vertical position of absolutePos,
+  // skipping .qc-line-num and .qc-memo-icon nodes (same exclusions as
+  // the speech-text extractor).
+  function _needleTopForPos(container, absolutePos) {
+    var filter = {
+      acceptNode: function (node) {
+        var parent = node.parentNode;
+        if (!parent) return NodeFilter.FILTER_ACCEPT;
+        // Skip line-number and memo-icon text
+        if (parent.classList &&
+            (parent.classList.contains('qc-line-num') ||
+             parent.classList.contains('qc-memo-icon'))) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    };
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, filter, false);
+    var n, count = 0;
+    while ((n = walker.nextNode())) {
+      var next = count + n.length;
+      if (next >= absolutePos) {
+        try {
+          var range = document.createRange();
+          range.setStart(n, Math.min(absolutePos - count, n.length));
+          range.collapse(true);
+          var rect  = range.getBoundingClientRect();
+          var cRect = container.getBoundingClientRect();
+          // Position relative to the scrollable container's content top
+          return container.scrollTop + (rect.top - cRect.top);
+        } catch (e) { break; }
+      }
+      count = next;
+    }
+    // Fallback: proportional estimate
+    var total = container.textContent.length;
+    if (total > 0) return (absolutePos / total) * container.scrollHeight;
+    return 0;
+  }
 
   function _updateReadingCursor(absolutePos) {
     var container = _getTtsContainer();
     if (!container) return;
 
-    // Line-mode: highlight the active line and scroll it into view
+    // Line-mode: highlight the active .qc-line element
     if (_tts.lineMap.length > 0) {
       var mapIdx = _findMapEntryAtPos(absolutePos);
       if (mapIdx < 0) return;
       var lineIdx = _tts.lineMap[mapIdx].lineIdx;
-      if (lineIdx === _tts.activeLineIdx) return; // already on this line
-      _tts.activeLineIdx = lineIdx;
-
-      var lineEls = container.querySelectorAll('.qc-line');
-      lineEls.forEach(function (el) { el.classList.remove('qc-tts-active-line'); });
-      if (lineEls[lineIdx]) {
-        lineEls[lineIdx].classList.add('qc-tts-active-line');
-        lineEls[lineIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (lineIdx !== _tts.activeLineIdx) {
+        _tts.activeLineIdx = lineIdx;
+        var lineEls = container.querySelectorAll('.qc-line');
+        lineEls.forEach(function (el) { el.classList.remove('qc-tts-active-line'); });
+        if (lineEls[lineIdx]) {
+          lineEls[lineIdx].classList.add('qc-tts-active-line');
+          lineEls[lineIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
+      // Also move the needle so there's a visible indicator even in line mode
+      var needle = _getOrCreateNeedle(container);
+      if (container.querySelectorAll('.qc-line')[lineIdx]) {
+        var el = container.querySelectorAll('.qc-line')[lineIdx];
+        needle.style.top    = (el.offsetTop) + 'px';
+        needle.style.height = el.offsetHeight + 'px';
+        needle.classList.add('qc-tts-needle--line');
+      }
+      needle.style.display = 'block';
       return;
     }
 
-    // Non-line mode: proportional scroll only
-    var total = _tts.currentText.length;
-    if (total > 0) {
-      var ratio = Math.min(absolutePos / total, 1);
-      container.scrollTo({
-        top: ratio * (container.scrollHeight - container.clientHeight),
-        behavior: 'smooth'
-      });
+    // No line structure: use Range geometry to position the needle
+    var top    = _needleTopForPos(container, absolutePos);
+    var needle = _getOrCreateNeedle(container);
+    needle.style.top     = Math.max(0, top) + 'px';
+    needle.style.height  = '';
+    needle.style.display = 'block';
+    needle.classList.remove('qc-tts-needle--line');
+
+    // Scroll to keep needle visible
+    var visible = container.clientHeight;
+    var relTop  = top - container.scrollTop;
+    if (relTop < 40 || relTop > visible - 60) {
+      container.scrollTo({ top: Math.max(0, top - visible / 2), behavior: 'smooth' });
     }
   }
 
@@ -210,6 +277,8 @@
     container.querySelectorAll('.qc-tts-active-line').forEach(function (el) {
       el.classList.remove('qc-tts-active-line');
     });
+    var needle = container.querySelector('.qc-tts-needle');
+    if (needle) needle.style.display = 'none';
   }
 
   // ── Speech text chunking with offset tracking ──────────────────────────────
