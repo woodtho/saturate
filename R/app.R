@@ -514,6 +514,156 @@ saturate_server <- function(input, output, session, project) {
   })
 }
 
+# ── Project launcher (shown when shiny_saturate() is called without a project) ─
+
+.launcher_roots <- function() {
+  c(Home = path.expand("~"), Working = getwd())
+}
+
+.launcher_ui <- function() {
+  bslib::page_fluid(
+    title = "saturate",
+    theme = bslib::bs_theme(version = 5, bootswatch = "flatly"),
+    shiny::tags$head(
+      shiny::tags$style(shiny::HTML(
+        ".qc-launcher-wrap{max-width:520px;margin:4rem auto 2rem;text-align:center;}
+         .qc-launcher-logo{display:block;height:200px;margin:0 auto 2rem;}
+         .qc-launcher-wrap .navset-card-tab{text-align:left;}"
+      ))
+    ),
+    shiny::div(
+      class = "qc-launcher-wrap",
+      shiny::tags$img(
+        src   = "saturate-assets/logo.png",
+        alt   = "saturate",
+        class = "qc-launcher-logo"
+      ),
+      bslib::navset_card_tab(
+        id = "launcher_tab",
+
+        bslib::nav_panel(
+          title = shiny::tagList(shiny::icon("folder-open"), " Open existing"),
+          value = "open",
+          shiny::div(
+            class = "p-1",
+            shiny::div(
+              class = "d-flex align-items-end gap-2 mb-1",
+              shiny::div(
+                class = "flex-grow-1",
+                shiny::textInput("open_path", "Project file (.satdb or .duckdb)",
+                  placeholder = "/path/to/project.satdb", width = "100%")
+              ),
+              shiny::div(
+                class = "mb-3",
+                shinyFiles::shinyFilesButton(
+                  "btn_browse", label = "Browse…",
+                  title    = "Select a saturate project file",
+                  multiple = FALSE,
+                  class    = "btn btn-outline-secondary"
+                )
+              )
+            ),
+            shiny::uiOutput("open_error_ui"),
+            shiny::actionButton("btn_open", "Open project",
+              class = "btn-primary mt-1", icon = shiny::icon("folder-open"))
+          )
+        ),
+
+        bslib::nav_panel(
+          title = shiny::tagList(shiny::icon("plus"), " New project"),
+          value = "new",
+          shiny::div(
+            class = "p-1",
+            shiny::textInput("new_name", "Project name",
+              placeholder = "e.g. Interview Study 2025", width = "100%"),
+            shiny::textInput("new_dir", "Save in folder",
+              value = getwd(), width = "100%"),
+            shiny::uiOutput("new_path_preview_ui"),
+            shiny::uiOutput("new_error_ui"),
+            shiny::actionButton("btn_new", "Create project",
+              class = "btn-primary mt-1", icon = shiny::icon("plus"))
+          )
+        )
+      )
+    )
+  )
+}
+
+.launcher_server <- function(input, output, session) {
+  open_error <- shiny::reactiveVal(NULL)
+  new_error  <- shiny::reactiveVal(NULL)
+
+  shinyFiles::shinyFileChoose(input, "btn_browse",
+    roots     = .launcher_roots(),
+    filetypes = c("satdb", "duckdb"),
+    session   = session
+  )
+
+  shiny::observeEvent(input$btn_browse, {
+    if (is.integer(input$btn_browse)) return()
+    parsed <- shinyFiles::parseFilePaths(.launcher_roots(), input$btn_browse)
+    if (nrow(parsed) == 0L) return()
+    shiny::updateTextInput(session, "open_path",
+      value = as.character(parsed$datapath[[1L]]))
+  })
+
+  output$open_error_ui <- shiny::renderUI({
+    err <- open_error()
+    if (is.null(err)) return(NULL)
+    shiny::div(class = "alert alert-danger mt-2 py-2",
+      shiny::icon("circle-exclamation"), " ", err)
+  })
+
+  output$new_error_ui <- shiny::renderUI({
+    err <- new_error()
+    if (is.null(err)) return(NULL)
+    shiny::div(class = "alert alert-danger mt-2 py-2",
+      shiny::icon("circle-exclamation"), " ", err)
+  })
+
+  output$new_path_preview_ui <- shiny::renderUI({
+    name <- trimws(input$new_name %||% "")
+    dir  <- trimws(input$new_dir  %||% "")
+    if (!nzchar(name) || !nzchar(dir)) return(NULL)
+    path <- file.path(dir, paste0(name, ".satdb"))
+    shiny::div(class = "text-muted small font-monospace mt-1",
+      shiny::icon("file"), " ", path)
+  })
+
+  shiny::observeEvent(input$btn_open, {
+    open_error(NULL)
+    path <- trimws(input$open_path %||% "")
+    if (!nzchar(path)) { open_error("Enter a file path."); return() }
+    tryCatch(
+      shiny::stopApp(returnValue = qc_open(path)),
+      error = function(e) open_error(conditionMessage(e))
+    )
+  })
+
+  shiny::observeEvent(input$btn_new, {
+    new_error(NULL)
+    name <- trimws(input$new_name %||% "")
+    dir  <- trimws(input$new_dir  %||% "")
+    if (!nzchar(name)) { new_error("Enter a project name."); return() }
+    if (!nzchar(dir))  { new_error("Enter a folder path.");  return() }
+    path <- file.path(dir, paste0(name, ".satdb"))
+    tryCatch(
+      shiny::stopApp(returnValue = qc_new(path, name = name)),
+      error = function(e) new_error(conditionMessage(e))
+    )
+  })
+}
+
+.run_project_launcher <- function(...) {
+  shiny::addResourcePath("saturate-assets",
+    system.file("app", package = "saturate"))
+  proj <- shiny::runApp(
+    shiny::shinyApp(ui = .launcher_ui(), server = .launcher_server),
+    ...
+  )
+  if (inherits(proj, "qc_project")) proj else NULL
+}
+
 #' Launch the saturate Shiny GUI
 #'
 #' Opens an interactive coding interface. Pass a `brand` list to apply
@@ -521,6 +671,9 @@ saturate_server <- function(input, output, session, project) {
 #' institutions that want to present the tool under their own branding.
 #'
 #' @param project A `qc_project` object created by [qc_new()] or [qc_open()].
+#'   If `NULL` (the default), a project picker is shown before the main
+#'   interface launches — letting the user open an existing `.duckdb` file or
+#'   create a new one.
 #' @param brand Optional named list for visual branding. Supported keys:
 #'   \describe{
 #'     \item{`name`}{App title shown in the navbar (default: `"saturate"`).}
@@ -538,9 +691,15 @@ saturate_server <- function(input, output, session, project) {
 #'
 #' @return Called for its side effect; does not return normally.
 #' @export
-shiny_saturate <- function(project, brand = NULL, max_upload_mb = 500L, ...) {
-  assert_class(project, "qc_project")
-  assert_con(project$con)
+shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, ...) {
+  if (is.null(project)) {
+    project <- .run_project_launcher(...)
+    if (is.null(project)) return(invisible(NULL))
+    on.exit(try(qc_close(project), silent = TRUE), add = TRUE)
+  } else {
+    assert_class(project, "qc_project")
+    assert_con(project$con)
+  }
   options(shiny.maxRequestSize = max_upload_mb * 1024^2)
   shiny::addResourcePath("saturate-assets",
     system.file("app", package = "saturate"))
