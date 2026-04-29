@@ -184,18 +184,17 @@
     return needle;
   }
 
-  // Walk live text nodes to find the vertical position of absolutePos,
-  // skipping .qc-line-num and .qc-memo-icon nodes (same exclusions as
-  // the speech-text extractor).
-  function _needleTopForPos(container, absolutePos) {
+  // Walk live text nodes to find the geometry of absolutePos.
+  // Returns { top, height } in scroll-relative px, skipping line-number
+  // and memo-icon nodes (same exclusions as the speech-text extractor).
+  function _needleGeomForPos(container, absolutePos) {
     var filter = {
       acceptNode: function (node) {
-        var parent = node.parentNode;
-        if (!parent) return NodeFilter.FILTER_ACCEPT;
-        // Skip line-number and memo-icon text
-        if (parent.classList &&
-            (parent.classList.contains('qc-line-num') ||
-             parent.classList.contains('qc-memo-icon'))) {
+        var p = node.parentNode;
+        if (!p) return NodeFilter.FILTER_ACCEPT;
+        if (p.classList &&
+            (p.classList.contains('qc-line-num') ||
+             p.classList.contains('qc-memo-icon'))) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;
@@ -212,16 +211,18 @@
           range.collapse(true);
           var rect  = range.getBoundingClientRect();
           var cRect = container.getBoundingClientRect();
-          // Position relative to the scrollable container's content top
-          return container.scrollTop + (rect.top - cRect.top);
+          var top   = container.scrollTop + (rect.top - cRect.top);
+          // rect.height from a collapsed range is the line height
+          var lineH = rect.height || parseFloat(getComputedStyle(container).lineHeight) || 24;
+          return { top: top, height: lineH };
         } catch (e) { break; }
       }
       count = next;
     }
-    // Fallback: proportional estimate
+    // Fallback: proportional estimate, no height info
     var total = container.textContent.length;
-    if (total > 0) return (absolutePos / total) * container.scrollHeight;
-    return 0;
+    var fallbackTop = total > 0 ? (absolutePos / total) * container.scrollHeight : 0;
+    return { top: fallbackTop, height: 24 };
   }
 
   function _updateReadingCursor(absolutePos) {
@@ -255,18 +256,18 @@
     }
 
     // No line structure: use Range geometry to position the needle
-    var top    = _needleTopForPos(container, absolutePos);
+    var geom   = _needleGeomForPos(container, absolutePos);
     var needle = _getOrCreateNeedle(container);
-    needle.style.top     = Math.max(0, top) + 'px';
-    needle.style.height  = '';
+    needle.style.top     = Math.max(0, geom.top) + 'px';
+    needle.style.height  = geom.height + 'px';
     needle.style.display = 'block';
     needle.classList.remove('qc-tts-needle--line');
 
     // Scroll to keep needle visible
     var visible = container.clientHeight;
-    var relTop  = top - container.scrollTop;
+    var relTop  = geom.top - container.scrollTop;
     if (relTop < 40 || relTop > visible - 60) {
-      container.scrollTo({ top: Math.max(0, top - visible / 2), behavior: 'smooth' });
+      container.scrollTo({ top: Math.max(0, geom.top - visible / 2), behavior: 'smooth' });
     }
   }
 

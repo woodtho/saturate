@@ -1488,33 +1488,32 @@ html[data-sat-theme="contrast"] .qc-tts-active-line {
   border-left-color: var(--sat-accent);
 }
 
-/* Thin horizontal needle — visible in both line and non-line modes.
- * In line mode it spans the full line height; in free-text mode it's 2px. */
+/* Reading needle — visible in both line and non-line modes.
+ * Height is set dynamically to match the actual line height from
+ * Range.getBoundingClientRect(), so it forms a full line-highlight band. */
 .qc-tts-needle {
   position: absolute;
   left: 0;
   right: 0;
-  height: 2px;
-  background: var(--sat-accent);
-  opacity: .55;
+  background: color-mix(in srgb, var(--sat-accent) 13%, transparent);
+  border-left: 3px solid var(--sat-accent);
+  border-radius: 0 3px 3px 0;
   pointer-events: none;
   z-index: 5;
-  border-radius: 1px;
   display: none;
-  transition: top .12s ease, height .1s ease;
+  transition: top .12s ease;
 }
+/* Line-number mode: the .qc-tts-active-line fill takes precedence;
+ * the needle supplies only the left-border accent. */
 .qc-tts-needle--line {
   background: transparent;
-  border-left: 3px solid var(--sat-accent);
-  border-radius: 0;
-  opacity: .8;
 }
 html[data-sat-theme="dark"] .qc-tts-needle {
-  opacity: .7;
+  background: color-mix(in srgb, var(--sat-accent) 20%, transparent);
 }
 html[data-sat-theme="contrast"] .qc-tts-needle {
+  background: var(--sat-hover-bg);
   opacity: 1;
-  background: var(--sat-accent);
 }
 .qc-line-text {
   flex: 1;
