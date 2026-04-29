@@ -671,7 +671,7 @@ build_highlighted_html <- function(content, codings,
 
     # Search highlight prefix/suffix — layered on top of coding/excerpt marks
     s_open  <- if (in_search)
-      '<mark class="qc-search-match" style="background:#FFE566;outline:2px solid #F0A500;outline-offset:-1px;">'
+      '<mark class="qc-search-match">'
     else ""
     s_close <- if (in_search) "</mark>" else ""
 

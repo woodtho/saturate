@@ -213,13 +213,10 @@
   }
 
   function setCoderInput(name) {
-    var input = document.getElementById("current_coder");
-    if (!input) return;
-    input.value = name;
-    input.setAttribute("readonly", "readonly");
-    input.setAttribute("title", "Change profile from Settings");
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
+    var display = document.getElementById("current_coder_display");
+    if (!display) return;
+    display.textContent = cleanName(name) || "default";
+    display.setAttribute("title", "Change profile from Settings");
   }
 
   function sendState(reason) {

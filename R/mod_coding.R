@@ -58,10 +58,9 @@
           )
         ),
         shiny::div(
-          class = "px-3 pt-2 pb-1 border-bottom d-flex gap-2 align-items-center",
+          class = "qc-doc-search-strip px-3 pt-2 pb-1 border-bottom d-flex gap-2 align-items-center",
           shiny::div(
-            class = "flex-grow-1",
-            style = "margin-bottom:0;",
+            class = "qc-doc-search-field flex-grow-1",
             shiny::textInput(ns("doc_search"), label = NULL,
               placeholder = "Search document…",
               width = "100%")
@@ -122,14 +121,12 @@
 
           # ── Display filters (collapsible) ──────────────────────────────────
           shiny::tags$details(
-            style = "margin-bottom:12px;",
+            class = "qc-panel-details",
             shiny::tags$summary(
-              style = paste0("cursor:pointer;font-size:0.82rem;color:var(--sat-text-muted);",
-                             "user-select:none;"),
               "Display filters"
             ),
             shiny::div(
-              style = "padding-top:8px;",
+              class = "qc-panel-details-body",
               shiny::selectizeInput(ns("filter_display_cats"),
                 label   = "Show categories",
                 choices = NULL, multiple = TRUE,
@@ -305,10 +302,13 @@ mod_coding_server <- function(id, rv, parent_session) {
       shiny::req(doc)
       content   <- doc$content
       use_regex <- isTRUE(input$search_regex)
+      escape_regex <- function(x) {
+        gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x, perl = TRUE)
+      }
+      search_pattern <- if (use_regex) pattern else escape_regex(pattern)
       tryCatch({
-        m <- gregexpr(pattern, content,
-                      perl  = use_regex,
-                      fixed = !use_regex,
+        m <- gregexpr(search_pattern, content,
+                      perl  = TRUE,
                       ignore.case = TRUE)[[1L]]
         if (m[[1L]] == -1L)
           return(tibble::tibble(selfirst = integer(0), selast = integer(0)))
@@ -510,22 +510,21 @@ mod_coding_server <- function(id, rv, parent_session) {
       crit <- row$criteria[[1L]]   %||% ""
       if (nchar(def) == 0L && nchar(crit) == 0L) return(NULL)
       shiny::tags$details(
-        style = paste0("margin-bottom:8px;font-size:0.82rem;",
-                       "color:var(--sat-text-label);line-height:1.5;"),
+        class = "qc-panel-details",
         shiny::tags$summary(
-          style = "cursor:pointer;color:var(--sat-text-muted);user-select:none;",
           "Code reference"
         ),
         shiny::div(
-          style = paste0("margin-top:6px;padding:8px 10px;",
-                         "background:var(--sat-surface-card);border-radius:4px;",
-                         "border-left:3px solid var(--sat-border);"),
-          if (nchar(def) > 0L) shiny::div(
-            style = "margin-bottom:4px;",
-            shiny::tags$strong("Definition: "), def
-          ),
-          if (nchar(crit) > 0L) shiny::div(
-            shiny::tags$strong("Criteria: "), crit
+          class = "qc-panel-details-body",
+          shiny::div(
+            class = "qc-code-info",
+            if (nchar(def) > 0L) shiny::div(
+              class = if (nchar(crit) > 0L) "mb-1" else NULL,
+              shiny::tags$strong("Definition: "), def
+            ),
+            if (nchar(crit) > 0L) shiny::div(
+              shiny::tags$strong("Criteria: "), crit
+            )
           )
         )
       )

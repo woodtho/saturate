@@ -83,26 +83,16 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
           # ── Active coder ─────────────────────────────────────────────────
           shiny::div(
             class = "qc-coder-block",
-            shiny::tags$label(
+            shiny::tags$span(
               "CODING AS",
-              `for`  = "current_coder-selectized",
               class  = "qc-coder-label",
               id     = "lbl-current-coder"
             ),
-            shiny::selectizeInput(
-              "current_coder",
-              label   = NULL,
-              choices = default_coder,
-              selected = default_coder,
-              width   = "160px",
-              options = list(
-                create         = TRUE,
-                createOnBlur   = TRUE,
-                persist        = FALSE,
-                placeholder    = "Coder name…",
-                selectOnTab    = TRUE,
-                openOnFocus    = TRUE
-              )
+            shiny::tags$div(
+              id = "current_coder_display",
+              class = "qc-coder-value",
+              title = "Change profile from Settings",
+              default_coder
             )
           ),
 
@@ -226,31 +216,11 @@ saturate_server <- function(input, output, session, project) {
     coder <- .profile_payload_name(input$profile_selected)
     if (nchar(coder) == 0L) return()
     rv$current_coder <- coder
-    shiny::updateSelectizeInput(session, "current_coder", selected = coder)
     tryCatch({
       .db_upsert_profile(rv$project, coder)
       .db_touch_profile(rv$project, coder)
     }, error = function(e) NULL)
   }, ignoreInit = TRUE)
-
-  shiny::observeEvent(input$current_coder, {
-    coder <- trimws(as.character(input$current_coder %||% ""))
-    if (nchar(coder) == 0L) return()
-    rv$current_coder <- coder
-  }, ignoreInit = TRUE)
-
-  shiny::observe({
-    rv$refresh_codes
-    coders     <- tryCatch(qc_list_coders(rv$project)$coder,
-                           error = function(e) character())
-    profiles   <- .profile_state_names(rv$profile_state, character())
-    all_coders <- unique(c(rv$current_coder %||% default_coder, profiles, coders))
-    all_coders <- all_coders[!is.na(all_coders) & nzchar(all_coders)]
-    shiny::updateSelectizeInput(session, "current_coder",
-      choices  = all_coders,
-      selected = rv$current_coder %||% default_coder
-    )
-  })
 
   # ── Blind mode toggle ──────────────────────────────────────────────────────
 

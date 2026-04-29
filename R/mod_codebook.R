@@ -30,13 +30,12 @@
 
         # ── Weight (optional) ────────────────────────────────────────────
         shiny::tags$details(
-          style = "margin-bottom:12px;",
+          class = "qc-panel-details",
           shiny::tags$summary(
-            style = "cursor:pointer;font-size:0.82rem;color:var(--sat-text-muted);user-select:none;",
             shiny::textOutput(ns("weight_summary"), inline = TRUE)
           ),
           shiny::div(
-            style = "padding-top:8px;",
+            class = "qc-panel-details-body",
             shiny::checkboxInput(ns("weight_enabled"), "Assign a weight to this code",
               value = FALSE),
             shiny::uiOutput(ns("weight_controls"))
