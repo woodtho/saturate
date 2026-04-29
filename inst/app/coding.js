@@ -25,7 +25,9 @@
     lineMap: [],       // [{lineIdx, charStart, charEnd}] in speech-text coords
     chunkOffsets: [],  // charOffset of each chunk's start in the full speech text
     activeLineIdx: -1, // index into lineMap of the currently highlighted line
-    clickOffset: null  // DOM char offset of last user click in the document
+    clickOffset: null,       // DOM char offset of last user click in the document
+    clickLineIdx: null,      // .qc-line index of last user click (line-numbers mode only)
+    speechTextOffset: 0      // char offset into full docText where current speech starts
   };
 
   // ── Namespace setup ────────────────────────────────────────────────────────
@@ -197,7 +199,8 @@
   }
 
   function _clearClickMark(container) {
-    _tts.clickOffset = null;
+    _tts.clickOffset  = null;
+    _tts.clickLineIdx = null;
     if (!container) return;
     var m = container.querySelector('.qc-tts-click-mark');
     if (m) m.style.display = 'none';
@@ -240,15 +243,6 @@
         if (range.getBoundingClientRect().top >= cRect.top - 2) return count;
       } catch (e) {}
       count += n.length;
-    }
-    return 0;
-  }
-
-  // Index of the last chunk whose start offset is ≤ charOff.
-  function _chunkIdxForOffset(offsets, charOff) {
-    if (charOff <= 0 || !offsets.length) return 0;
-    for (var i = offsets.length - 1; i >= 0; i--) {
-      if (offsets[i] <= charOff) return i;
     }
     return 0;
   }
@@ -340,7 +334,7 @@
     }
 
     // No line structure: use Range geometry to position the needle
-    var geom   = _needleGeomForPos(container, absolutePos);
+    var geom   = _needleGeomForPos(container, absolutePos + _tts.speechTextOffset);
     var needle = _getOrCreateNeedle(container);
     needle.style.top     = Math.max(0, geom.top) + 'px';
     needle.style.height  = geom.height + 'px';
@@ -490,6 +484,7 @@
     _tts.currentUtterance  = null;
     _tts.lineMap           = [];
     _tts.chunkOffsets      = [];
+    _tts.speechTextOffset  = 0;
     _clearReadingCursor();
   }
 
@@ -502,6 +497,7 @@
     _tts.currentUtterance  = null;
     _tts.lineMap           = [];
     _tts.chunkOffsets      = [];
+    _tts.speechTextOffset  = 0;
     _clearReadingCursor();
     _syncTtsControls();
   }
@@ -521,6 +517,7 @@
     var chunkOffset = _tts.chunkOffsets[index] || 0;
     utterance.onboundary = function (event) {
       if (runId !== _tts.runId) return;
+      if (_tts.currentMode === 'selection') return;
       if (event.name !== 'word' && event.name !== 'sentence') return;
       _updateReadingCursor(chunkOffset + (event.charIndex || 0));
       _syncTtsControls();
@@ -540,7 +537,7 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  function _launchTts(text, mode, lineMap) {
+  function _launchTts(text, mode, lineMap, textOffset) {
     _cancelTts();
     var container = _getTtsContainer();
 
@@ -551,6 +548,7 @@
     _tts.currentDocumentText = _getDocumentSpeechText(container);
     _tts.lineMap             = lineMap || [];
     _tts.activeLineIdx       = -1;
+    _tts.speechTextOffset    = textOffset || 0;
 
     var split = _splitSpeechTextWithOffsets(text);
     _tts.chunkOffsets = split.offsets;
@@ -579,30 +577,33 @@
 
     // Priority 2 (line mode): click point or first visible line
     if (container && container.classList.contains('qc-line-numbers-on')) {
-      _startTtsFromLine(_firstVisibleLine(container));
+      var fromLine = (_tts.clickLineIdx !== null && _tts.clickLineIdx >= 0)
+        ? _tts.clickLineIdx
+        : _firstVisibleLine(container);
+      _startTtsFromLine(fromLine);
       return;
     }
 
-    // Priority 2 (free-text mode): click offset, else scroll position
-    var split    = _splitSpeechTextWithOffsets(docText);
-    var startIdx = _tts.clickOffset !== null
-      ? _chunkIdxForOffset(split.offsets, _tts.clickOffset)
-      : _chunkIdxForOffset(split.offsets, _findScrollStartOffset(container));
+    // Priority 2 (free-text mode): click offset or scroll position → slice text from that point
+    var domTotal = container.textContent.length;
+    var speechOff;
+    if (_tts.clickOffset !== null) {
+      speechOff = domTotal > 0
+        ? Math.round((_tts.clickOffset / domTotal) * docText.length)
+        : 0;
+    } else {
+      var scrollDomOff = _findScrollStartOffset(container);
+      speechOff = domTotal > 0
+        ? Math.round((scrollDomOff / domTotal) * docText.length)
+        : 0;
+    }
 
+    var sliced    = speechOff > 0 ? docText.slice(speechOff) : '';
+    var startText = sliced.trim();
+    var ttsText   = startText || docText;
+    var ttsOffset = (ttsText === docText) ? 0 : speechOff;
     _clearClickMark(container);
-    _cancelTts();
-    _tts.isSpeaking          = true;
-    _tts.isPaused            = false;
-    _tts.currentMode         = 'document';
-    _tts.currentText         = docText;
-    _tts.currentDocumentText = docText;
-    _tts.lineMap             = [];
-    _tts.chunkOffsets        = split.offsets;
-    _tts.activeLineIdx       = -1;
-
-    var runId = _tts.runId;
-    _syncTtsControls();
-    window.setTimeout(function () { _speakChunk(runId, split.chunks, startIdx); }, 0);
+    _launchTts(ttsText, 'document', [], ttsOffset);
   }
 
   // Click on a line number: read from that line to end of document
@@ -747,7 +748,21 @@
       // Collapsed click — record TTS start point and show marker
       if (!_tts.supported) return;
       var range = sel.getRangeAt(0);
-      _tts.clickOffset = charOffset(container, range.startContainer, range.startOffset);
+      _tts.clickOffset  = charOffset(container, range.startContainer, range.startOffset);
+      _tts.clickLineIdx = null;
+      if (container.classList.contains('qc-line-numbers-on')) {
+        var el = range.startContainer.nodeType === Node.TEXT_NODE
+          ? range.startContainer.parentNode
+          : range.startContainer;
+        while (el && el !== container) {
+          if (el.classList && el.classList.contains('qc-line')) {
+            var lineEls = Array.from(container.querySelectorAll('.qc-line'));
+            _tts.clickLineIdx = lineEls.indexOf(el);
+            break;
+          }
+          el = el.parentNode;
+        }
+      }
       _showClickMark(container, range);
       return;
     }

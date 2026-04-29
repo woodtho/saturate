@@ -23,7 +23,9 @@
     tableDensity: "comfortable",
     reduceMotion: false,
     showLineNumbers: false,
-    highlightOpacity: 0.33
+    highlightOpacity: 0.33,
+    ttsVoice: "auto",
+    ttsRate: 1
   };
   var handlerRegistered = false;
 
@@ -95,6 +97,82 @@
   function choiceSetting(settings, key, fallback, choices) {
     var value = String(settings[key] || fallback);
     return choices.indexOf(value) >= 0 ? value : fallback;
+  }
+
+  function ttsVoiceSetting(settings) {
+    var value = cleanName(String((settings && settings.ttsVoice) || "auto"));
+    return value || "auto";
+  }
+
+  function listSpeechVoices() {
+    if (!window.speechSynthesis || !window.speechSynthesis.getVoices) return [];
+    var seen = {};
+    return (window.speechSynthesis.getVoices() || [])
+      .filter(function(voice) {
+        var key = cleanName(voice.voiceURI || voice.name);
+        if (!key || seen[key]) return false;
+        seen[key] = true;
+        return true;
+      })
+      .map(function(voice) {
+        return {
+          value: cleanName(voice.voiceURI || voice.name),
+          label:
+            voice.name +
+            (voice.lang ? " (" + voice.lang + ")" : "") +
+            (voice.default ? " - browser default" : "")
+        };
+      })
+      .sort(function(a, b) {
+        return a.label.localeCompare(b.label);
+      });
+  }
+
+  function syncTtsVoiceSelect(settings) {
+    var select = document.getElementById("settings_tts_voice");
+    if (!select) return;
+
+    var note = document.getElementById("settings_tts_voice_note");
+    var supported = !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+    var preferred =
+      ttsVoiceSetting(settings) ||
+      cleanName(select.dataset.preferredVoice) ||
+      cleanName(select.value) ||
+      ttsVoiceSetting(readSettings());
+    var voices = supported ? listSpeechVoices() : [];
+    var currentValue = cleanName(select.value);
+
+    select.innerHTML = "";
+
+    var autoOption = document.createElement("option");
+    autoOption.value = "auto";
+    autoOption.textContent = "System default";
+    select.appendChild(autoOption);
+
+    voices.forEach(function(voice) {
+      var option = document.createElement("option");
+      option.value = voice.value;
+      option.textContent = voice.label;
+      select.appendChild(option);
+    });
+
+    var selected =
+      voices.some(function(voice) { return voice.value === currentValue; }) ? currentValue :
+      voices.some(function(voice) { return voice.value === preferred; }) ? preferred :
+      "auto";
+
+    select.value = selected;
+    select.dataset.preferredVoice = selected;
+    select.disabled = !supported;
+
+    if (!note) return;
+    if (!supported) {
+      note.textContent = "Read-aloud voices are not available in this browser.";
+    } else if (!voices.length) {
+      note.textContent = "Voice list is still loading from this browser.";
+    } else {
+      note.textContent = "Voice choices come from this browser and device.";
+    }
   }
 
   function activeProfile() {
@@ -182,9 +260,13 @@
       2.4
     );
     var documentHeight = numberSetting(settings, "documentHeight", 68, 48, 86);
+    var ttsRate = numberSetting(settings, "ttsRate", 1, 0.6, 1.8);
+    var ttsVoice = ttsVoiceSetting(settings);
 
     root.setAttribute("data-sat-theme", theme);
     root.setAttribute("data-sat-density", density);
+    root.setAttribute("data-sat-tts-voice", ttsVoice);
+    root.setAttribute("data-sat-tts-rate", String(ttsRate));
     root.setAttribute(
       "data-sat-motion",
       settings.reduceMotion ? "reduced" : "standard"
@@ -210,6 +292,7 @@
       "--sat-document-height",
       documentHeight + "vh"
     );
+    syncTtsVoiceSelect(settings);
   }
 
   function setCoderInput(name) {
@@ -410,9 +493,30 @@
     });
   }
 
+  function initTtsSettingsBridge() {
+    document.addEventListener("change", function(event) {
+      if (event.target && event.target.id === "settings_tts_voice") {
+        event.target.dataset.preferredVoice = cleanName(event.target.value) || "auto";
+      }
+    });
+
+    document.addEventListener("shown.bs.modal", function() {
+      window.setTimeout(function() {
+        syncTtsVoiceSelect(readSettings());
+      }, 0);
+    });
+
+    if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener("voiceschanged", function() {
+        syncTtsVoiceSelect(readSettings());
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function() {
     applySettings(readSettings());
     initGate();
+    initTtsSettingsBridge();
     initShinyBridge();
   });
 })();

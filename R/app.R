@@ -100,7 +100,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
           shiny::uiOutput("ui_blind_btn", inline = TRUE),
 
           shiny::actionButton("btn_help_modal",
-            shiny::icon("circle-question"),
+            shiny::tagList(shiny::icon("circle-question"), "Help"),
             class = "btn-sm btn-outline-light qc-navbar-help",
             title = "Help",
             `aria-label` = "Open help reference"
@@ -112,7 +112,8 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
             `aria-label` = "Open profile and display settings"
           ),
 
-          shiny::actionButton("btn_project_info", "Project",
+          shiny::actionButton("btn_project_info",
+            shiny::tagList(shiny::icon("id-card-clip"), "Project"),
             class = "btn-sm btn-outline-light ms-1 qc-navbar-project",
             `aria-label` = "View project information"
           )
@@ -295,6 +296,8 @@ saturate_server <- function(input, output, session, project) {
   })
 
   shiny::observeEvent(input$btn_settings_save, {
+    tts_voice <- trimws(as.character(input$settings_tts_voice %||% "auto"))
+    if (!nzchar(tts_voice)) tts_voice <- "auto"
     settings <- list(
       colorTheme        = input$settings_color_theme %||% "light",
       uiFont             = input$settings_ui_font %||% "system",
@@ -306,7 +309,9 @@ saturate_server <- function(input, output, session, project) {
       tableDensity       = input$settings_table_density %||% "comfortable",
       reduceMotion       = isTRUE(input$settings_reduce_motion),
       showLineNumbers    = isTRUE(input$settings_show_line_numbers),
-      highlightOpacity   = as.numeric(input$settings_highlight_opacity %||% 0.33)
+      highlightOpacity   = as.numeric(input$settings_highlight_opacity %||% 0.33),
+      ttsVoice           = tts_voice,
+      ttsRate            = as.numeric(input$settings_tts_rate %||% 1)
     )
     session$sendCustomMessage("qc_profile_action",
       list(action = "settings", settings = settings))
@@ -606,7 +611,12 @@ shiny_saturate <- function(project, brand = NULL, max_upload_mb = 500L, ...) {
     tableDensity = .profile_setting_chr(settings, "tableDensity", "comfortable"),
     reduceMotion = .profile_setting_bool(settings, "reduceMotion", FALSE),
     showLineNumbers = .profile_setting_bool(settings, "showLineNumbers", FALSE),
-    highlightOpacity = .profile_setting_num(settings, "highlightOpacity", 0.33, 0.15, 0.85)
+    highlightOpacity = .profile_setting_num(settings, "highlightOpacity", 0.33, 0.15, 0.85),
+    ttsVoice = {
+      voice <- .profile_setting_chr(settings, "ttsVoice", "auto")
+      if (nzchar(voice)) voice else "auto"
+    },
+    ttsRate = .profile_setting_num(settings, "ttsRate", 1, 0.6, 1.8)
   )
 }
 
@@ -746,6 +756,43 @@ shiny_saturate <- function(project, brand = NULL, max_upload_mb = 500L, ...) {
         shiny::checkboxInput("settings_reduce_motion",
           "Reduce animation",
           value = isTRUE(settings$reduceMotion))
+      )
+    ),
+
+    shiny::hr(),
+
+    shiny::div(
+      class = "qc-settings-section",
+      shiny::h6("Read Aloud"),
+      qc_help_note(
+        "Voice choices come from the browser on this device. ",
+        "Use System default if a saved voice is not available here."
+      ),
+      bslib::layout_columns(
+        col_widths = c(7, 5),
+        shiny::div(
+          class = "shiny-input-container",
+          shiny::tags$label(
+            `for` = "settings_tts_voice",
+            class = "form-label",
+            "Read-aloud voice"
+          ),
+          shiny::tags$select(
+            id = "settings_tts_voice",
+            class = "form-select",
+            `aria-describedby` = "settings_tts_voice_note",
+            `data-preferred-voice` = settings$ttsVoice %||% "auto",
+            shiny::tags$option(value = "auto", "System default")
+          ),
+          shiny::tags$div(
+            id = "settings_tts_voice_note",
+            class = "form-text text-muted",
+            "Voice choices come from this browser and device."
+          )
+        ),
+        shiny::sliderInput("settings_tts_rate", "Reading speed",
+          min = 0.6, max = 1.8, value = settings$ttsRate,
+          step = 0.05, ticks = FALSE)
       )
     ),
 
