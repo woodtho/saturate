@@ -29,26 +29,48 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         shiny::tags$img(src = NULL, height = 0, alt = ""),
         app_name
       ),
-      theme  = bslib::bs_theme(version = 5, bootswatch = "flatly"),
-      lang   = "en",
+      theme    = bslib::bs_theme(version = 5, bootswatch = "flatly"),
+      lang     = "en",
+      selected = "Coding",
 
-      bslib::nav_panel("Documents",
-        shiny::div(
-          id = "sat-main-content", tabindex = "-1",
-          shiny::tagList(shinyjs::useShinyjs(), mod_documents_ui("docs"))
-        )
+      # ── Prep workspace ──────────────────────────────────────────────────
+      bslib::nav_menu(
+        title = shiny::tagList(shiny::icon("folder-open"), " Prep"),
+        bslib::nav_panel("Documents",
+          shiny::div(
+            id = "sat-main-content", tabindex = "-1",
+            shiny::tagList(shinyjs::useShinyjs(), mod_documents_ui("docs"))
+          )
+        ),
+        bslib::nav_panel("Codebook", mod_codebook_ui("codebook")),
+        bslib::nav_panel("Cases",    mod_cases_ui("cases")),
+        bslib::nav_panel("Journal",  mod_memos_ui("memos"))
       ),
-      bslib::nav_panel("Coding",    mod_coding_ui("coding")),
-      bslib::nav_panel("Compare",   mod_compare_ui("compare")),
-      bslib::nav_panel("Codebook",  mod_codebook_ui("codebook")),
-      bslib::nav_panel("Themes",    mod_themes_ui("themes")),
-      bslib::nav_panel("Query",     mod_query_ui("query")),
-      bslib::nav_panel("Cases",     mod_cases_ui("cases")),
-      bslib::nav_panel("Journal",   mod_memos_ui("memos")),
-      bslib::nav_panel("Member Checks", mod_member_check_ui("members")),
-      bslib::nav_panel("Export",    mod_export_ui("export")),
-      bslib::nav_panel("Audit",     mod_audit_ui("audit")),
-      bslib::nav_panel("Help",      mod_help_ui("help")),
+
+      # ── Coding workspace ─────────────────────────────────────────────────
+      bslib::nav_panel(
+        title = shiny::tagList(shiny::icon("tag"), " Coding"),
+        value = "Coding",
+        mod_coding_ui("coding")
+      ),
+
+      # ── Analysis workspace ───────────────────────────────────────────────
+      bslib::nav_menu(
+        title = shiny::tagList(shiny::icon("chart-bar"), " Analysis"),
+        bslib::nav_panel("Compare", mod_compare_ui("compare")),
+        bslib::nav_panel("Themes",  mod_themes_ui("themes")),
+        bslib::nav_panel("Query",   mod_query_ui("query"))
+      ),
+
+      # ── Review workspace ─────────────────────────────────────────────────
+      bslib::nav_menu(
+        title = shiny::tagList(shiny::icon("clipboard-check"), " Review"),
+        bslib::nav_panel("Member Checks", mod_member_check_ui("members")),
+        bslib::nav_panel("Audit",         mod_audit_ui("audit")),
+        bslib::nav_panel("Export",        mod_export_ui("export"))
+      ),
+
+      bslib::nav_panel("Help", mod_help_ui("help")),
 
       bslib::nav_spacer(),
       bslib::nav_item(

@@ -331,6 +331,42 @@ html[data-sat-motion="reduced"] *::after {
   font-weight: 700;
 }
 
+/* Hide the Help tab from the navbar — it is opened via the ? button only */
+.navbar-nav .nav-item .nav-link[data-value="Help"] { display: none !important; }
+
+/* ── Workspace dropdown menus ───────────────────────────────────────────────── */
+.navbar .dropdown-menu {
+  min-width: 160px;
+  border: 1px solid var(--sat-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  padding: 4px 0;
+  background: var(--sat-white);
+}
+.navbar .dropdown-item {
+  font-size: .875rem;
+  padding: 7px 16px;
+  color: var(--sat-text-label);
+  border-radius: 0;
+}
+.navbar .dropdown-item:hover,
+.navbar .dropdown-item:focus {
+  background: var(--sat-hover-bg);
+  color: var(--sat-text);
+}
+.navbar .dropdown-item.active,
+.navbar .dropdown-item:active {
+  background: var(--sat-selected-bg);
+  color: var(--sat-selected-fg);
+  font-weight: 600;
+}
+/* Active workspace — bold the dropdown toggle */
+.navbar .nav-item.dropdown.show > .nav-link,
+.navbar .nav-item.dropdown .nav-link[aria-expanded="true"] {
+  font-weight: 700;
+  opacity: 1;
+}
+
 .qc-navbar-session {
   display: flex;
   align-items: center;
