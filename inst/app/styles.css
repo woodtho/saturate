@@ -319,12 +319,14 @@ html[data-sat-motion="reduced"] *::after {
   letter-spacing: -.02em;
   font-size: 1.05rem;
   color: var(--sat-primary-fg) !important;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  margin-right: 1.5rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-right: 2.5rem;
+  display: flex;
+  align-items: center;
 }
 .navbar-brand img {
-  height: 38px;
+  height: 48px;
   width: auto;
   display: block;
 }
