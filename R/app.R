@@ -25,9 +25,11 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
     .profile_gate_ui(default_coder),
 
     bslib::page_navbar(
-      title  = shiny::span(
-        shiny::tags$img(src = NULL, height = 0, alt = ""),
-        app_name
+      title  = shiny::tags$img(
+        src    = "saturate-assets/logo.png",
+        height = "38",
+        alt    = "saturate — for qualitative coding",
+        style  = "display:block;"
       ),
       theme    = bslib::bs_theme(version = 5, bootswatch = "flatly"),
       lang     = "en",
@@ -560,6 +562,8 @@ shiny_saturate <- function(project, brand = NULL, max_upload_mb = 500L, ...) {
   assert_class(project, "qc_project")
   assert_con(project$con)
   options(shiny.maxRequestSize = max_upload_mb * 1024^2)
+  shiny::addResourcePath("saturate-assets",
+    system.file("app", package = "saturate"))
 
   app_name  <- (brand$name %||% "saturate")
   brand_css <- .build_brand_css(brand)

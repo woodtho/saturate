@@ -14,17 +14,21 @@
 
 /* ── CSS Custom Properties ──────────────────────────────────────────────────── */
 :root {
-  /* Brand — injected via shiny_saturate(brand = list(primary = "#…")) */
-  --sat-primary:          #2c3e50;
-  --sat-primary-hover:    #253444;
+  /* Brand — derived from the saturate logo palette
+   * Primary: deep forest green  #1D3D35
+   * Accent:  teal               #3E8C7A
+   * Info:    steel blue         #5580A0  (logo chip)
+   * Injected overrides via shiny_saturate(brand = list(primary = "#…")) */
+  --sat-primary:          #1D3D35;
+  --sat-primary-hover:    #162d27;
   --sat-primary-fg:       #ffffff;
-  --sat-accent:           #4E79A7;
+  --sat-accent:           #3E8C7A;
   --sat-accent-fg:        #ffffff;
-  --sat-button-alt:       #4E79A7;
-  --sat-button-alt-hover: #3f638a;
+  --sat-button-alt:       #3E8C7A;
+  --sat-button-alt-hover: #30705f;
   --sat-button-alt-fg:    #ffffff;
-  --sat-button-info:      #6f4aa8;
-  --sat-button-info-hover: #5e3e8f;
+  --sat-button-info:      #5580A0;
+  --sat-button-info-hover: #426680;
   --sat-button-info-fg:   #ffffff;
   --sat-danger:           #b42318;
   --sat-danger-hover:     #8f1d14;
@@ -48,10 +52,10 @@
   --sat-border-light:     #e9ecef;
   --sat-border-row:       #f2f4f6;
 
-  /* Interactive states */
-  --sat-hover-bg:         #eef2ff;
-  --sat-selected-bg:      #dce6f7;
-  --sat-selected-fg:      #1a3a6b;
+  /* Interactive states — green-tinted */
+  --sat-hover-bg:         #e6f2ee;
+  --sat-selected-bg:      #bfd8d0;
+  --sat-selected-fg:      #0d2a22;
   --sat-selection-accent: var(--sat-primary);
 
   /* Focus — visible outline on keyboard navigation */
@@ -78,40 +82,40 @@
 }
 
 html[data-sat-theme="dark"] {
-  --sat-primary:          #102235;
-  --sat-primary-hover:    #0b1826;
-  --sat-primary-fg:       #f8fafc;
-  --sat-accent:           #7fb3d5;
-  --sat-accent-fg:        #07131f;
-  --sat-button-alt:       #66a7d8;
-  --sat-button-alt-hover: #8cc4ee;
-  --sat-button-alt-fg:    #07131f;
-  --sat-button-info:      #b794f4;
-  --sat-button-info-hover: #d0b5ff;
-  --sat-button-info-fg:   #07131f;
+  --sat-primary:          #0d2018;
+  --sat-primary-hover:    #081510;
+  --sat-primary-fg:       #f0f7f4;
+  --sat-accent:           #6db5a3;
+  --sat-accent-fg:        #071a12;
+  --sat-button-alt:       #6db5a3;
+  --sat-button-alt-hover: #8fcfbe;
+  --sat-button-alt-fg:    #071a12;
+  --sat-button-info:      #88afc8;
+  --sat-button-info-hover: #a8cade;
+  --sat-button-info-fg:   #071a12;
   --sat-danger:           #dc2626;
   --sat-danger-hover:     #b91c1c;
   --sat-blind-locked:     #f59e0b;
   --sat-blind-locked-hover: #fbbf24;
   --sat-blind-locked-fg:  #111827;
-  --sat-text:             #f4f7fb;
-  --sat-text-label:       #d9e2ec;
-  --sat-text-muted:       #b5c1cc;
-  --sat-text-caption:     #aab6c2;
-  --sat-surface:          #101820;
-  --sat-surface-card:     #172231;
-  --sat-white:            #0b1118;
-  --sat-border:           #334155;
-  --sat-border-light:     #263445;
-  --sat-border-row:       #1f2b3a;
-  --sat-hover-bg:         #1f3550;
-  --sat-selected-bg:      #244766;
-  --sat-selected-fg:      #f8fafc;
-  --sat-focus-color:      #93c5fd;
-  --sat-focus-shadow:     0 0 0 3px rgba(147, 197, 253, .38);
+  --sat-text:             #e8f4f0;
+  --sat-text-label:       #c8ddd7;
+  --sat-text-muted:       #9bbdb4;
+  --sat-text-caption:     #92b5ab;
+  --sat-surface:          #0f1e18;
+  --sat-surface-card:     #152820;
+  --sat-white:            #0a1610;
+  --sat-border:           #2a4038;
+  --sat-border-light:     #1e3028;
+  --sat-border-row:       #182820;
+  --sat-hover-bg:         #1a3328;
+  --sat-selected-bg:      #1e4535;
+  --sat-selected-fg:      #e8f4f0;
+  --sat-focus-color:      #6db5a3;
+  --sat-focus-shadow:     0 0 0 3px rgba(109, 181, 163, .38);
   --sat-scrollbar-track:       transparent;
-  --sat-scrollbar-thumb:       #334155;
-  --sat-scrollbar-thumb-hover: #475569;
+  --sat-scrollbar-thumb:       #2a4038;
+  --sat-scrollbar-thumb-hover: #3d5e50;
 }
 
 html[data-sat-theme="contrast"] {
@@ -315,6 +319,13 @@ html[data-sat-motion="reduced"] *::after {
   letter-spacing: -.02em;
   font-size: 1.05rem;
   color: var(--sat-primary-fg) !important;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.navbar-brand img {
+  height: 38px;
+  width: auto;
+  display: block;
 }
 
 .navbar .nav-link {
