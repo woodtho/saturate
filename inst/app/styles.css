@@ -321,6 +321,7 @@ html[data-sat-motion="reduced"] *::after {
   color: var(--sat-primary-fg) !important;
   padding-top: 4px;
   padding-bottom: 4px;
+  margin-right: 1.5rem;
 }
 .navbar-brand img {
   height: 38px;
