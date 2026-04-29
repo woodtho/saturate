@@ -144,7 +144,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         class = "qc-profile-brand",
         shiny::tags$img(
           src   = "saturate-assets/logo.png",
-          height = "100",
+          height = "160",
           alt   = "saturate",
           style = "display:block;margin:0 auto 1rem;"
         )
