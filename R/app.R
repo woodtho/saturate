@@ -31,6 +31,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         alt    = "saturate — for qualitative coding",
         style  = "display:block;"
       ),
+      window_title = "saturate",
       theme    = bslib::bs_theme(version = 5, bootswatch = "flatly"),
       lang     = "en",
       selected = "Coding",
