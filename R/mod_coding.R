@@ -109,7 +109,7 @@
               `aria-label` = "Read aloud",
               title = "Read aloud (or pause/resume)",
               `data-qc-tts-action` = "playpause",
-              "⏯"
+              "▶"
             ),
             shiny::tags$button(
               id = ns("tts_stop"),

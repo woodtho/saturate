@@ -381,8 +381,9 @@
 
     if (ppBtn) {
       ppBtn.disabled = !_tts.supported || !hasText;
-      var label = _tts.isSpeaking && !_tts.isPaused ? 'Pause' :
-                  _tts.isPaused ? 'Resume' : 'Read aloud';
+      var playing = _tts.isSpeaking && !_tts.isPaused;
+      ppBtn.textContent = playing ? '⏸' : '▶';
+      var label = playing ? 'Pause' : _tts.isPaused ? 'Resume' : 'Read aloud';
       ppBtn.title = label;
       ppBtn.setAttribute('aria-label', label);
     }
