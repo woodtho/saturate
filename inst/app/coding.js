@@ -24,7 +24,8 @@
     currentUtterance: null,
     lineMap: [],       // [{lineIdx, charStart, charEnd}] in speech-text coords
     chunkOffsets: [],  // charOffset of each chunk's start in the full speech text
-    activeLineIdx: -1  // index into lineMap of the currently highlighted line
+    activeLineIdx: -1, // index into lineMap of the currently highlighted line
+    clickOffset: null  // DOM char offset of last user click in the document
   };
 
   // ── Namespace setup ────────────────────────────────────────────────────────
@@ -167,6 +168,89 @@
       else { return mid; }
     }
     return Math.min(lo, map.length - 1);
+  }
+
+  // ── Click-start marker ────────────────────────────────────────────────────
+
+  function _getOrCreateClickMark(container) {
+    var m = container.querySelector('.qc-tts-click-mark');
+    if (!m) {
+      m = document.createElement('div');
+      m.className = 'qc-tts-click-mark';
+      m.setAttribute('aria-hidden', 'true');
+      container.appendChild(m);
+    }
+    return m;
+  }
+
+  function _showClickMark(container, range) {
+    try {
+      var rect  = range.getBoundingClientRect();
+      var cRect = container.getBoundingClientRect();
+      var top   = container.scrollTop + (rect.top - cRect.top);
+      var lineH = rect.height || parseFloat(getComputedStyle(container).lineHeight) || 24;
+      var m = _getOrCreateClickMark(container);
+      m.style.top    = Math.max(0, top) + 'px';
+      m.style.height = lineH + 'px';
+      m.style.display = 'block';
+    } catch (e) {}
+  }
+
+  function _clearClickMark(container) {
+    _tts.clickOffset = null;
+    if (!container) return;
+    var m = container.querySelector('.qc-tts-click-mark');
+    if (m) m.style.display = 'none';
+  }
+
+  // ── Start-position helpers ─────────────────────────────────────────────────
+
+  // First .qc-line element whose top edge is at or below the container viewport.
+  function _firstVisibleLine(container) {
+    var lineEls = container.querySelectorAll('.qc-line');
+    var cRect   = container.getBoundingClientRect();
+    for (var i = 0; i < lineEls.length; i++) {
+      if (lineEls[i].getBoundingClientRect().top >= cRect.top - 2) return i;
+    }
+    return 0;
+  }
+
+  // DOM char offset of the first text node visible at the container's top edge.
+  function _findScrollStartOffset(container) {
+    if (!container) return 0;
+    var cRect = container.getBoundingClientRect();
+    var filter = {
+      acceptNode: function (node) {
+        var p = node.parentNode;
+        if (p && p.classList &&
+            (p.classList.contains('qc-line-num') || p.classList.contains('qc-memo-icon'))) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    };
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, filter, false);
+    var n, count = 0;
+    while ((n = walker.nextNode())) {
+      if (!n.length) continue;
+      try {
+        var range = document.createRange();
+        range.setStart(n, 0);
+        range.collapse(true);
+        if (range.getBoundingClientRect().top >= cRect.top - 2) return count;
+      } catch (e) {}
+      count += n.length;
+    }
+    return 0;
+  }
+
+  // Index of the last chunk whose start offset is ≤ charOff.
+  function _chunkIdxForOffset(offsets, charOff) {
+    if (charOff <= 0 || !offsets.length) return 0;
+    for (var i = offsets.length - 1; i >= 0; i--) {
+      if (offsets[i] <= charOff) return i;
+    }
+    return 0;
   }
 
   // ── Reading cursor ─────────────────────────────────────────────────────────
@@ -477,20 +561,48 @@
     window.setTimeout(function () { _speakChunk(runId, chunks, 0); }, 0);
   }
 
-  // Play button: read selection (if any) or the full document
+  // Play button: selection → click point → scroll position → full document.
   function _startTts() {
     if (!_tts.supported) { _syncTtsControls(); return; }
-    var container   = _getTtsContainer();
+    var container    = _getTtsContainer();
     var selectedText = container ? _getSelectedSpeechText(container) : '';
     var docText      = _getDocumentSpeechText(container);
-    var text = selectedText || docText;
-    if (!text) { _syncTtsControls(); return; }
 
-    var lineMap = [];
-    if (!selectedText && container && container.classList.contains('qc-line-numbers-on')) {
-      lineMap = _buildLineMap(container, 0);
+    // Priority 1: highlighted text
+    if (selectedText) {
+      _clearClickMark(container);
+      _launchTts(selectedText, 'selection', []);
+      return;
     }
-    _launchTts(text, selectedText ? 'selection' : 'document', lineMap);
+
+    if (!docText) { _syncTtsControls(); return; }
+
+    // Priority 2 (line mode): click point or first visible line
+    if (container && container.classList.contains('qc-line-numbers-on')) {
+      _startTtsFromLine(_firstVisibleLine(container));
+      return;
+    }
+
+    // Priority 2 (free-text mode): click offset, else scroll position
+    var split    = _splitSpeechTextWithOffsets(docText);
+    var startIdx = _tts.clickOffset !== null
+      ? _chunkIdxForOffset(split.offsets, _tts.clickOffset)
+      : _chunkIdxForOffset(split.offsets, _findScrollStartOffset(container));
+
+    _clearClickMark(container);
+    _cancelTts();
+    _tts.isSpeaking          = true;
+    _tts.isPaused            = false;
+    _tts.currentMode         = 'document';
+    _tts.currentText         = docText;
+    _tts.currentDocumentText = docText;
+    _tts.lineMap             = [];
+    _tts.chunkOffsets        = split.offsets;
+    _tts.activeLineIdx       = -1;
+
+    var runId = _tts.runId;
+    _syncTtsControls();
+    window.setTimeout(function () { _speakChunk(runId, split.chunks, startIdx); }, 0);
   }
 
   // Click on a line number: read from that line to end of document
@@ -549,6 +661,7 @@
     if (_tts.isSpeaking && documentText !== _tts.currentDocumentText) {
       _cancelTts();
     }
+    _clearClickMark(container);
     _syncTtsControls();
   }
 
@@ -624,14 +737,26 @@
     _startTtsFromLine(lineIdx);
   });
 
-  // ── Text selection offset capture ──────────────────────────────────────────
+  // ── Text selection / click-start capture ──────────────────────────────────
   $(document).on('mouseup', '.qc-text-display', function (e) {
-    var sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
-    var range     = sel.getRangeAt(0);
+    var sel       = window.getSelection();
     var container = e.currentTarget;
-    var start     = charOffset(container, range.startContainer, range.startOffset);
-    var end       = charOffset(container, range.endContainer,   range.endOffset);
+    if (!sel || sel.rangeCount === 0) return;
+
+    if (sel.isCollapsed) {
+      // Collapsed click — record TTS start point and show marker
+      if (!_tts.supported) return;
+      var range = sel.getRangeAt(0);
+      _tts.clickOffset = charOffset(container, range.startContainer, range.startOffset);
+      _showClickMark(container, range);
+      return;
+    }
+
+    // Text selection — clear any click mark and send offsets to Shiny
+    _clearClickMark(container);
+    var range = sel.getRangeAt(0);
+    var start = charOffset(container, range.startContainer, range.startOffset);
+    var end   = charOffset(container, range.endContainer,   range.endOffset);
     if (start >= end) return;
     Shiny.setInputValue(
       window._qc_ns + 'selection',

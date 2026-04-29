@@ -1436,6 +1436,39 @@ html[data-sat-theme="contrast"] .qc-tts-active-line {
   border-left-color: var(--sat-accent);
 }
 
+/* Click-start marker — shows where TTS will begin on next play press.
+ * Uses the info/steel-blue token so it's distinct from the green needle. */
+.qc-tts-click-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--sat-button-info) 10%, transparent);
+  border-left: 3px solid var(--sat-button-info);
+  border-radius: 0 3px 3px 0;
+  pointer-events: none;
+  z-index: 4;
+  display: none;
+  animation: qc-tts-click-fade 2.5s ease forwards;
+}
+.qc-tts-click-mark::after {
+  content: "▶";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .55rem;
+  color: var(--sat-button-info);
+  line-height: 1;
+}
+@keyframes qc-tts-click-fade {
+  0%   { opacity: 1; }
+  60%  { opacity: 1; }
+  100% { opacity: .35; }
+}
+html[data-sat-theme="dark"] .qc-tts-click-mark {
+  background: color-mix(in srgb, var(--sat-button-info) 16%, transparent);
+}
+
 /* Reading needle — visible in both line and non-line modes.
  * Height is set dynamically to match the actual line height from
  * Range.getBoundingClientRect(), so it forms a full line-highlight band. */
