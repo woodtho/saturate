@@ -725,65 +725,13 @@ html[data-sat-theme="dark"] .nav-underline .nav-link.active {
 }
 
 .qc-tts-controls {
-  padding-left: .45rem;
-  margin-left: .15rem;
-  border-left: 1px solid var(--sat-border);
-}
-
-.qc-tts-controls .btn {
-  min-width: 4.25rem;
+  display: flex;
+  gap: .5rem;
+  align-items: center;
 }
 
 .qc-tts-controls .btn[disabled] {
-  opacity: .55;
-}
-
-.qc-tts-status {
-  display: inline-flex;
-  align-items: center;
-  min-width: 5.5rem;
-  min-height: 2rem;
-  padding: .2rem .65rem;
-  border: 1px solid var(--sat-border);
-  border-radius: 999px;
-  background: var(--sat-white);
-  color: var(--sat-text-muted);
-  font-size: .75rem;
-  font-weight: 600;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.qc-tts-status[data-state="active"] {
-  color: var(--sat-button-alt);
-  border-color: color-mix(in srgb, var(--sat-button-alt) 45%, var(--sat-border));
-  background: color-mix(in srgb, var(--sat-button-alt) 10%, var(--sat-white));
-}
-
-.qc-tts-status[data-state="paused"] {
-  color: var(--sat-blind-locked);
-  border-color: color-mix(in srgb, var(--sat-blind-locked) 50%, var(--sat-border));
-  background: color-mix(in srgb, var(--sat-blind-locked) 12%, var(--sat-white));
-}
-
-.qc-tts-status[data-state="error"] {
-  color: var(--sat-danger);
-  border-color: color-mix(in srgb, var(--sat-danger) 45%, var(--sat-border));
-  background: color-mix(in srgb, var(--sat-danger) 8%, var(--sat-white));
-}
-
-html[data-sat-theme="dark"] .qc-tts-controls {
-  border-left-color: color-mix(in srgb, var(--sat-border) 82%, var(--sat-white) 18%);
-}
-
-html[data-sat-theme="dark"] .qc-tts-status {
-  background: color-mix(in srgb, var(--sat-surface) 84%, var(--sat-white));
-  border-color: color-mix(in srgb, var(--sat-border) 84%, var(--sat-button-alt) 16%);
-  color: color-mix(in srgb, var(--sat-text-muted) 92%, var(--sat-text) 8%);
-}
-
-html[data-sat-theme="dark"] .qc-tts-status[data-state="active"] {
-  background: color-mix(in srgb, var(--sat-button-alt) 20%, var(--sat-surface));
+  opacity: .45;
 }
 
 html[data-sat-theme="dark"] .qc-tts-status[data-state="paused"] {

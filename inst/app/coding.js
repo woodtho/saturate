@@ -372,14 +372,6 @@
 
   // ── Controls sync ──────────────────────────────────────────────────────────
 
-  function _setTtsStatus(text, state) {
-    if (!window._qc_ns) return;
-    var el = document.getElementById(window._qc_ns + 'tts_status');
-    if (!el) return;
-    el.textContent = text;
-    el.setAttribute('data-state', state || 'idle');
-  }
-
   function _syncTtsControls() {
     if (!window._qc_ns) return;
     var playBtn  = document.getElementById(window._qc_ns + 'tts_play');
@@ -390,28 +382,12 @@
 
     if (playBtn)  playBtn.disabled  = !_tts.supported || !hasText;
     if (pauseBtn) {
-      pauseBtn.disabled   = !_tts.supported || !_tts.isSpeaking;
-      pauseBtn.textContent = _tts.isPaused ? 'Resume' : '⏸';
+      pauseBtn.disabled    = !_tts.supported || !_tts.isSpeaking;
+      pauseBtn.textContent = _tts.isPaused ? '▶ Resume' : '⏸';
       pauseBtn.title       = _tts.isPaused ? 'Resume the current narration' : 'Pause the current narration';
       pauseBtn.setAttribute('aria-label', _tts.isPaused ? 'Resume narration' : 'Pause narration');
     }
     if (stopBtn)  stopBtn.disabled  = !_tts.supported || !_tts.isSpeaking;
-
-    if (!_tts.supported) { _setTtsStatus('Unavailable', 'error'); return; }
-
-    if (_tts.isSpeaking) {
-      if (_tts.isPaused) {
-        _setTtsStatus('Paused', 'paused');
-      } else {
-        var label = _tts.currentMode === 'selection' ? 'Reading selection' : 'Reading';
-        if (_tts.activeLineIdx >= 0) {
-          label += ' · line ' + (_tts.activeLineIdx + 1);
-        }
-        _setTtsStatus(label, 'active');
-      }
-      return;
-    }
-    _setTtsStatus(hasText ? 'Ready' : 'No document', 'idle');
   }
 
   // ── Core TTS control ───────────────────────────────────────────────────────
@@ -475,7 +451,6 @@
       if (runId !== _tts.runId) return;
       _cancelTts();
       _syncTtsControls();
-      _setTtsStatus('TTS error', 'error');
     };
     _tts.currentUtterance = utterance;
     window.speechSynthesis.speak(utterance);

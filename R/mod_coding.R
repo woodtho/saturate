@@ -12,7 +12,7 @@
       bslib::card(
         bslib::card_header(
           shiny::div(
-            class = "d-flex justify-content-between align-items-center w-100",
+            class = "qc-doc-toolbar d-flex justify-content-between align-items-center w-100",
             shiny::div(
               class = "flex-grow-1 me-2",
               style = "min-width:0;",
@@ -25,9 +25,9 @@
               )
             ),
             shiny::div(
-              class = "d-flex gap-1 flex-shrink-0 align-items-center",
+              class = "qc-doc-actions d-flex gap-1 flex-shrink-0 align-items-center flex-wrap justify-content-end",
               shiny::div(
-                class = "form-check form-switch d-flex align-items-center gap-1 me-1",
+                class = "qc-doc-lines-toggle form-check form-switch d-flex align-items-center gap-1 me-1",
                 style = "margin-bottom:0;",
                 shiny::tags$input(
                   id    = ns("show_line_numbers"),
@@ -98,7 +98,41 @@
           )
         ),
         shiny::uiOutput(ns("blind_banner")),
-        shiny::uiOutput(ns("text_display"))
+        shiny::uiOutput(ns("text_display")),
+        bslib::card_footer(
+          shiny::div(
+            class = "qc-tts-controls d-flex gap-2 align-items-center",
+            shiny::tags$button(
+              id = ns("tts_play"),
+              type = "button",
+              class = "btn btn-sm btn-outline-secondary",
+              `aria-label` = "Read aloud",
+              title = "Read selected text, or read the whole document",
+              `data-qc-tts-action` = "play",
+              "▶ Read"
+            ),
+            shiny::tags$button(
+              id = ns("tts_pause"),
+              type = "button",
+              class = "btn btn-sm btn-outline-secondary",
+              `aria-label` = "Pause narration",
+              title = "Pause the current narration",
+              `data-qc-tts-action` = "pause",
+              disabled = "disabled",
+              "⏸"
+            ),
+            shiny::tags$button(
+              id = ns("tts_stop"),
+              type = "button",
+              class = "btn btn-sm btn-outline-secondary",
+              `aria-label` = "Stop narration",
+              title = "Stop the current narration",
+              `data-qc-tts-action` = "stop",
+              disabled = "disabled",
+              "⏹"
+            )
+          )
+        )
       ),
 
       # ── Right: apply-code panel ────────────────────────────────────────────
