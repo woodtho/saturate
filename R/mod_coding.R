@@ -728,6 +728,45 @@ mod_coding_server <- function(id, rv, parent_session) {
     shiny::observeEvent(input$hotkey_doc_prev, .nav_doc(-1L))
     shiny::observeEvent(input$hotkey_doc_next, .nav_doc(+1L))
 
+    # -- Coding tab shortcut: m (memo for last coding) --------------------------
+
+    shiny::observeEvent(input$hotkey_memo, {
+      shiny::req(!is.null(lv$last_coding_id))
+      tryCatch({
+        codings <- qc_list_codings(rv$project, rv$active_source_id)
+        row     <- codings[codings$id == lv$last_coding_id, ]
+        shiny::req(nrow(row) > 0L)
+        .show_edit_modal(row[1L, ])
+      }, error = function(e) NULL)
+    })
+
+    # -- Coding tab shortcut: r (remove last coding) ----------------------------
+
+    shiny::observeEvent(input$hotkey_remove_last, {
+      shiny::req(!is.null(lv$last_coding_id))
+      tryCatch({
+        qc_delete_coding(rv$project, lv$last_coding_id)
+        rv$refresh_codes  <- rv$refresh_codes + 1L
+        lv$last_coding_id <- NULL
+        shiny::removeNotification(ns("apply_toast"))
+        shiny::showNotification("Coding removed.", type = "message", duration = 2)
+      }, error = function(e) {
+        shiny::showNotification(conditionMessage(e), type = "error")
+      })
+    })
+
+    # -- Coding tab shortcut: c / l (toggle display filters) -------------------
+
+    shiny::observeEvent(input$hotkey_cb_toggle, {
+      shiny::updateCheckboxInput(session, "cb_mode",
+        value = !isTRUE(input$cb_mode))
+    })
+
+    shiny::observeEvent(input$hotkey_lines_toggle, {
+      shiny::updateCheckboxInput(session, "show_line_numbers",
+        value = !isTRUE(input$show_line_numbers))
+    })
+
     # -- Display filter reactive updates ----------------------------------------
 
     shiny::observeEvent(input$highlight_opacity, {
@@ -761,6 +800,10 @@ mod_coding_server <- function(id, rv, parent_session) {
           shiny::tags$dd("Apply the selected code to the highlighted text"),
           shiny::tags$dt(kbd("/")),
           shiny::tags$dd("Focus the code search box"),
+          shiny::tags$dt(kbd("m")),
+          shiny::tags$dd("Edit memo / confidence for the last coding"),
+          shiny::tags$dt(kbd("r")),
+          shiny::tags$dd("Remove the last coding applied"),
           shiny::tags$dt(kbd("Esc")),
           shiny::tags$dd("Clear the text selection")
         ),
@@ -775,7 +818,9 @@ mod_coding_server <- function(id, rv, parent_session) {
           shiny::tags$dt(kbd("]")),
           shiny::tags$dd("Next document"),
           shiny::tags$dt(kbd("[")),
-          shiny::tags$dd("Previous document")
+          shiny::tags$dd("Previous document"),
+          shiny::tags$dt(shiny::tagList(kbd("Alt"), "+", kbd("1\u20138"))),
+          shiny::tags$dd("Switch tab (1=Documents 2=Coding 3=Compare 4=Codebook 5=Themes 6=Query 7=Cases 8=Journal)")
         ),
         shiny::tags$h6("Read aloud"),
         shiny::tags$dl(
@@ -788,8 +833,17 @@ mod_coding_server <- function(id, rv, parent_session) {
         shiny::tags$dl(
           shiny::tags$dt(kbd("b")),
           shiny::tags$dd("Toggle blind mode"),
+          shiny::tags$dt(kbd("c")),
+          shiny::tags$dd("Toggle colour-blind highlight mode"),
+          shiny::tags$dt(kbd("l")),
+          shiny::tags$dd("Toggle line numbers")
+        ),
+        shiny::tags$h6("Any tab"),
+        shiny::tags$dl(
+          shiny::tags$dt(shiny::tagList(kbd("Ctrl"), "+", kbd("Enter"))),
+          shiny::tags$dd("Save / submit the current form (Journal, Codebook, Cases)"),
           shiny::tags$dt(kbd("?")),
-          shiny::tags$dd("Show this help")
+          shiny::tags$dd("Show this help (Coding tab only)")
         )
       ))
     }

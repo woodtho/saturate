@@ -1740,6 +1740,8 @@ the in-app shortcut reference.
 | **Enter** | Apply the currently selected code to the selected text |
 | **1** -- **9** | Select the Nth code in the picker *and* apply it immediately -- no Enter needed |
 | **/** | Focus the code search box |
+| **m** | Open the edit modal for the most recently applied coding (adjust memo or confidence) |
+| **r** | Remove the most recently applied coding |
 | **Esc** | Clear the current text selection and dismiss the code picker |
 
 ### Navigation shortcuts
@@ -1751,12 +1753,20 @@ the in-app shortcut reference.
 | **d** | Next disputed or draft segment within the current document |
 | **]** | Next document in the list |
 | **[** | Previous document in the list |
+| **Alt+1** | Switch to the Documents tab |
+| **Alt+2** | Switch to the Coding tab |
+| **Alt+3** | Switch to the Compare tab |
+| **Alt+4** | Switch to the Codebook tab |
+| **Alt+5** | Switch to the Themes tab |
+| **Alt+6** | Switch to the Query tab |
+| **Alt+7** | Switch to the Cases tab |
+| **Alt+8** | Switch to the Journal tab |
 
 ### Read-aloud shortcuts
 
 | Key | Action |
 |---|---|
-| **Space** | Play / pause read-aloud (starts from the clicked position, visible scroll position, or beginning) |
+| **Space** | Play / pause read-aloud (starts from click point, scroll position, or beginning) |
 | **x** | Stop read-aloud and reset to the beginning |
 
 ### View shortcuts
@@ -1764,7 +1774,23 @@ the in-app shortcut reference.
 | Key | Action |
 |---|---|
 | **b** | Toggle blind mode on/off |
+| **c** | Toggle colour-blind highlight mode (solid fill vs border outlines) |
+| **l** | Toggle line numbers |
 | **?** | Open the keyboard shortcuts reference modal |
+
+### Any-tab shortcuts
+
+These work regardless of which tab is active, as long as the cursor is in the
+relevant field.
+
+| Key | Action |
+|---|---|
+| **Ctrl+Enter** in the Journal memo field | Save the current journal entry |
+| **Ctrl+Enter** in the Codebook code name field | Add or save the current code |
+| **Ctrl+Enter** in the Cases name field | Add the current case |
+
+On macOS, **Cmd+Enter** works in place of **Ctrl+Enter** for the form submit
+shortcuts.
 
 ### Mouse interactions in the document pane
 
@@ -1773,20 +1799,24 @@ the in-app shortcut reference.
 | Click and drag | Select a text passage; the code picker opens on release |
 | Click on a highlight | Open the edit/remove panel for that coding |
 | Click anywhere (no drag) | Set the read-aloud start point; a marker line appears at that position |
-| Click a line number | Start read-aloud from that line (requires **Show line numbers** to be on in Settings) |
+| Click a line number | Start read-aloud from that line (requires **Show line numbers** to be on) |
 | Select text, then press **Space** | Reads only the selected passage aloud |
 
 ### Shortcut scope and limitations
 
-- Shortcuts are suppressed when a text input, dropdown, or SELECT element has
-  focus -- type freely in the code search box and memo fields without
-  accidentally triggering them.
-- Shortcuts are suppressed when any modal dialogue is open.
+- Letter shortcuts (**n**, **p**, **m**, **r**, etc.) are suppressed when any
+  text input, dropdown, or SELECT element has focus -- type freely in the code
+  search box and memo fields without accidentally triggering them.
+- All Coding-tab shortcuts are suppressed when any modal dialogue is open.
 - The digit shortcuts (**1**--**9**) apply the Nth code from the *filtered*
   list, so typing a few letters in the code search box first narrows the list
   before you press the digit.
+- **m** and **r** require a coding to have been applied in the current session;
+  they do nothing if no coding has been made yet.
 - **Space** prevents the default page-scroll behaviour while in the Coding tab;
   use the mouse wheel or trackpad to scroll instead.
+- **Alt+digit** tab switching is suppressed when any input field has focus, so
+  it will not interfere with typing.
 
 ### Workflow tips
 

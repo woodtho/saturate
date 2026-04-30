@@ -857,6 +857,18 @@
         e.preventDefault();
         Shiny.setInputValue(ns + 'hotkey_doc_next', Date.now(), { priority: 'event' });
         break;
+      case 'm':
+        Shiny.setInputValue(ns + 'hotkey_memo', Date.now(), { priority: 'event' });
+        break;
+      case 'r':
+        Shiny.setInputValue(ns + 'hotkey_remove_last', Date.now(), { priority: 'event' });
+        break;
+      case 'c':
+        Shiny.setInputValue(ns + 'hotkey_cb_toggle', Date.now(), { priority: 'event' });
+        break;
+      case 'l':
+        Shiny.setInputValue(ns + 'hotkey_lines_toggle', Date.now(), { priority: 'event' });
+        break;
       default:
         if (/^[1-9]$/.test(e.key)) {
           Shiny.setInputValue(
@@ -865,6 +877,48 @@
             { priority: 'event' }
           );
         }
+    }
+  });
+
+  // ── Global: Alt+1-8 tab switching ─────────────────────────────────────────
+  var _altTabMap = {
+    '1': 'Documents', '2': 'Coding',  '3': 'Compare',
+    '4': 'Codebook',  '5': 'Themes',  '6': 'Query',
+    '7': 'Cases',     '8': 'Journal'
+  };
+
+  function _navToTab(value) {
+    var el = document.querySelector('[data-value="' + CSS.escape(value) + '"]');
+    if (el) el.click();
+  }
+
+  $(document).on('keydown', function (e) {
+    if (!e.altKey || !_altTabMap[e.key]) return;
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    e.preventDefault();
+    _navToTab(_altTabMap[e.key]);
+  });
+
+  // ── Global: Ctrl/Cmd+Enter form submit ────────────────────────────────────
+  $(document).on('keydown', 'textarea, input[type="text"]', function (e) {
+    if ((!e.ctrlKey && !e.metaKey) || e.key !== 'Enter') return;
+    e.preventDefault();
+    var id  = this.id;
+    var btnId;
+    if (id === 'memos-new_memo_content') {
+      btnId = 'memos-btn_add_memo';
+    } else if (id === 'codebook-code_name') {
+      var save = document.getElementById('codebook-btn_save_code');
+      btnId = (save && !save.disabled && save.offsetParent !== null)
+        ? 'codebook-btn_save_code'
+        : 'codebook-btn_add_code';
+    } else if (id === 'cases-new_case_name') {
+      btnId = 'cases-btn_add_case';
+    }
+    if (btnId) {
+      var btn = document.getElementById(btnId);
+      if (btn && !btn.disabled) btn.click();
     }
   });
 
