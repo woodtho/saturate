@@ -32,7 +32,11 @@ mod_documents_ui <- function(id) {
           "Documents",
           shiny::div(
             class = "d-flex gap-1",
-            shiny::downloadButton(ns("dl_docs_csv"), "CSV",
+            shiny::downloadButton(ns("dl_docs_csv"),  "CSV",
+              class = "btn-sm btn-outline-secondary"),
+            shiny::downloadButton(ns("dl_docs_xlsx"), "Excel",
+              class = "btn-sm btn-outline-secondary"),
+            shiny::downloadButton(ns("dl_docs_json"), "JSON",
               class = "btn-sm btn-outline-secondary"),
             shiny::actionButton(ns("btn_code_doc"), "Code →",
               class = "btn-sm btn-primary",
@@ -113,17 +117,37 @@ mod_documents_server <- function(id, rv) {
       )
     })
 
-    # ── Document list CSV ──────────────────────────────────────────────────────
+    # ── Document list exports ──────────────────────────────────────────────────
+
+    .docs_export_df <- function() {
+      tryCatch(
+        dplyr::select(docs(), id, name, source_type, word_count,
+                      char_count, n_codings, n_coders, memo),
+        error = function(e) tibble::tibble()
+      )
+    }
 
     output$dl_docs_csv <- shiny::downloadHandler(
       filename = function() paste0("documents_", Sys.Date(), ".csv"),
+      content  = function(file) utils::write.csv(.docs_export_df(), file, row.names = FALSE)
+    )
+
+    output$dl_docs_xlsx <- shiny::downloadHandler(
+      filename = function() paste0("documents_", Sys.Date(), ".xlsx"),
       content  = function(file) {
-        df <- tryCatch(
-          dplyr::select(docs(), id, name, source_type, word_count,
-                        char_count, n_codings, n_coders, memo),
-          error = function(e) tibble::tibble()
-        )
-        utils::write.csv(df, file, row.names = FALSE)
+        tryCatch(.write_xlsx(list(documents = .docs_export_df()), file),
+          error = function(e) shiny::showNotification(conditionMessage(e), type = "error"))
+      }
+    )
+
+    output$dl_docs_json <- shiny::downloadHandler(
+      filename = function() paste0("documents_", Sys.Date(), ".json"),
+      content  = function(file) {
+        if (!requireNamespace("jsonlite", quietly = TRUE)) {
+          shiny::showNotification("Install 'jsonlite' for JSON export.", type = "error")
+          return()
+        }
+        writeLines(jsonlite::toJSON(.docs_export_df(), auto_unbox = TRUE, pretty = TRUE), file)
       }
     )
 

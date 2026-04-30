@@ -441,6 +441,15 @@
     if (!window.speechSynthesis || !window.speechSynthesis.getVoices) return null;
     var voices = window.speechSynthesis.getVoices() || [];
     if (!voices.length) return null;
+
+    var preferred = (document.documentElement.getAttribute('data-sat-tts-voice') || '').trim();
+    if (preferred && preferred !== 'auto') {
+      var match = voices.find(function(v) {
+        return (v.voiceURI || v.name) === preferred;
+      });
+      if (match) return match;
+    }
+
     var lang = (document.documentElement.lang || navigator.language || 'en-US').toLowerCase();
     var baseLang = lang.split('-')[0];
     return voices.find(function (v) { return v.lang && v.lang.toLowerCase() === lang; }) ||
@@ -510,7 +519,8 @@
     var voice = _pickSpeechVoice();
     if (voice) utterance.voice = voice;
     utterance.lang  = (voice && voice.lang) || document.documentElement.lang || navigator.language || 'en-US';
-    utterance.rate  = 1;
+    var ttsRate = parseFloat(document.documentElement.getAttribute('data-sat-tts-rate') || '1');
+    utterance.rate  = (isFinite(ttsRate) && ttsRate >= 0.6 && ttsRate <= 1.8) ? ttsRate : 1;
     utterance.pitch = 1;
 
     // Reading cursor via boundary events (not supported in all browsers — degrades gracefully)

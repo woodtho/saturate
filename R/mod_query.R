@@ -40,7 +40,7 @@ mod_query_ui <- function(id) {
       shiny::hr(),
       shiny::actionButton(ns("btn_run"), "Run Query",
                           class = "btn-primary w-100 mb-2"),
-      shiny::downloadButton(ns("btn_csv"), "Export CSV",
+      shiny::downloadButton(ns("btn_csv"), "CSV",
                             class = "btn-outline-secondary w-100 mb-3"),
       shiny::uiOutput(ns("summary_text"))
     ),

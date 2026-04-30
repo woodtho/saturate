@@ -27,10 +27,18 @@ mod_memos_ui <- function(id) {
 
       shiny::hr(),
 
-      shiny::downloadButton(ns("dl_memos_csv"), "Export CSV",
-        class = "btn-outline-secondary w-100 mb-1"),
-      shiny::downloadButton(ns("dl_memos_txt"), "Export TXT",
-        class = "btn-outline-secondary w-100")
+      shiny::tags$p(class = "text-muted small mb-1 mt-0", "Export journal"),
+      shiny::div(
+        class = "d-flex gap-2 flex-wrap",
+        shiny::downloadButton(ns("dl_memos_csv"),  "CSV",
+          class = "btn-sm btn-outline-secondary"),
+        shiny::downloadButton(ns("dl_memos_txt"),  "Text",
+          class = "btn-sm btn-outline-secondary"),
+        shiny::downloadButton(ns("dl_memos_docx"), "Word",
+          class = "btn-sm btn-outline-secondary"),
+        shiny::downloadButton(ns("dl_memos_html"), "HTML",
+          class = "btn-sm btn-outline-secondary")
+      )
     ),
 
     shiny::div(
@@ -206,6 +214,30 @@ mod_memos_server <- function(id, rv) {
           )
         }
         writeLines(lines, file)
+      }
+    )
+
+    output$dl_memos_docx <- shiny::downloadHandler(
+      filename = function() paste0("journal_", Sys.Date(), ".docx"),
+      content  = function(file) {
+        tryCatch({
+          file.copy(.export_memos_docx(rv$project), file)
+        }, error = function(e) {
+          shiny::showNotification(paste0("Export error: ", conditionMessage(e)),
+            type = "error")
+        })
+      }
+    )
+
+    output$dl_memos_html <- shiny::downloadHandler(
+      filename = function() paste0("journal_", Sys.Date(), ".html"),
+      content  = function(file) {
+        tryCatch({
+          file.copy(.export_memos_html(rv$project), file)
+        }, error = function(e) {
+          shiny::showNotification(paste0("Export error: ", conditionMessage(e)),
+            type = "error")
+        })
       }
     )
   })

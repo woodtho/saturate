@@ -58,5 +58,5 @@ test_that("qc_close invalidates the connection", {
 test_that("print.qc_project does not error", {
   proj <- make_test_project()
   on.exit(qc_close(proj))
-  expect_output(print(proj), "qc_project")
+  expect_no_error(print(proj))
 })

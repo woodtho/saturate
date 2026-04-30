@@ -72,8 +72,15 @@ mod_compare_ui <- function(id) {
         shiny::div(
           class = "d-flex justify-content-between align-items-center w-100",
           "Differences",
-          shiny::downloadButton(ns("dl_diff_csv"), "CSV",
-            class = "btn-sm btn-outline-secondary")
+          shiny::div(
+            class = "d-flex gap-2",
+            shiny::downloadButton(ns("dl_diff_csv"),  "CSV",
+              class = "btn-sm btn-outline-secondary"),
+            shiny::downloadButton(ns("dl_diff_xlsx"), "Excel",
+              class = "btn-sm btn-outline-secondary"),
+            shiny::downloadButton(ns("dl_diff_json"), "JSON",
+              class = "btn-sm btn-outline-secondary")
+          )
         )
       ),
       shiny::div(
@@ -325,7 +332,11 @@ mod_compare_server <- function(id, rv) {
             "Reliability Statistics",
             shiny::div(
               class = "d-flex gap-2",
-              shiny::downloadButton(ns("dl_reliability_csv"), "CSV",
+              shiny::downloadButton(ns("dl_reliability_csv"),  "CSV",
+                class = "btn-sm btn-outline-secondary"),
+              shiny::downloadButton(ns("dl_reliability_xlsx"), "Excel",
+                class = "btn-sm btn-outline-secondary"),
+              shiny::downloadButton(ns("dl_reliability_json"), "JSON",
                 class = "btn-sm btn-outline-secondary"),
               shiny::actionButton(ns("btn_reliability"), "Compute",
                 class = "btn-sm btn-outline-secondary")
@@ -382,6 +393,27 @@ mod_compare_server <- function(id, rv) {
         df <- diff_rv()
         utils::write.csv(if (is.null(df)) tibble::tibble() else df,
                          file, row.names = FALSE)
+      }
+    )
+
+    output$dl_diff_xlsx <- shiny::downloadHandler(
+      filename = function() paste0("differences_", Sys.Date(), ".xlsx"),
+      content  = function(file) {
+        df <- diff_rv() %||% tibble::tibble()
+        tryCatch(.write_xlsx(list(differences = df), file),
+          error = function(e) shiny::showNotification(conditionMessage(e), type = "error"))
+      }
+    )
+
+    output$dl_diff_json <- shiny::downloadHandler(
+      filename = function() paste0("differences_", Sys.Date(), ".json"),
+      content  = function(file) {
+        if (!requireNamespace("jsonlite", quietly = TRUE)) {
+          shiny::showNotification("Install 'jsonlite' for JSON export.", type = "error")
+          return()
+        }
+        df <- diff_rv() %||% tibble::tibble()
+        writeLines(jsonlite::toJSON(df, auto_unbox = TRUE, pretty = TRUE), file)
       }
     )
 

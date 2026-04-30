@@ -36,7 +36,11 @@ mod_cases_ui <- function(id) {
             "Cases",
             shiny::div(
               class = "d-flex gap-2 align-items-center",
-              shiny::downloadButton(ns("dl_attributes_csv"), "Attributes CSV",
+              shiny::downloadButton(ns("dl_attributes_csv"),  "CSV",
+                class = "btn-sm btn-outline-secondary"),
+              shiny::downloadButton(ns("dl_attributes_xlsx"), "Excel",
+                class = "btn-sm btn-outline-secondary"),
+              shiny::downloadButton(ns("dl_attributes_json"), "JSON",
                 class = "btn-sm btn-outline-secondary")
             )
           )
@@ -440,14 +444,33 @@ mod_cases_server <- function(id, rv) {
       })
     })
 
-    # ── Attributes CSV download ────────────────────────────────────────────────
+    # ── Attributes exports ─────────────────────────────────────────────────────
+
+    .attrs_df <- function() {
+      tryCatch(qc_case_attributes_wide(rv$project), error = function(e) tibble::tibble())
+    }
 
     output$dl_attributes_csv <- shiny::downloadHandler(
       filename = function() paste0("case_attributes_", Sys.Date(), ".csv"),
+      content  = function(file) utils::write.csv(.attrs_df(), file, row.names = FALSE)
+    )
+
+    output$dl_attributes_xlsx <- shiny::downloadHandler(
+      filename = function() paste0("case_attributes_", Sys.Date(), ".xlsx"),
       content  = function(file) {
-        df <- tryCatch(qc_case_attributes_wide(rv$project),
-                       error = function(e) tibble::tibble())
-        utils::write.csv(df, file, row.names = FALSE)
+        tryCatch(.write_xlsx(list(attributes = .attrs_df()), file),
+          error = function(e) shiny::showNotification(conditionMessage(e), type = "error"))
+      }
+    )
+
+    output$dl_attributes_json <- shiny::downloadHandler(
+      filename = function() paste0("case_attributes_", Sys.Date(), ".json"),
+      content  = function(file) {
+        if (!requireNamespace("jsonlite", quietly = TRUE)) {
+          shiny::showNotification("Install 'jsonlite' for JSON export.", type = "error")
+          return()
+        }
+        writeLines(jsonlite::toJSON(.attrs_df(), auto_unbox = TRUE, pretty = TRUE), file)
       }
     )
   })

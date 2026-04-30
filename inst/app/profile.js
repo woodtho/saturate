@@ -242,7 +242,7 @@
       settings,
       "colorTheme",
       "light",
-      ["light", "dark", "contrast"]
+      ["light", "dark", "contrast", "contrast-dark", "ocean", "warm"]
     );
     var density = choiceSetting(
       settings,

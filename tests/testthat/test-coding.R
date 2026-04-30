@@ -59,7 +59,9 @@ test_that("build_highlighted_html returns an htmltools tag", {
     selfirst   = c(1L, 7L),
     selast     = c(5L, 11L),
     code_name  = c("A", "B"),
-    code_color = c("#4E79A7", "#F28E2B")
+    code_color = c("#4E79A7", "#F28E2B"),
+    id         = c(1L, 2L),
+    memo       = c("", "")
   )
   html <- build_highlighted_html(doc, codings)
   expect_s3_class(html, "shiny.tag")

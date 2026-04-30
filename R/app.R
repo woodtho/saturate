@@ -35,6 +35,11 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       theme    = bslib::bs_theme(version = 5, bootswatch = "flatly"),
       lang     = "en",
       selected = "Coding",
+      header   = shiny::div(
+        class = "d-md-none alert alert-warning rounded-0 mb-0 py-2 px-3 border-0 border-bottom",
+        shiny::icon("triangle-exclamation"),
+        " saturate is designed for larger screens. Some features may not display correctly on this device."
+      ),
 
       # ── Prep workspace ──────────────────────────────────────────────────
       bslib::nav_menu(
@@ -820,9 +825,12 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
     "Monospace" = "mono"
   )
   theme_choices <- c(
-    "Light" = "light",
-    "Dark" = "dark",
-    "High contrast" = "contrast"
+    "Light"                = "light",
+    "Dark"                 = "dark",
+    "High contrast"        = "contrast",
+    "High contrast dark"   = "contrast-dark",
+    "Ocean"                = "ocean",
+    "Warm"                 = "warm"
   )
   density_choices <- c(
     "Compact" = "compact",

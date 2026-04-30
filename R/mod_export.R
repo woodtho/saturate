@@ -352,7 +352,7 @@ mod_export_server <- function(id, rv) {
               class = "d-grid",
               shiny::downloadButton(ns("dl_rpt_docx"),
                 shiny::tagList(shiny::tags$i(class = "fa fa-file-word-o", `aria-hidden` = "true"),
-                               " Word Document (.docx)"),
+                               " Word"),
                 class = "btn btn-primary"
               )
             ),
@@ -360,7 +360,7 @@ mod_export_server <- function(id, rv) {
               class = "d-grid",
               shiny::downloadButton(ns("dl_rpt_html"),
                 shiny::tagList(shiny::tags$i(class = "fa fa-globe", `aria-hidden` = "true"),
-                               " HTML Report (.html)"),
+                               " HTML"),
                 class = "btn btn-outline-secondary"
               )
             ),
@@ -368,7 +368,7 @@ mod_export_server <- function(id, rv) {
               class = "d-grid",
               shiny::downloadButton(ns("dl_rpt_txt"),
                 shiny::tagList(shiny::tags$i(class = "fa fa-file-text-o", `aria-hidden` = "true"),
-                               " Plain Text (.txt)"),
+                               " Text"),
                 class = "btn btn-outline-secondary"
               )
             ),
@@ -376,7 +376,7 @@ mod_export_server <- function(id, rv) {
               class = "d-grid",
               shiny::downloadButton(ns("dl_rpt_json"),
                 shiny::tagList(shiny::tags$i(class = "fa fa-code", `aria-hidden` = "true"),
-                               " JSON (.json)"),
+                               " JSON"),
                 class = "btn btn-outline-secondary"
               )
             )
@@ -407,27 +407,27 @@ mod_export_server <- function(id, rv) {
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_cb_docx"),
               shiny::tagList(shiny::tags$i(class = "fa fa-file-word-o",
-                `aria-hidden` = "true"), " Word (.docx)"),
+                `aria-hidden` = "true"), " Word"),
               class = "btn btn-primary")),
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_cb_xlsx"),
               shiny::tagList(shiny::tags$i(class = "fa fa-file-excel-o",
-                `aria-hidden` = "true"), " Excel (.xlsx)"),
+                `aria-hidden` = "true"), " Excel"),
               class = "btn btn-outline-secondary")),
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_cb_csv"),
               shiny::tagList(shiny::tags$i(class = "fa fa-table",
-                `aria-hidden` = "true"), " CSV (.csv)"),
+                `aria-hidden` = "true"), " CSV"),
               class = "btn btn-outline-secondary")),
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_cb_json"),
               shiny::tagList(shiny::tags$i(class = "fa fa-code",
-                `aria-hidden` = "true"), " JSON (.json)"),
+                `aria-hidden` = "true"), " JSON"),
               class = "btn btn-outline-secondary")),
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_cb_html"),
               shiny::tagList(shiny::tags$i(class = "fa fa-globe",
-                `aria-hidden` = "true"), " HTML (.html)"),
+                `aria-hidden` = "true"), " HTML"),
               class = "btn btn-outline-secondary"))
         )
       )
@@ -455,17 +455,17 @@ mod_export_server <- function(id, rv) {
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_tbl_csv"),
               shiny::tagList(shiny::tags$i(class = "fa fa-table",
-                `aria-hidden` = "true"), " CSV (.csv)"),
+                `aria-hidden` = "true"), " CSV"),
               class = "btn btn-primary")),
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_tbl_xlsx"),
               shiny::tagList(shiny::tags$i(class = "fa fa-file-excel-o",
-                `aria-hidden` = "true"), " Excel (.xlsx)"),
+                `aria-hidden` = "true"), " Excel"),
               class = "btn btn-outline-secondary")),
           shiny::div(class = "d-grid",
             shiny::downloadButton(ns("dl_tbl_json"),
               shiny::tagList(shiny::tags$i(class = "fa fa-code",
-                `aria-hidden` = "true"), " JSON (.json)"),
+                `aria-hidden` = "true"), " JSON"),
               class = "btn btn-outline-secondary"))
         )
       )

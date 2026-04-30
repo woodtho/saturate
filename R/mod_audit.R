@@ -43,7 +43,11 @@ mod_audit_ui <- function(id) {
             class = "d-flex gap-2 align-items-end",
             shiny::actionButton(ns("btn_refresh"), "Refresh",
               class = "btn-sm btn-outline-secondary"),
-            shiny::downloadButton(ns("btn_export"), "Export CSV",
+            shiny::downloadButton(ns("btn_export"), "CSV",
+              class = "btn-sm btn-outline-secondary"),
+            shiny::downloadButton(ns("dl_audit_xlsx"), "Excel",
+              class = "btn-sm btn-outline-secondary"),
+            shiny::downloadButton(ns("dl_audit_json"), "JSON",
               class = "btn-sm btn-outline-secondary")
           )
         )
@@ -286,7 +290,7 @@ mod_audit_server <- function(id, rv) {
       )
     })
 
-    # ── CSV export ────────────────────────────────────────────────────────────
+    # ── Export handlers ───────────────────────────────────────────────────────
 
     output$btn_export <- shiny::downloadHandler(
       filename = function() {
@@ -297,6 +301,29 @@ mod_audit_server <- function(id, rv) {
         if (nrow(df) > 0L)
           df$changed_at <- format(df$changed_at, "%Y-%m-%d %H:%M:%S")
         utils::write.csv(df, file, row.names = FALSE)
+      }
+    )
+
+    output$dl_audit_xlsx <- shiny::downloadHandler(
+      filename = function() paste0("audit_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".xlsx"),
+      content  = function(file) {
+        df <- audit_rv()
+        if (nrow(df) > 0L)
+          df$changed_at <- format(df$changed_at, "%Y-%m-%d %H:%M:%S")
+        tryCatch(.write_xlsx(list(audit = df), file),
+          error = function(e) shiny::showNotification(conditionMessage(e), type = "error"))
+      }
+    )
+
+    output$dl_audit_json <- shiny::downloadHandler(
+      filename = function() paste0("audit_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json"),
+      content  = function(file) {
+        if (!requireNamespace("jsonlite", quietly = TRUE)) {
+          shiny::showNotification("Install 'jsonlite' for JSON export.", type = "error")
+          return()
+        }
+        df <- audit_rv()
+        writeLines(jsonlite::toJSON(df, auto_unbox = TRUE, pretty = TRUE), file)
       }
     )
   })

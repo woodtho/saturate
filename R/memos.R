@@ -59,6 +59,100 @@ qc_list_project_memos <- function(project, type = NULL) {
   }
 }
 
+# ── Internal export helpers ───────────────────────────────────────────────────
+
+.export_memos_docx <- function(project) {
+  if (!requireNamespace("officer", quietly = TRUE))
+    rlang::abort("Install the 'officer' package to export Word documents.")
+
+  info <- qc_project_info(project)
+  df   <- qc_list_project_memos(project)
+  doc  <- officer::read_docx()
+
+  doc <- officer::body_add_par(doc,
+    paste0(info$name, " — Research Journal"), style = "heading 1")
+  doc <- officer::body_add_par(doc,
+    paste0("Exported ", format(Sys.Date(), "%B %d, %Y"),
+           " — ", nrow(df), " entr", if (nrow(df) == 1L) "y" else "ies"),
+    style = "Normal")
+
+  for (i in seq_len(nrow(df))) {
+    row <- df[i, , drop = FALSE]
+    ts  <- format(as.POSIXct(row$created_at), "%d %b %Y %H:%M")
+    doc <- officer::body_add_break(doc)
+    doc <- officer::body_add_par(doc,
+      paste0(tools::toTitleCase(row$memo_type %||% "other"),
+             "  —  ", ts, "  —  ", row$created_by),
+      style = "heading 2")
+    doc <- officer::body_add_par(doc, as.character(row$content), style = "Normal")
+  }
+
+  path <- tempfile(fileext = ".docx")
+  print(doc, target = path)
+  path
+}
+
+.export_memos_html <- function(project) {
+  info <- qc_project_info(project)
+  df   <- qc_list_project_memos(project)
+
+  type_colour <- c(
+    analytical     = "#3b82f6",
+    reflexivity    = "#06b6d4",
+    decision       = "#f59e0b",
+    methodological = "#6b7280",
+    other          = "#374151"
+  )
+
+  esc <- htmltools::htmlEscape
+
+  pieces <- c(
+    "<!DOCTYPE html><html lang='en'><head>",
+    "<meta charset='UTF-8'>",
+    "<meta name='viewport' content='width=device-width,initial-scale=1'>",
+    paste0("<title>", esc(info$name), " — Journal</title>"),
+    "<style>",
+    "body{font-family:Georgia,'Times New Roman',serif;max-width:760px;margin:2rem auto;padding:0 1.5rem;color:#1a1a1a;line-height:1.7}",
+    "h1{font-size:1.6rem;border-bottom:3px solid #2c3e50;padding-bottom:.5rem;color:#2c3e50;margin-bottom:.25rem}",
+    ".meta{color:#6b7280;font-size:.85rem;margin:.5rem 0 2rem}",
+    ".entry{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #e9ecef}",
+    ".entry-header{display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline;margin-bottom:.6rem}",
+    ".badge{display:inline-block;border-radius:3px;padding:2px 8px;font-size:.75rem;font-weight:600;color:#fff}",
+    ".entry-meta{font-size:.82rem;color:#6b7280}",
+    ".entry-content{white-space:pre-wrap;margin:0}",
+    "</style></head><body>",
+    paste0("<h1>", esc(info$name), " — Research Journal</h1>"),
+    paste0("<p class='meta'>Exported ", format(Sys.Date(), "%B %d, %Y"),
+           " &mdash; ", nrow(df), " entr", if (nrow(df) == 1L) "y" else "ies", "</p>")
+  )
+
+  if (nrow(df) == 0L) {
+    pieces <- c(pieces, "<p><em>No journal entries.</em></p>")
+  } else {
+    for (i in seq_len(nrow(df))) {
+      row    <- df[i, , drop = FALSE]
+      ts     <- format(as.POSIXct(row$created_at), "%d %b %Y %H:%M")
+      colour <- type_colour[[row$memo_type %||% "other"]] %||% "#374151"
+      pieces <- c(pieces,
+        "<div class='entry'>",
+        "<div class='entry-header'>",
+        sprintf("<span class='badge' style='background:%s'>%s</span>",
+                esc(colour), esc(tools::toTitleCase(row$memo_type %||% "other"))),
+        sprintf("<span class='entry-meta'>%s &mdash; %s</span>",
+                esc(ts), esc(as.character(row$created_by))),
+        "</div>",
+        paste0("<p class='entry-content'>", esc(as.character(row$content)), "</p>"),
+        "</div>"
+      )
+    }
+  }
+
+  pieces <- c(pieces, "</body></html>")
+  path   <- tempfile(fileext = ".html")
+  writeLines(paste(pieces, collapse = "\n"), path, useBytes = FALSE)
+  path
+}
+
 #' Delete a project journal entry (soft delete)
 #'
 #' @param project A `qc_project` object.
