@@ -17,7 +17,7 @@ mod_query_ui <- function(id) {
           "Exclude codes removes passages containing selected codes."
         ))
       ),
-      shiny::selectizeInput(ns("filter_codes"), "Codes (OR — any of these)",
+      shiny::selectizeInput(ns("filter_codes"), "Codes (OR \u2014 any of these)",
         choices = NULL, multiple = TRUE,
         options = list(placeholder = "All codes")),
       shiny::selectizeInput(ns("must_have"), "Must also have (AND)",
@@ -48,12 +48,12 @@ mod_query_ui <- function(id) {
     bslib::navset_card_underline(
       id = ns("result_tabs"),
 
-      # ── Coded segments ───────────────────────────────────────────────────
+      # -- Coded segments ---------------------------------------------------
       bslib::nav_panel("Segments",
         DT::dataTableOutput(ns("tbl_results"))
       ),
 
-      # ── Full-text search ─────────────────────────────────────────────────
+      # -- Full-text search -------------------------------------------------
       bslib::nav_panel("Search",
         shiny::div(
           class = "p-3",
@@ -85,7 +85,7 @@ mod_query_ui <- function(id) {
         )
       ),
 
-      # ── Co-occurrence ────────────────────────────────────────────────────
+      # -- Co-occurrence ----------------------------------------------------
       bslib::nav_panel("Co-occurrence",
         shiny::div(
           class = "p-3",
@@ -110,7 +110,7 @@ mod_query_ui <- function(id) {
         )
       ),
 
-      # ── Saturation curve ─────────────────────────────────────────────────
+      # -- Saturation curve -------------------------------------------------
       bslib::nav_panel("Saturation",
         shiny::div(
           class = "p-3",
@@ -138,7 +138,7 @@ mod_query_ui <- function(id) {
         )
       ),
 
-      # ── Triangulation ─────────────────────────────────────────────────────
+      # -- Triangulation -----------------------------------------------------
       bslib::nav_panel("Triangulation",
         shiny::div(
           class = "p-3",
@@ -165,7 +165,7 @@ mod_query_ui <- function(id) {
         )
       ),
 
-      # ── Cross-tabulation ─────────────────────────────────────────────────
+      # -- Cross-tabulation -------------------------------------------------
       bslib::nav_panel("Cross-tab",
         shiny::div(
           class = "p-3",
@@ -180,7 +180,7 @@ mod_query_ui <- function(id) {
               shiny::selectizeInput(ns("xtab_attr"), "Case attribute variable",
                 choices = NULL,
                 options = list(
-                  placeholder  = "Select or type a variable…",
+                  placeholder  = "Select or type a variable\u2026",
                   create       = TRUE,
                   createOnBlur = TRUE
                 ))
@@ -192,12 +192,12 @@ mod_query_ui <- function(id) {
         )
       ),
 
-      # ── Graph ────────────────────────────────────────────────────────────
+      # -- Graph ------------------------------------------------------------
       bslib::nav_panel("Graph",
         mod_graph_ui(ns("graph"))
       ),
 
-      # ── Word Cloud ───────────────────────────────────────────────────────
+      # -- Word Cloud -------------------------------------------------------
       bslib::nav_panel("Word Cloud",
         shiny::div(
           class = "p-3",
@@ -211,8 +211,8 @@ mod_query_ui <- function(id) {
               shiny::tags$label("Cloud type", class = "form-label"),
               shiny::selectInput(ns("wc_type"), NULL,
                 choices = c(
-                  "All codes — sized by coding count" = "codes",
-                  "Single code — words in excerpts"   = "excerpt_words"
+                  "All codes \u2014 sized by coding count" = "codes",
+                  "Single code \u2014 words in excerpts"   = "excerpt_words"
                 ),
                 width = "280px")
             ),
@@ -328,7 +328,7 @@ mod_query_server <- function(id, rv) {
       }
     )
 
-    # ── Search ─────────────────────────────────────────────────────────────
+    # -- Search -------------------------------------------------------------
 
     search_results <- shiny::eventReactive(input$btn_search, {
       shiny::req(nchar(trimws(input$search_pattern)) > 0)
@@ -367,7 +367,7 @@ mod_query_server <- function(id, rv) {
       }
     )
 
-    # ── Co-occurrence ──────────────────────────────────────────────────────
+    # -- Co-occurrence ------------------------------------------------------
 
     cooc_results <- shiny::eventReactive(input$btn_cooc, {
       qc_code_cooccurrence(rv$project, unit = input$cooc_unit)
@@ -423,7 +423,7 @@ mod_query_server <- function(id, rv) {
       }
     )
 
-    # ── Saturation curve ───────────────────────────────────────────────────
+    # -- Saturation curve ---------------------------------------------------
 
     sat_rv <- shiny::eventReactive(input$btn_saturation, {
       tryCatch(
@@ -497,7 +497,7 @@ mod_query_server <- function(id, rv) {
       }
     )
 
-    # ── Triangulation ──────────────────────────────────────────────────────
+    # -- Triangulation ------------------------------------------------------
 
     tri_rv <- shiny::eventReactive(input$btn_triangulate, {
       tryCatch(
@@ -556,7 +556,7 @@ mod_query_server <- function(id, rv) {
       }
     )
 
-    # ── Cross-tabulation ───────────────────────────────────────────────────
+    # -- Cross-tabulation ---------------------------------------------------
 
     xtab_results <- shiny::eventReactive(input$btn_xtab, {
       attr_val <- trimws(input$xtab_attr[[1L]] %||% "")
@@ -582,7 +582,7 @@ mod_query_server <- function(id, rv) {
       )
     })
 
-    # ── Word Cloud ──────────────────────────────────────────────────────────
+    # -- Word Cloud ----------------------------------------------------------
 
     output$wc_code_picker <- shiny::renderUI({
       if (input$wc_type != "excerpt_words") return(NULL)
@@ -700,7 +700,7 @@ mod_query_server <- function(id, rv) {
       }
     )
 
-    # ── Graph (nested module) ──────────────────────────────────────────────
+    # -- Graph (nested module) ----------------------------------------------
     mod_graph_server("graph", rv)
 
   })

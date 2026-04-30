@@ -1,4 +1,4 @@
-# ── Top-level UI ──────────────────────────────────────────────────────────────
+# -- Top-level UI --------------------------------------------------------------
 
 saturate_ui <- function(app_name = "saturate", brand_css = "") {
   default_coder <- Sys.info()[["user"]] %||% "default"
@@ -7,7 +7,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
 
   shiny::tagList(
 
-    # ── Skip-to-main-content (keyboard / screen-reader accessibility) ──────
+    # -- Skip-to-main-content (keyboard / screen-reader accessibility) ------
     shiny::tags$a(
       href  = "#sat-main-content",
       class = "skip-link",
@@ -17,7 +17,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
     shiny::tags$head(
       shiny::includeCSS(css_file),
       shiny::includeScript(profile_js),
-      # Brand CSS variable overrides — injected when brand != NULL
+      # Brand CSS variable overrides -- injected when brand != NULL
       if (nchar(brand_css) > 0L)
         shiny::tags$style(shiny::HTML(brand_css))
     ),
@@ -28,7 +28,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       title  = shiny::tags$img(
         src    = "saturate-assets/logo.png",
         height = "38",
-        alt    = "saturate — for qualitative coding",
+        alt    = "saturate \u2014 for qualitative coding",
         style  = "display:block;"
       ),
       window_title = "saturate",
@@ -41,7 +41,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         " saturate is designed for larger screens. Some features may not display correctly on this device."
       ),
 
-      # ── Prep workspace ──────────────────────────────────────────────────
+      # -- Prep workspace --------------------------------------------------
       bslib::nav_menu(
         title = shiny::tagList(shiny::icon("folder-open"), " Prep"),
         bslib::nav_panel("Documents",
@@ -55,14 +55,14 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         bslib::nav_panel("Journal",  mod_memos_ui("memos"))
       ),
 
-      # ── Coding workspace ─────────────────────────────────────────────────
+      # -- Coding workspace -------------------------------------------------
       bslib::nav_panel(
         title = shiny::tagList(shiny::icon("tag"), " Coding"),
         value = "Coding",
         mod_coding_ui("coding")
       ),
 
-      # ── Analysis workspace ───────────────────────────────────────────────
+      # -- Analysis workspace -----------------------------------------------
       bslib::nav_menu(
         title = shiny::tagList(shiny::icon("chart-bar"), " Analysis"),
         bslib::nav_panel("Compare", mod_compare_ui("compare")),
@@ -70,7 +70,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         bslib::nav_panel("Query",   mod_query_ui("query"))
       ),
 
-      # ── Review workspace ─────────────────────────────────────────────────
+      # -- Review workspace -------------------------------------------------
       bslib::nav_menu(
         title = shiny::tagList(shiny::icon("clipboard-check"), " Review"),
         bslib::nav_panel("Member Checks", mod_member_check_ui("members")),
@@ -85,7 +85,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
         shiny::div(
           class = "qc-navbar-session d-flex align-items-center gap-2",
 
-          # ── Active coder ─────────────────────────────────────────────────
+          # -- Active coder -------------------------------------------------
           shiny::div(
             class = "qc-coder-block",
             shiny::tags$span(
@@ -101,7 +101,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
             )
           ),
 
-          # ── Blind mode toggle ─────────────────────────────────────────────
+          # -- Blind mode toggle ---------------------------------------------
           shiny::uiOutput("ui_blind_btn", inline = TRUE),
 
           shiny::actionButton("btn_help_modal",
@@ -176,7 +176,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
   )
 }
 
-# ── Top-level server ──────────────────────────────────────────────────────────
+# -- Top-level server ----------------------------------------------------------
 
 saturate_server <- function(input, output, session, project) {
   default_coder <- Sys.info()[["user"]] %||% "default"
@@ -196,7 +196,7 @@ saturate_server <- function(input, output, session, project) {
     rv$profile_state <- input$profile_state
   }, ignoreInit = FALSE)
 
-  # ── Push DB profiles to JS on first flush ─────────────────────────────────
+  # -- Push DB profiles to JS on first flush ---------------------------------
   session$onFlushed(function() {
     profiles_df <- tryCatch(.db_list_profiles(rv$project), error = function(e) NULL)
     if (is.null(profiles_df) || nrow(profiles_df) == 0L) return()
@@ -228,7 +228,7 @@ saturate_server <- function(input, output, session, project) {
     }, error = function(e) NULL)
   }, ignoreInit = TRUE)
 
-  # ── Blind mode toggle ──────────────────────────────────────────────────────
+  # -- Blind mode toggle ------------------------------------------------------
 
   output$ui_blind_btn <- shiny::renderUI({
     is_blind <- isTRUE(rv$blind_mode)
@@ -244,9 +244,9 @@ saturate_server <- function(input, output, session, project) {
         "btn-sm btn-outline-light qc-blind-toggle",
       `aria-pressed` = if (is_blind) "true" else "false",
       title = paste0(
-        "Blind coding mode: hide other coders’ work while coding. ",
-        if (is_blind) "Currently ON — click to disable."
-        else "Currently OFF — click to enable."
+        "Blind coding mode: hide other coders' work while coding. ",
+        if (is_blind) "Currently ON \u2014 click to disable."
+        else "Currently OFF \u2014 click to enable."
       )
     )
   })
@@ -255,7 +255,7 @@ saturate_server <- function(input, output, session, project) {
     rv$blind_mode <- !isTRUE(rv$blind_mode)
   })
 
-  # ── Profile and display settings ───────────────────────────────────────────
+  # -- Profile and display settings -------------------------------------------
 
   shiny::observeEvent(input$btn_settings, {
     shiny::showModal(.profile_settings_modal(rv$profile_state, rv$current_coder))
@@ -358,7 +358,7 @@ saturate_server <- function(input, output, session, project) {
   mod_audit_server("audit",          rv)
   mod_help_server("help",            rv)
 
-  # ── Split download (static registration — button lives in renderUI) ──────────
+  # -- Split download (static registration -- button lives in renderUI) ----------
   output$dl_split <- shiny::downloadHandler(
     filename = function() {
       info <- tryCatch(qc_project_info(rv$project),
@@ -409,7 +409,7 @@ saturate_server <- function(input, output, session, project) {
     )
   })
 
-  # ── Merge state + observers ───────────────────────────────────────────────────
+  # -- Merge state + observers ---------------------------------------------------
   merge_preview_rv <- shiny::reactiveVal(NULL)
 
   output$merge_preview_ui <- shiny::renderUI({
@@ -470,7 +470,7 @@ saturate_server <- function(input, output, session, project) {
       rv$refresh_codes <- rv$refresh_codes + 1L
       rv$refresh_docs  <- rv$refresh_docs  + 1L
       shiny::showNotification(paste0(
-        "Merge complete — ",
+        "Merge complete \u2014 ",
         result$codings_added, " coding(s), ",
         result$codes_added,   " code(s), ",
         result$sources_added, " document(s) added; ",
@@ -519,7 +519,7 @@ saturate_server <- function(input, output, session, project) {
   })
 }
 
-# ── Project launcher (shown when shiny_saturate() is called without a project) ─
+# -- Project launcher (shown when shiny_saturate() is called without a project) -
 
 .launcher_roots <- function() {
   c(Home = path.expand("~"), Working = getwd())
@@ -561,7 +561,7 @@ saturate_server <- function(input, output, session, project) {
               shiny::div(
                 class = "mb-3",
                 shinyFiles::shinyFilesButton(
-                  "btn_browse", label = "Browse…",
+                  "btn_browse", label = "Browse\u2026",
                   title    = "Select a saturate project file",
                   multiple = FALSE,
                   class    = "btn btn-outline-secondary"
@@ -672,23 +672,23 @@ saturate_server <- function(input, output, session, project) {
 #' Launch the saturate Shiny GUI
 #'
 #' Opens an interactive coding interface. Pass a `brand` list to apply
-#' organisation-specific colours and a custom app name — useful for
+#' organisation-specific colours and a custom app name -- useful for
 #' institutions that want to present the tool under their own branding.
 #'
 #' @param project A `qc_project` object created by [qc_new()] or [qc_open()].
 #'   If `NULL` (the default), a project picker is shown before the main
-#'   interface launches — letting the user open an existing `.duckdb` file or
+#'   interface launches -- letting the user open an existing `.duckdb` file or
 #'   create a new one.
 #' @param brand Optional named list for visual branding. Supported keys:
 #'   \describe{
 #'     \item{`name`}{App title shown in the navbar (default: `"saturate"`).}
 #'     \item{`primary`}{CSS hex colour for the navbar and primary buttons
-#'       (e.g. `"#003366"`). Ensure ≥ 4.5:1 contrast with white.}
+#'       (e.g. `"#003366"`). Ensure >= 4.5:1 contrast with white.}
 #'     \item{`primary_hover`}{Slightly darker version for hover states.}
 #'     \item{`primary_fg`}{Foreground (text) colour on `primary` backgrounds
 #'       (default: `"#ffffff"`).}
 #'     \item{`accent`}{Accent colour used in charts and sparklines.}
-#'     \item{`custom_css`}{A raw CSS string appended last — override anything.}
+#'     \item{`custom_css`}{A raw CSS string appended last -- override anything.}
 #'   }
 #' @param max_upload_mb Integer. Maximum file size (MB) accepted by the Merge
 #'   file-upload input (default: 500 MB).
@@ -724,7 +724,7 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
   shiny::runApp(app, ...)
 }
 
-# ── Profile/settings helpers ─────────────────────────────────────────────────
+# -- Profile/settings helpers -------------------------------------------------
 
 .profile_payload_name <- function(payload) {
   if (is.null(payload)) return("")
@@ -975,7 +975,7 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
   )
 }
 
-# ── Brand CSS builder ─────────────────────────────────────────────────────────
+# -- Brand CSS builder ---------------------------------------------------------
 
 .build_brand_css <- function(brand) {
   if (is.null(brand)) return("")

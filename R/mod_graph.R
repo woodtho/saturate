@@ -96,7 +96,7 @@ mod_graph_server <- function(id, rv) {
     output$graph_title <- shiny::renderText({
       switch(input$graph_type %||% "similarity",
         similarity   = "Document similarity network (shared codes)",
-        bipartite    = "Bipartite network (documents ↔ codes)",
+        bipartite    = "Bipartite network (documents \u2194 codes)",
         cooccurrence = "Code co-occurrence network"
       )
     })
@@ -120,7 +120,7 @@ mod_graph_server <- function(id, rv) {
 
       if (nrow(gd$nodes) == 0L) {
         shiny::showNotification(
-          "No graph data — try relaxing the filters or minimum threshold.",
+          "No graph data \u2014 try relaxing the filters or minimum threshold.",
           type = "warning")
         return(NULL)
       }

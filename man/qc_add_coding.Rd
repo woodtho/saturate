@@ -36,7 +36,7 @@ qc_add_coding(
 
 \item{coding_status}{One of \code{"draft"} or \code{"validated"}.}
 
-\item{confidence}{Integer 0–100 or \code{NULL}. Coder's confidence that this
+\item{confidence}{Integer 0-100 or \code{NULL}. Coder's confidence that this
 passage belongs under this code. \code{NULL} means unrated.}
 }
 \value{

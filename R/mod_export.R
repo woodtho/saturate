@@ -1,4 +1,4 @@
-# ── Export module ─────────────────────────────────────────────────────────────
+# -- Export module -------------------------------------------------------------
 
 mod_export_ui <- function(id) {
   ns <- shiny::NS(id)
@@ -43,7 +43,7 @@ mod_export_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # ── Sidebar options vary by export type ───────────────────────────────────
+    # -- Sidebar options vary by export type -----------------------------------
 
     output$sidebar_opts <- shiny::renderUI({
       switch(input$export_type,
@@ -75,7 +75,7 @@ mod_export_server <- function(id, rv) {
               "Codes"            = "codes",
               "Codings"          = "codings",
               "Categories"       = "categories",
-              "Category–Code links" = "category_links",
+              "Category\u2013Code links" = "category_links",
               "Themes"           = "themes",
               "Cases"            = "cases",
               "Case attributes"  = "case_attributes",
@@ -108,7 +108,7 @@ mod_export_server <- function(id, rv) {
     # Row count for raw table
     output$tbl_row_count <- shiny::renderUI({
       shiny::req(input$tbl_name)
-      # Quick count — approximate using status=1 where applicable
+      # Quick count -- approximate using status=1 where applicable
       n <- tryCatch({
         tbl_sql <- list(
           documents     = "SELECT COUNT(*) FROM sources WHERE status=1",
@@ -133,7 +133,7 @@ mod_export_server <- function(id, rv) {
           paste0(format(n, big.mark = ","), " rows"))
     })
 
-    # ── Main panel ────────────────────────────────────────────────────────────
+    # -- Main panel ------------------------------------------------------------
 
     output$export_panel <- shiny::renderUI({
       switch(input$export_type,
@@ -143,7 +143,7 @@ mod_export_server <- function(id, rv) {
       )
     })
 
-    # ── Summary stats reactive ────────────────────────────────────────────────
+    # -- Summary stats reactive ------------------------------------------------
 
     output$rpt_stats <- shiny::renderUI({
       themes   <- tryCatch(qc_list_themes(rv$project),  error = function(e) NULL)
@@ -182,7 +182,7 @@ mod_export_server <- function(id, rv) {
       )
     })
 
-    # ── Download handlers — Analytical Report ─────────────────────────────────
+    # -- Download handlers -- Analytical Report ---------------------------------
 
     .rpt_content <- function(fmt) {
       function(file) {
@@ -219,7 +219,7 @@ mod_export_server <- function(id, rv) {
       content  = .rpt_content("json")
     )
 
-    # ── Download handlers — Codebook ──────────────────────────────────────────
+    # -- Download handlers -- Codebook ------------------------------------------
 
     .cb_content <- function(fmt) {
       function(file) {
@@ -261,7 +261,7 @@ mod_export_server <- function(id, rv) {
       content  = .cb_content("html")
     )
 
-    # ── Download handlers — Raw Table ─────────────────────────────────────────
+    # -- Download handlers -- Raw Table -----------------------------------------
 
     .tbl_content <- function(fmt) {
       function(file) {
@@ -292,7 +292,7 @@ mod_export_server <- function(id, rv) {
   })
 }
 
-# ── Panel UI helpers ──────────────────────────────────────────────────────────
+# -- Panel UI helpers ----------------------------------------------------------
 
 .stat_pill <- function(n, label) {
   shiny::tags$div(

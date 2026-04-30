@@ -136,7 +136,7 @@ qc_update_case <- function(project, case_id, name = NULL, memo = NULL) {
 qc_delete_case <- function(project, case_id) {
   assert_class(project, "qc_project")
   assert_con(project$con)
-  .soft_delete(project$con, "cases", as.integer(case_id))
+  .soft_delete(project$con, "cases", "id", as.integer(case_id))
   invisible(TRUE)
 }
 

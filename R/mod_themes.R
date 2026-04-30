@@ -33,7 +33,7 @@ mod_themes_server <- function(id, rv) {
       refresh_themes = 0L
     )
 
-    # ── Theme list ─────────────────────────────────────────────────────────────
+    # -- Theme list -------------------------------------------------------------
 
     themes_rv <- shiny::reactive({
       rv$refresh_codes
@@ -45,7 +45,7 @@ mod_themes_server <- function(id, rv) {
       df <- themes_rv()
       if (nrow(df) == 0L) {
         return(DT::datatable(
-          tibble::tibble(message = "No themes yet — click New to create one."),
+          tibble::tibble(message = "No themes yet \u2014 click New to create one."),
           rownames = FALSE, options = list(dom = "t")
         ))
       }
@@ -67,7 +67,7 @@ mod_themes_server <- function(id, rv) {
       )
     })
 
-    # ── Row selection ──────────────────────────────────────────────────────────
+    # -- Row selection ----------------------------------------------------------
 
     shiny::observeEvent(input$tbl_themes_rows_selected, {
       row <- input$tbl_themes_rows_selected
@@ -75,7 +75,7 @@ mod_themes_server <- function(id, rv) {
         themes_rv()$id[[row]] else NULL
     })
 
-    # ── Detail UI (re-renders on selection change or save) ─────────────────────
+    # -- Detail UI (re-renders on selection change or save) ---------------------
 
     output$detail_ui <- shiny::renderUI({
       lv$refresh_themes
@@ -107,13 +107,13 @@ mod_themes_server <- function(id, rv) {
 
       shiny::tagList(
 
-        # ── Definition card ───────────────────────────────────────────────────
+        # -- Definition card ---------------------------------------------------
         bslib::card(
           class = "mb-3",
           bslib::card_header(
             shiny::div(
               class = "d-flex justify-content-between align-items-center w-100",
-              shiny::span(paste0("Theme #", id_val, " — ", th$name)),
+              shiny::span(paste0("Theme #", id_val, " \u2014 ", th$name)),
               shiny::div(
                 class = "d-flex gap-2",
                 shiny::downloadButton(ns("dl_theme_docx"), "Word",
@@ -143,8 +143,8 @@ mod_themes_server <- function(id, rv) {
             shiny::textAreaInput(ns("edit_narrative"), "Analytical statement",
               rows = 3,
               placeholder = paste0(
-                "Write a proposition, e.g. ‘Participants navigate tension ",
-                "between X and Y through…’"
+                "Write a proposition, e.g. 'Participants navigate tension ",
+                "between X and Y through\u2026'"
               ),
               value = th$narrative[[1L]] %||% ""),
             shiny::textAreaInput(ns("edit_definition"), "Definition",
@@ -158,7 +158,7 @@ mod_themes_server <- function(id, rv) {
           )
         ),
 
-        # ── Structure card ────────────────────────────────────────────────────
+        # -- Structure card ----------------------------------------------------
         bslib::card(
           class = "mb-3",
           bslib::card_header(
@@ -174,7 +174,7 @@ mod_themes_server <- function(id, rv) {
           )
         ),
 
-        # ── Excerpts card ─────────────────────────────────────────────────────
+        # -- Excerpts card -----------------------------------------------------
         bslib::card(
           bslib::card_header(shiny::textOutput(ns("excerpts_header"))),
           bslib::card_body(
@@ -186,7 +186,7 @@ mod_themes_server <- function(id, rv) {
       )
     })
 
-    # ── New theme modal ────────────────────────────────────────────────────────
+    # -- New theme modal --------------------------------------------------------
 
     shiny::observeEvent(input$btn_new_theme, {
       shiny::showModal(shiny::modalDialog(
@@ -201,8 +201,8 @@ mod_themes_server <- function(id, rv) {
         shiny::textAreaInput(ns("new_narrative"), "Analytical statement",
           rows = 3,
           placeholder = paste0(
-            "Write a proposition, e.g. ‘Participants navigate tension ",
-            "between X and Y through…’"
+            "Write a proposition, e.g. 'Participants navigate tension ",
+            "between X and Y through\u2026'"
           )),
 
         footer = shiny::tagList(
@@ -236,7 +236,7 @@ mod_themes_server <- function(id, rv) {
       })
     })
 
-    # ── Save theme ─────────────────────────────────────────────────────────────
+    # -- Save theme -------------------------------------------------------------
 
     shiny::observeEvent(input$btn_save_theme, {
       shiny::req(lv$selected_id)
@@ -263,7 +263,7 @@ mod_themes_server <- function(id, rv) {
       })
     })
 
-    # ── Delete theme ───────────────────────────────────────────────────────────
+    # -- Delete theme -----------------------------------------------------------
 
     shiny::observeEvent(input$btn_delete_theme, {
       shiny::req(lv$selected_id)
@@ -295,7 +295,7 @@ mod_themes_server <- function(id, rv) {
       })
     })
 
-    # ── Theme exports ──────────────────────────────────────────────────────────
+    # -- Theme exports ----------------------------------------------------------
 
     output$dl_theme_docx <- shiny::downloadHandler(
       filename = function() {
@@ -381,7 +381,7 @@ mod_themes_server <- function(id, rv) {
       }
     )
 
-    # ── Edit links modal ───────────────────────────────────────────────────────
+    # -- Edit links modal -------------------------------------------------------
 
     shiny::observeEvent(input$btn_edit_links, {
       shiny::req(lv$selected_id)
@@ -416,7 +416,7 @@ mod_themes_server <- function(id, rv) {
           choices  = cat_choices,
           selected = theme_data$linked_cats$id,
           multiple = TRUE,
-          options  = list(placeholder = "Select categories…")),
+          options  = list(placeholder = "Select categories\u2026")),
 
         shiny::hr(),
 
@@ -427,7 +427,7 @@ mod_themes_server <- function(id, rv) {
           choices  = code_choices,
           selected = theme_data$linked_codes$id,
           multiple = TRUE,
-          options  = list(placeholder = "Select codes…")),
+          options  = list(placeholder = "Select codes\u2026")),
 
         footer = shiny::tagList(
           shiny::modalButton("Cancel"),
@@ -472,7 +472,7 @@ mod_themes_server <- function(id, rv) {
       })
     })
 
-    # ── Structure UI ───────────────────────────────────────────────────────────
+    # -- Structure UI -----------------------------------------------------------
 
     output$structure_ui <- shiny::renderUI({
       lv$refresh_themes
@@ -489,7 +489,7 @@ mod_themes_server <- function(id, rv) {
 
       if (nrow(cats) == 0L && nrow(codes) == 0L) {
         return(shiny::p(class = "text-muted",
-          "No structure yet — click ",
+          "No structure yet \u2014 click ",
           shiny::tags$strong("Edit links"), " to add categories or codes."))
       }
 
@@ -567,7 +567,7 @@ mod_themes_server <- function(id, rv) {
       do.call(shiny::tagList, parts)
     })
 
-    # ── Excerpts ───────────────────────────────────────────────────────────────
+    # -- Excerpts ---------------------------------------------------------------
 
     output$excerpts_header <- shiny::renderText({
       lv$refresh_themes
@@ -590,7 +590,7 @@ mod_themes_server <- function(id, rv) {
 
       if (nrow(excerpts) == 0L) {
         return(shiny::p(class = "text-muted p-3",
-          "No excerpts — link categories or codes to populate this view."))
+          "No excerpts \u2014 link categories or codes to populate this view."))
       }
 
       doc_names <- unique(excerpts$doc_name)
@@ -626,10 +626,10 @@ mod_themes_server <- function(id, rv) {
                 shiny::tags$em(
                   style = "font-size:.875rem;",
                   paste0(
-                    "“",
+                    "\u201c",
                     substr(r$seltext, 1L, 300L),
-                    if (nchar(r$seltext) > 300L) "…" else "",
-                    "”"
+                    if (nchar(r$seltext) > 300L) "\u2026" else "",
+                    "\u201d"
                   )
                 )
               )

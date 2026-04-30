@@ -14,7 +14,7 @@
   key
 }
 
-# Internal helper — append one row to code_history
+# Internal helper -- append one row to code_history
 .log_code_history <- function(con, code_id, operation,
                                field     = NULL,
                                old_value = NULL,
@@ -44,6 +44,11 @@
 #' @param code_key Character or `NULL`. Stable slug (e.g. `"positive_affect"`).
 #'   Auto-generated from `name` when `NULL`. Must be unique; may contain only
 #'   lowercase letters, digits, and underscores.
+#' @param level Character. Analytic level of the code (e.g. `"descriptive"`,
+#'   `"interpretive"`).
+#' @param orientation Character. Theoretical orientation of the code.
+#' @param weight Numeric or `NULL`. Optional numeric weight for the code.
+#' @param weight_description Character. Description of what the weight represents.
 #'
 #' @return A one-row tibble: `id`, `name`, `color`, `memo`, `created_at`.
 #' @export
@@ -159,6 +164,11 @@ qc_list_codes <- function(project) {
 #'   non-`NULL` to update.
 #' @param parent_id Integer or `NA`. Pass an integer to set a parent;
 #'   `NA` to make the code a root node.
+#' @param level Character or `NULL`. Analytic level of the code.
+#' @param orientation Character or `NULL`. Theoretical orientation of the code.
+#' @param weight Numeric, `NA`, or `NULL`. Pass a number to set; `NA` to clear.
+#' @param weight_description Character or `NULL`. Description of what the weight
+#'   represents.
 #'
 #' @return The updated one-row tibble.
 #' @export
@@ -187,7 +197,7 @@ qc_update_code <- function(project, id,
   if (nrow(current) == 0L)
     rlang::abort(paste0("No active code with id = ", id))
 
-  # Numeric weight handled separately — it's a DOUBLE, not VARCHAR
+  # Numeric weight handled separately -- it's a DOUBLE, not VARCHAR
   if (!is.null(weight)) {
     wt <- if (is.na(weight)) NA_real_ else as.double(weight)
     .exec(project$con,
@@ -445,7 +455,7 @@ qc_merge_codes <- function(project, from_ids, into_id) {
 #' Split a code into new codes
 #'
 #' Creates `length(new_names)` new codes and logs the split in `code_history`.
-#' The original code is left intact — use `qc_reassign_coding()` or the
+#' The original code is left intact -- use `qc_reassign_coding()` or the
 #' Codebook "Review Codings" panel to move passages to the new codes, then
 #' delete the original when done.
 #'

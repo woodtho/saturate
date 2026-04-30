@@ -23,13 +23,13 @@ qc_get_coded_segments(
 \arguments{
 \item{project}{A \code{qc_project} object.}
 
-\item{code_ids}{Integer vector or \code{NULL}. OR filter — return segments that
+\item{code_ids}{Integer vector or \code{NULL}. OR filter -- return segments that
 carry any of these codes.}
 
-\item{must_have}{Integer vector or \code{NULL}. AND filter — restrict to
+\item{must_have}{Integer vector or \code{NULL}. AND filter -- restrict to
 documents that contain \emph{all} of these codes somewhere (any segment).}
 
-\item{must_not}{Integer vector or \code{NULL}. NOT filter — exclude documents
+\item{must_not}{Integer vector or \code{NULL}. NOT filter -- exclude documents
 that carry any of these codes.}
 
 \item{source_ids}{Integer vector or \code{NULL}. Restrict to these documents.}

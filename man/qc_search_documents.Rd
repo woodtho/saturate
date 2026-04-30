@@ -27,7 +27,7 @@ regex. When \code{FALSE} (default), it is matched literally.}
 \item{accent_fold}{Logical. When \code{TRUE} (requires \code{stringi}), both the
 document text and \code{pattern} are converted to ASCII-equivalent characters
 before matching, enabling accent-insensitive search (e.g. \code{"cafe"} matches
-\code{"café"}).}
+\code{"cafe"}).}
 
 \item{source_ids}{Integer vector or \code{NULL}. Restrict to these documents.}
 

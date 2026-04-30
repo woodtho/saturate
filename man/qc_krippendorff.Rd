@@ -25,6 +25,6 @@ applied the code to a document (1) or did not (0). Only documents coded by
 at least two of the specified coders contribute to the calculation.
 }
 \details{
-Alpha interpretation: > 0.8 = strong, 0.67–0.8 = tentative, < 0.67 =
+Alpha interpretation: > 0.8 = strong, 0.67-0.8 = tentative, < 0.67 =
 unreliable (Krippendorff 2004 thresholds for content analysis).
 }

@@ -38,7 +38,7 @@
 #' @param coder Character. Coder identifier (username or label).
 #' @param coding_source One of `"manual"` or `"auto"`.
 #' @param coding_status One of `"draft"` or `"validated"`.
-#' @param confidence Integer 0–100 or `NULL`. Coder's confidence that this
+#' @param confidence Integer 0-100 or `NULL`. Coder's confidence that this
 #'   passage belongs under this code. `NULL` means unrated.
 #'
 #' @return A one-row tibble: `id`, `source_id`, `code_id`, `selfirst`,
@@ -123,7 +123,7 @@ qc_add_coding <- function(project, source_id, code_id,
 #' @param source_id Integer or `NULL`. Restrict to a single document.
 #' @param code_id Integer or `NULL`. Restrict to a single code.
 #' @param coder Character or `NULL`. Restrict to a single coder. Used to
-#'   implement blind coding — pass the current coder's name to hide all
+#'   implement blind coding -- pass the current coder's name to hide all
 #'   other coders' annotations.
 #'
 #' @return A tibble: `id`, `source_id`, `code_id`, `code_name`,
@@ -273,7 +273,7 @@ qc_update_coding_memo <- function(project, id, memo) {
 #'
 #' @param project A `qc_project` object.
 #' @param id Integer. Coding id.
-#' @param confidence Integer 0–100 or `NULL` (unrated).
+#' @param confidence Integer 0-100 or `NULL` (unrated).
 #'
 #' @return Invisibly `TRUE`.
 #' @export
@@ -535,7 +535,7 @@ qc_disputed_segments <- function(project, source_id) {
   result[order(result$selfirst), ]
 }
 
-# ── Internal document splitting helpers ────────────────────────────────────────
+# -- Internal document splitting helpers ----------------------------------------
 
 .split_paragraphs <- function(content) {
   m <- gregexpr("\\n{2,}", content, perl = TRUE)[[1L]]
@@ -580,13 +580,13 @@ qc_disputed_segments <- function(project, source_id) {
 # Builds the document HTML with coding highlights, excerpt underlines,
 # memo icons, optional bold markdown, and optional line numbers.
 #
-# codings:          tibble from qc_list_codings — must have id, code_id,
+# codings:          tibble from qc_list_codings -- must have id, code_id,
 #                   code_color, code_name, selfirst, selast, memo.
-# excerpts:         tibble from qc_list_excerpts or NULL — selfirst, selast, memo.
-# opacity:          numeric 0–1, highlight background alpha.
-# cb_mode:          TRUE → border-bottom instead of fill (colorblind-safe).
+# excerpts:         tibble from qc_list_excerpts or NULL -- selfirst, selast, memo.
+# opacity:          numeric 0-1, highlight background alpha.
+# cb_mode:          TRUE -> border-bottom instead of fill (colorblind-safe).
 # highlight_codes:  integer vector; when not NULL only these code_ids are shown.
-# show_line_numbers: TRUE → prepend line numbers to each line.
+# show_line_numbers: TRUE -> prepend line numbers to each line.
 build_highlighted_html <- function(content, codings,
                                     opacity           = 0.33,
                                     cb_mode           = FALSE,
@@ -602,7 +602,7 @@ build_highlighted_html <- function(content, codings,
       class        = cls,
       role         = "region",
       tabindex     = "0",
-      `aria-label` = "Document text — select a passage then choose a code to apply",
+      `aria-label` = "Document text \u2014 select a passage then choose a code to apply",
       style        = .text_display_style(),
       htmltools::HTML(inner_html)
     )
@@ -669,7 +669,7 @@ build_highlighted_html <- function(content, codings,
     has_coding  <- nrow(active_c) > 0L
     has_excerpt <- !is.null(active_e) && nrow(active_e) > 0L
 
-    # Search highlight prefix/suffix — layered on top of coding/excerpt marks
+    # Search highlight prefix/suffix -- layered on top of coding/excerpt marks
     s_open  <- if (in_search)
       '<mark class="qc-search-match">'
     else ""

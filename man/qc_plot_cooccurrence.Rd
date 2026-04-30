@@ -29,6 +29,6 @@ are found.
 }
 \description{
 Displays how frequently pairs of codes appear together within the same unit
-(document or overlapping segment). The heatmap is symmetric — each pair
+(document or overlapping segment). The heatmap is symmetric -- each pair
 appears once in each triangle.
 }

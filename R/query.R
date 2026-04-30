@@ -3,11 +3,11 @@
 #' The primary analysis function. Returns a flat tibble of every coded passage.
 #'
 #' @param project A `qc_project` object.
-#' @param code_ids Integer vector or `NULL`. OR filter — return segments that
+#' @param code_ids Integer vector or `NULL`. OR filter -- return segments that
 #'   carry any of these codes.
-#' @param must_have Integer vector or `NULL`. AND filter — restrict to
+#' @param must_have Integer vector or `NULL`. AND filter -- restrict to
 #'   documents that contain *all* of these codes somewhere (any segment).
-#' @param must_not Integer vector or `NULL`. NOT filter — exclude documents
+#' @param must_not Integer vector or `NULL`. NOT filter -- exclude documents
 #'   that carry any of these codes.
 #' @param source_ids Integer vector or `NULL`. Restrict to these documents.
 #' @param case_ids Integer vector or `NULL`. Restrict to documents linked to
@@ -195,7 +195,7 @@ qc_code_cooccurrence <- function(project, unit = c("document", "segment")) {
 #' Cross-tabulate code frequency by a case attribute
 #'
 #' Returns a wide table: rows = attribute values, columns = code names,
-#' cells = number of documents with that code–attribute combination.
+#' cells = number of documents with that code-attribute combination.
 #'
 #' @param project A `qc_project` object.
 #' @param attribute Character. The case attribute variable to cross-tabulate

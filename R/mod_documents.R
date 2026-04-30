@@ -4,7 +4,7 @@ mod_documents_ui <- function(id) {
     sidebar = bslib::sidebar(
       width = 310,
 
-      # ── Import from file ────────────────────────────────────────────────────
+      # -- Import from file ----------------------------------------------------
       shiny::h5("Import Document"),
       qc_help_details(
         "Import help",
@@ -17,11 +17,11 @@ mod_documents_ui <- function(id) {
       shiny::fileInput(
         ns("file_upload"), NULL,
         accept      = c(".txt", ".docx", ".pdf", ".csv", ".md"),
-        buttonLabel = "Browse…"
+        buttonLabel = "Browse\u2026"
       ),
 
       shiny::hr(),
-      shiny::actionButton(ns("btn_open_paste_modal"), "Paste text…",
+      shiny::actionButton(ns("btn_open_paste_modal"), "Paste text\u2026",
         class = "btn-outline-secondary w-100")
     ),
 
@@ -38,7 +38,7 @@ mod_documents_ui <- function(id) {
               class = "btn-sm btn-outline-secondary"),
             shiny::downloadButton(ns("dl_docs_json"), "JSON",
               class = "btn-sm btn-outline-secondary"),
-            shiny::actionButton(ns("btn_code_doc"), "Code →",
+            shiny::actionButton(ns("btn_code_doc"), "Code \u2192",
               class = "btn-sm btn-primary",
               title = "Open selected document in the Coding panel"),
             shiny::actionButton(ns("btn_edit_doc"), "Edit",
@@ -107,7 +107,7 @@ mod_documents_server <- function(id, rv) {
       lv$selected_id <- if (!is.null(row)) docs()$id[[row]] else NULL
     })
 
-    # "Code →" button: set active document and switch to Coding tab
+    # "Code ->" button: set active document and switch to Coding tab
     shiny::observeEvent(input$btn_code_doc, {
       shiny::req(lv$selected_id)
       rv$active_source_id <- lv$selected_id
@@ -117,7 +117,7 @@ mod_documents_server <- function(id, rv) {
       )
     })
 
-    # ── Document list exports ──────────────────────────────────────────────────
+    # -- Document list exports --------------------------------------------------
 
     .docs_export_df <- function() {
       tryCatch(
@@ -151,7 +151,7 @@ mod_documents_server <- function(id, rv) {
       }
     )
 
-    # ── File upload: parse then show import preview modal ─────────────────────
+    # -- File upload: parse then show import preview modal ---------------------
 
     shiny::observeEvent(input$file_upload, {
       f <- input$file_upload
@@ -172,7 +172,7 @@ mod_documents_server <- function(id, rv) {
 
       n_chars  <- nchar(content)
       n_words  <- length(strsplit(trimws(content), "\\s+")[[1L]])
-      preview  <- if (n_chars > 800L) paste0(substr(content, 1L, 800L), "…") else content
+      preview  <- if (n_chars > 800L) paste0(substr(content, 1L, 800L), "\u2026") else content
       auto_nm  <- fs::path_ext_remove(f$name)
 
       shiny::showModal(shiny::modalDialog(
@@ -185,7 +185,7 @@ mod_documents_server <- function(id, rv) {
           shiny::div(
             class = "qc-preview-header",
             paste0(
-              formatC(n_chars, format = "d", big.mark = ","), " chars  ·  ",
+              formatC(n_chars, format = "d", big.mark = ","), " chars  \u00b7  ",
               formatC(n_words, format = "d", big.mark = ","), " words"
             )
           ),
@@ -205,7 +205,7 @@ mod_documents_server <- function(id, rv) {
             class       = "form-control form-control-sm",
             type        = "text",
             list        = ns("import_modal_source_type_list"),
-            placeholder = "interview, survey, …"
+            placeholder = "interview, survey, \u2026"
           ),
           shiny::tags$datalist(
             id = ns("import_modal_source_type_list"),
@@ -225,7 +225,7 @@ mod_documents_server <- function(id, rv) {
       ))
     })
 
-    # ── Confirm import from modal ──────────────────────────────────────────────
+    # -- Confirm import from modal ----------------------------------------------
 
     shiny::observeEvent(input$btn_confirm_import, {
       shiny::req(lv$pending_content, input$file_upload)
@@ -250,7 +250,7 @@ mod_documents_server <- function(id, rv) {
       })
     })
 
-    # ── Paste text modal ───────────────────────────────────────────────────────
+    # -- Paste text modal -------------------------------------------------------
 
     shiny::observeEvent(input$btn_open_paste_modal, {
       shiny::showModal(shiny::modalDialog(
@@ -261,7 +261,7 @@ mod_documents_server <- function(id, rv) {
         shiny::textAreaInput(ns("paste_modal_content"), "Text",
           rows        = 8,
           width       = "100%",
-          placeholder = "Paste document text here…"),
+          placeholder = "Paste document text here\u2026"),
         shiny::textInput(ns("paste_modal_name"), "Display name",
           placeholder = "Required"),
         shiny::textAreaInput(ns("paste_modal_memo"), "Memo",
@@ -274,7 +274,7 @@ mod_documents_server <- function(id, rv) {
             class       = "form-control form-control-sm",
             type        = "text",
             list        = ns("paste_modal_source_type_list"),
-            placeholder = "interview, survey, …"
+            placeholder = "interview, survey, \u2026"
           ),
           shiny::tags$datalist(
             id = ns("paste_modal_source_type_list"),
@@ -321,7 +321,7 @@ mod_documents_server <- function(id, rv) {
       })
     })
 
-    # ── Edit document content ──────────────────────────────────────────────────
+    # -- Edit document content --------------------------------------------------
 
     shiny::observeEvent(input$btn_edit_doc, {
       shiny::req(lv$selected_id)
@@ -354,7 +354,7 @@ mod_documents_server <- function(id, rv) {
           ),
           shiny::fileInput(ns("edit_doc_file"), NULL,
             accept      = c(".txt", ".docx", ".pdf", ".csv", ".md"),
-            buttonLabel = "Choose file…",
+            buttonLabel = "Choose file\u2026",
             placeholder = "No file chosen"
           )
         ),
@@ -408,7 +408,7 @@ mod_documents_server <- function(id, rv) {
       })
     })
 
-    # ── Delete document ────────────────────────────────────────────────────────
+    # -- Delete document --------------------------------------------------------
 
     shiny::observeEvent(input$btn_delete_doc, {
       shiny::req(lv$selected_id)

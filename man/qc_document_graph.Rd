@@ -2,7 +2,7 @@
 % Please edit documentation in R/graph.R
 \name{qc_document_graph}
 \alias{qc_document_graph}
-\title{Build graph data for the document–code network}
+\title{Build graph data for the document-code network}
 \usage{
 qc_document_graph(
   project,
@@ -35,11 +35,11 @@ Three graph types are supported:
 }
 \details{
 \itemize{
-\item \code{"similarity"} — documents are nodes; edges connect documents that share
+\item \code{"similarity"} -- documents are nodes; edges connect documents that share
 at least \code{min_shared} codes, weighted by the number of shared codes.
-\item \code{"bipartite"} — documents \emph{and} codes are nodes; edges represent
+\item \code{"bipartite"} -- documents \emph{and} codes are nodes; edges represent
 individual coding relationships.
-\item \code{"cooccurrence"} — codes are nodes; edges connect codes that co-occur in
+\item \code{"cooccurrence"} -- codes are nodes; edges connect codes that co-occur in
 at least one document, weighted by the document count.
 }
 }

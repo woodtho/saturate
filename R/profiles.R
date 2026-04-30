@@ -1,4 +1,4 @@
-# ── Internal DB helpers ────────────────────────────────────────────────────────
+# -- Internal DB helpers --------------------------------------------------------
 
 .db_list_profiles <- function(project) {
   .query(project$con,
@@ -53,7 +53,7 @@
   invisible(NULL)
 }
 
-# ── Public API ─────────────────────────────────────────────────────────────────
+# -- Public API -----------------------------------------------------------------
 
 #' List coder profiles stored in the project
 #'

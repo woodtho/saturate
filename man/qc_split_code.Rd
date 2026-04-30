@@ -23,7 +23,7 @@ A tibble of the newly created codes.
 }
 \description{
 Creates \code{length(new_names)} new codes and logs the split in \code{code_history}.
-The original code is left intact — use \code{qc_reassign_coding()} or the
+The original code is left intact -- use \code{qc_reassign_coding()} or the
 Codebook "Review Codings" panel to move passages to the new codes, then
 delete the original when done.
 }

@@ -1,4 +1,4 @@
-﻿mod_coding_ui <- function(id) {
+mod_coding_ui <- function(id) {
   ns       <- shiny::NS(id)
   js_file  <- system.file("app", "coding.js",  package = "saturate")
   shiny::tagList(
@@ -8,7 +8,7 @@
     bslib::layout_columns(
       col_widths = c(8, 4),
 
-      # ── Left: document display ─────────────────────────────────────────────
+      # -- Left: document display ---------------------------------------------
       bslib::card(
         bslib::card_header(
           shiny::div(
@@ -21,7 +21,7 @@
                 label   = NULL,
                 choices = character(0),
                 width   = "100%",
-                options = list(placeholder = "Open document…")
+                options = list(placeholder = "Open document\u2026")
               )
             ),
             shiny::div(
@@ -42,10 +42,10 @@
                   "Lines"
                 )
               ),
-              shiny::actionButton(ns("btn_nav_prev"), "← Prev",
+              shiny::actionButton(ns("btn_nav_prev"), "\u2190 Prev",
                 class = "btn-sm btn-outline-secondary",
                 title = "Previous uncoded segment  (p)"),
-              shiny::actionButton(ns("btn_nav_next"), "Next →",
+              shiny::actionButton(ns("btn_nav_next"), "Next \u2192",
                 class = "btn-sm btn-outline-secondary",
                 title = "Next uncoded segment  (n)"),
               shiny::actionButton(ns("btn_nav_disputed"), "Disputed",
@@ -62,7 +62,7 @@
           shiny::div(
             class = "qc-doc-search-field flex-grow-1",
             shiny::textInput(ns("doc_search"), label = NULL,
-              placeholder = "Search document…",
+              placeholder = "Search document\u2026",
               width = "100%")
           ),
           shiny::div(
@@ -109,7 +109,7 @@
               `aria-label` = "Read aloud",
               title = "Read aloud (or pause/resume)",
               `data-qc-tts-action` = "playpause",
-              "▶"
+              "\u25b6"
             ),
             shiny::tags$button(
               id = ns("tts_stop"),
@@ -119,13 +119,13 @@
               title = "Stop the current narration",
               `data-qc-tts-action` = "stop",
               disabled = "disabled",
-              "⏹"
+              "\u23f9"
             )
           )
         )
       ),
 
-      # ── Right: apply-code panel ────────────────────────────────────────────
+      # -- Right: apply-code panel --------------------------------------------
       bslib::card(
         bslib::card_header("Code"),
         shiny::div(
@@ -143,7 +143,7 @@
             ))
           ),
 
-          # ── Display filters (collapsible) ──────────────────────────────────
+          # -- Display filters (collapsible) ----------------------------------
           shiny::tags$details(
             class = "qc-panel-details",
             shiny::tags$summary(
@@ -169,7 +169,7 @@
             )
           ),
 
-          # ── Code application ───────────────────────────────────────────────
+          # -- Code application -----------------------------------------------
           shiny::h6("Selected text"),
           shiny::uiOutput(ns("sel_preview")),
           shiny::div(
@@ -245,7 +245,7 @@ mod_coding_server <- function(id, rv, parent_session) {
         value = isTRUE(settings$showLineNumbers))
     }, ignoreInit = FALSE, ignoreNULL = FALSE)
 
-    # ── Core reactives ─────────────────────────────────────────────────────────
+    # -- Core reactives ---------------------------------------------------------
 
     docs_rv <- shiny::reactive({
       rv$refresh_docs
@@ -315,7 +315,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       )
     })
 
-    # ── Output rendering ───────────────────────────────────────────────────────
+    # -- Output rendering -------------------------------------------------------
 
 
 
@@ -387,14 +387,14 @@ mod_coding_server <- function(id, rv, parent_session) {
         class = "alert alert-warning mb-0 py-2 px-3 rounded-0 border-0 border-bottom",
         style = "font-size:0.82rem;",
         shiny::icon("lock"), " ",
-        shiny::tags$strong("Blind mode active — "),
+        shiny::tags$strong("Blind mode active \u2014 "),
         "showing only ",
         shiny::tags$strong(rv$current_coder %||% "default"),
         "'s codings. Other coders' work is hidden."
       )
     })
 
-    # ── Code selector ──────────────────────────────────────────────────────────
+    # -- Code selector ----------------------------------------------------------
 
     shiny::observe({
       codes   <- codes_rv()
@@ -406,7 +406,7 @@ mod_coding_server <- function(id, rv, parent_session) {
         selected = pending %||% character(0))
     })
 
-    # ── New-code quick-add ─────────────────────────────────────────────────────
+    # -- New-code quick-add -----------------------------------------------------
 
     .random_code_color <- function() {
       h <- stats::runif(1L, 0, 360)
@@ -486,7 +486,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       selected_coder <- input$filter_display_coder %||% ""
 
       # isolate blind_mode so choices/selection changes from blind toggles are
-      # handled exclusively by the observeEvent below — avoids feedback loops
+      # handled exclusively by the observeEvent below -- avoids feedback loops
       if (isTRUE(shiny::isolate(rv$blind_mode))) {
         coder_choices  <- stats::setNames(active_coder, active_coder)
         selected_coder <- active_coder
@@ -523,7 +523,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       }
     }, ignoreInit = TRUE)
 
-    # ── Code info tooltip ──────────────────────────────────────────────────────
+    # -- Code info tooltip ------------------------------------------------------
 
     output$code_info <- shiny::renderUI({
       shiny::req(input$sel_code)
@@ -554,7 +554,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       )
     })
 
-    # ── Apply code (button + Enter hotkey) ─────────────────────────────────────
+    # -- Apply code (button + Enter hotkey) -------------------------------------
 
     .do_apply <- function() {
       shiny::req(input$selection, input$sel_code, rv$active_source_id)
@@ -610,7 +610,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     })
 
-    # ── Digit hotkey: select Nth code and apply immediately ────────────────────
+    # -- Digit hotkey: select Nth code and apply immediately --------------------
 
     shiny::observeEvent(input$hotkey_digit, {
       shiny::req(input$selection, rv$active_source_id)
@@ -637,7 +637,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     })
 
-    # ── Escape: clear selection display ────────────────────────────────────────
+    # -- Escape: clear selection display ----------------------------------------
 
     shiny::observeEvent(input$hotkey_escape, {
       output$sel_preview <- shiny::renderUI({
@@ -648,7 +648,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     })
 
-    # ── Navigation: build uncoded targets when document / codings change ───────
+    # -- Navigation: build uncoded targets when document / codings change -------
 
     shiny::observe({
       shiny::req(rv$active_source_id)
@@ -698,14 +698,37 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     }
 
-    shiny::observeEvent(input$btn_nav_next,      .nav_next())
-    shiny::observeEvent(input$hotkey_nav_next,   .nav_next())
-    shiny::observeEvent(input$btn_nav_prev,      .nav_prev())
-    shiny::observeEvent(input$hotkey_nav_prev,   .nav_prev())
-    shiny::observeEvent(input$btn_nav_disputed,  .nav_disputed())
+    shiny::observeEvent(input$btn_nav_next,        .nav_next())
+    shiny::observeEvent(input$hotkey_nav_next,     .nav_next())
+    shiny::observeEvent(input$btn_nav_prev,        .nav_prev())
+    shiny::observeEvent(input$hotkey_nav_prev,     .nav_prev())
+    shiny::observeEvent(input$btn_nav_disputed,    .nav_disputed())
     shiny::observeEvent(input$hotkey_nav_disputed, .nav_disputed())
 
-    # ── Display filter reactive updates ────────────────────────────────────────
+    # -- Document navigation shortcuts ([ and ]) --------------------------------
+
+    .nav_doc <- function(direction) {
+      docs <- docs_rv()
+      if (nrow(docs) == 0L) return()
+      current <- rv$active_source_id
+      idx <- if (is.null(current)) 0L else which(docs$id == current)
+      if (length(idx) == 0L) idx <- 0L
+      new_idx <- idx + direction
+      if (new_idx < 1L) {
+        shiny::showNotification("Already at the first document.", type = "message")
+        return()
+      }
+      if (new_idx > nrow(docs)) {
+        shiny::showNotification("Already at the last document.", type = "message")
+        return()
+      }
+      rv$active_source_id <- docs$id[[new_idx]]
+    }
+
+    shiny::observeEvent(input$hotkey_doc_prev, .nav_doc(-1L))
+    shiny::observeEvent(input$hotkey_doc_next, .nav_doc(+1L))
+
+    # -- Display filter reactive updates ----------------------------------------
 
     shiny::observeEvent(input$highlight_opacity, {
       lv$highlight_op <- input$highlight_opacity
@@ -721,30 +744,51 @@ mod_coding_server <- function(id, rv, parent_session) {
                                  value = isTRUE(rv$colorblind_mode))
     }, ignoreInit = TRUE)
 
-    # ── Keyboard shortcuts help modal ──────────────────────────────────────────
+    # -- Keyboard shortcuts help modal ------------------------------------------
 
     .show_shortcuts <- function() {
+      kbd <- shiny::tags$kbd
       shiny::showModal(shiny::modalDialog(
         title     = "Keyboard Shortcuts",
         easyClose = TRUE,
         footer    = shiny::modalButton("Close"),
         size      = "m",
+        shiny::tags$h6("Coding"),
         shiny::tags$dl(
-          shiny::tags$dt(shiny::tags$kbd("1"), "–", shiny::tags$kbd("9")),
-          shiny::tags$dd("Select and apply the Nth code to selected text"),
-          shiny::tags$dt(shiny::tags$kbd("Enter")),
-          shiny::tags$dd("Apply the current code to the selected text"),
-          shiny::tags$dt(shiny::tags$kbd("Esc")),
-          shiny::tags$dd("Clear the current text selection"),
-          shiny::tags$dt(shiny::tags$kbd("/")),
-          shiny::tags$dd("Focus the code selector"),
-          shiny::tags$dt(shiny::tags$kbd("n")),
-          shiny::tags$dd("Jump to the next uncoded segment"),
-          shiny::tags$dt(shiny::tags$kbd("p")),
-          shiny::tags$dd("Jump to the previous uncoded segment"),
-          shiny::tags$dt(shiny::tags$kbd("d")),
-          shiny::tags$dd("Jump to the next disputed / draft segment"),
-          shiny::tags$dt(shiny::tags$kbd("?")),
+          shiny::tags$dt(kbd("1"), "\u2013", kbd("9")),
+          shiny::tags$dd("Select and apply the Nth code immediately"),
+          shiny::tags$dt(kbd("Enter")),
+          shiny::tags$dd("Apply the selected code to the highlighted text"),
+          shiny::tags$dt(kbd("/")),
+          shiny::tags$dd("Focus the code search box"),
+          shiny::tags$dt(kbd("Esc")),
+          shiny::tags$dd("Clear the text selection")
+        ),
+        shiny::tags$h6("Navigation"),
+        shiny::tags$dl(
+          shiny::tags$dt(kbd("n")),
+          shiny::tags$dd("Next uncoded segment"),
+          shiny::tags$dt(kbd("p")),
+          shiny::tags$dd("Previous uncoded segment"),
+          shiny::tags$dt(kbd("d")),
+          shiny::tags$dd("Next disputed or draft segment"),
+          shiny::tags$dt(kbd("]")),
+          shiny::tags$dd("Next document"),
+          shiny::tags$dt(kbd("[")),
+          shiny::tags$dd("Previous document")
+        ),
+        shiny::tags$h6("Read aloud"),
+        shiny::tags$dl(
+          shiny::tags$dt(kbd("Space")),
+          shiny::tags$dd("Play / pause read-aloud"),
+          shiny::tags$dt(kbd("x")),
+          shiny::tags$dd("Stop read-aloud")
+        ),
+        shiny::tags$h6("View"),
+        shiny::tags$dl(
+          shiny::tags$dt(kbd("b")),
+          shiny::tags$dd("Toggle blind mode"),
+          shiny::tags$dt(kbd("?")),
           shiny::tags$dd("Show this help")
         )
       ))
@@ -753,7 +797,7 @@ mod_coding_server <- function(id, rv, parent_session) {
     shiny::observeEvent(input$btn_shortcuts,  .show_shortcuts())
     shiny::observeEvent(input$hotkey_help,    .show_shortcuts())
 
-    # ── Click-to-edit existing coding ──────────────────────────────────────────
+    # -- Click-to-edit existing coding ------------------------------------------
 
     .show_edit_modal <- function(row) {
       lv$editing_coding <- row
@@ -801,7 +845,7 @@ mod_coding_server <- function(id, rv, parent_session) {
         # Disambiguation: multiple codings overlap at the clicked point
         choices <- stats::setNames(
           relevant$id,
-          paste0(relevant$code_name, ' — "',
+          paste0(relevant$code_name, ' \u2014 "',
                  substr(relevant$seltext, 1L, 50L), '"')
         )
         lv$disambiguation <- relevant
@@ -871,7 +915,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     })
 
-    # ── Excerpt creation ────────────────────────────────────────────────────────
+    # -- Excerpt creation --------------------------------------------------------
 
     shiny::observeEvent(input$btn_create_excerpt, {
       sel <- input$selection
@@ -918,7 +962,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     })
 
-    # ── Excerpts table ─────────────────────────────────────────────────────────
+    # -- Excerpts table ---------------------------------------------------------
 
     output$tbl_excerpts <- DT::renderDataTable({
       shiny::req(rv$active_source_id)
@@ -993,7 +1037,7 @@ mod_coding_server <- function(id, rv, parent_session) {
       })
     })
 
-    # ── Codings table ──────────────────────────────────────────────────────────
+    # -- Codings table ----------------------------------------------------------
 
     output$tbl_codings <- DT::renderDataTable({
       shiny::req(rv$active_source_id)

@@ -3,7 +3,7 @@
 #' Records a directed or symmetric semantic link between codes, e.g.
 #' `"related_to"`, `"broader_than"`, `"narrower_than"`, or
 #' `"co_occurs_with"`. The relation is stored as a directed edge
-#' (`code_id_1 → code_id_2`), but [qc_list_code_relations()] returns
+#' (`code_id_1 -> code_id_2`), but [qc_list_code_relations()] returns
 #' both directions when filtering by a single code.
 #'
 #' @param project A `qc_project` object.

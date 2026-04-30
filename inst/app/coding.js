@@ -838,6 +838,25 @@
       case '?':
         Shiny.setInputValue(ns + 'hotkey_help', Date.now(), { priority: 'event' });
         break;
+      case ' ':
+        e.preventDefault();
+        if (!_tts.isSpeaking) { _startTts(); } else { _toggleTtsPause(); }
+        break;
+      case 'x':
+        _stopTts();
+        break;
+      case 'b':
+        var blindBtn = document.getElementById('btn_blind_mode');
+        if (blindBtn) blindBtn.click();
+        break;
+      case '[':
+        e.preventDefault();
+        Shiny.setInputValue(ns + 'hotkey_doc_prev', Date.now(), { priority: 'event' });
+        break;
+      case ']':
+        e.preventDefault();
+        Shiny.setInputValue(ns + 'hotkey_doc_next', Date.now(), { priority: 'event' });
+        break;
       default:
         if (/^[1-9]$/.test(e.key)) {
           Shiny.setInputValue(

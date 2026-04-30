@@ -49,7 +49,7 @@ qc_update_document_content <- function(project, id, content, memo = "") {
   )
   if (n_flagged > 0L)
     cli::cli_warn(c(
-      "!" = "{n_flagged} coding{?s} flagged 'needs_review' — offsets may have shifted."
+      "!" = "{n_flagged} coding{?s} flagged 'needs_review' \u2014 offsets may have shifted."
     ))
 
   cli::cli_alert_success(

@@ -34,7 +34,7 @@ file are created if absent, then linked to the imported code.
 \code{criteria}, \code{code_key}, \code{categories} (comma-separated names in a single
 cell).
 
-\strong{JSON format:} array of objects — \code{name}, \code{color}, \code{memo}, \code{definition},
+\strong{JSON format:} array of objects -- \code{name}, \code{color}, \code{memo}, \code{definition},
 \code{criteria}, \code{code_key}, \code{categories} (array of strings). JSON import
 requires \pkg{jsonlite}.
 }

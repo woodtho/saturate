@@ -99,7 +99,7 @@ qc_agreement <- function(project, code_id, coder1, coder2) {
 #' applied the code to a document (1) or did not (0). Only documents coded by
 #' at least two of the specified coders contribute to the calculation.
 #'
-#' Alpha interpretation: > 0.8 = strong, 0.67–0.8 = tentative, < 0.67 =
+#' Alpha interpretation: > 0.8 = strong, 0.67-0.8 = tentative, < 0.67 =
 #' unreliable (Krippendorff 2004 thresholds for content analysis).
 #'
 #' @param project A `qc_project` object.
@@ -148,7 +148,7 @@ qc_krippendorff <- function(project, code_id, coders = NULL) {
 
   valid_docs <- names(doc_m)[doc_m >= 2L]
   if (length(valid_docs) < 2L)
-    rlang::abort("Fewer than 2 documents have been coded by ≥2 coders.")
+    rlang::abort("Fewer than 2 documents have been coded by \u22652 coders.")
 
   do_num  <- 0
   do_den  <- 0

@@ -1,3 +1,8 @@
+#' @importFrom utils head
+#' @importFrom stats setNames
+#' @importFrom rlang .data
+utils::globalVariables(c("n_coders", "n_sources"))
+
 .onLoad <- function(libname, pkgname) {
   app_dir <- system.file("app", package = pkgname, lib.loc = libname)
   if (nchar(app_dir) > 0L)
@@ -7,6 +12,6 @@
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage(
     "saturate ", utils::packageVersion("saturate"),
-    " — use shiny_saturate() to launch the GUI"
+    " \u2014 use shiny_saturate() to launch the GUI"
   )
 }

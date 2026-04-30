@@ -19,5 +19,5 @@ A tibble: \code{attribute_value}, then one column per code.
 }
 \description{
 Returns a wide table: rows = attribute values, columns = code names,
-cells = number of documents with that code–attribute combination.
+cells = number of documents with that code-attribute combination.
 }

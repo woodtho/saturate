@@ -1,9 +1,9 @@
-﻿mod_codebook_ui <- function(id) {
+mod_codebook_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_columns(
     col_widths = c(4, 8),
 
-    # ── Left: add / edit form ────────────────────────────────────────────
+    # -- Left: add / edit form --------------------------------------------
     bslib::card(
       bslib::card_header(shiny::textOutput(ns("form_header"))),
       shiny::div(
@@ -28,7 +28,7 @@
         shiny::textAreaInput(ns("code_criteria"),   "Criteria (include/exclude)", rows = 3),
         shiny::textAreaInput(ns("code_memo"), "Memo", rows = 2),
 
-        # ── Weight (optional) ────────────────────────────────────────────
+        # -- Weight (optional) --------------------------------------------
         shiny::tags$details(
           class = "qc-panel-details",
           shiny::tags$summary(
@@ -57,7 +57,7 @@
       )
     ),
 
-    # ── Right: codes table ───────────────────────────────────────────────
+    # -- Right: codes table -----------------------------------------------
     bslib::card(
       bslib::card_header(
         shiny::div(
@@ -68,7 +68,7 @@
             shiny::actionButton(ns("btn_new_code_hdr"),
                                 shiny::icon("plus"),
                                 class = "btn-sm btn-outline-success",
-                                title = "New code — clear current selection"),
+                                title = "New code \u2014 clear current selection"),
             shiny::actionButton(ns("btn_validate"), "Validate",
                                 class = "btn-sm btn-outline-info"),
             shiny::actionButton(ns("btn_snapshots"), "Snapshots",
@@ -106,7 +106,7 @@ mod_codebook_server <- function(id, rv) {
       name_error    = NULL
     )
 
-    # ── Data reactives ────────────────────────────────────────────────────
+    # -- Data reactives ----------------------------------------------------
 
     codes <- shiny::reactive({
       rv$refresh_codes
@@ -120,7 +120,7 @@ mod_codebook_server <- function(id, rv) {
               WHERE  status = 1 ORDER BY name")
     })
 
-    # ── Weight controls ───────────────────────────────────────────────────
+    # -- Weight controls ---------------------------------------------------
 
     output$weight_controls <- shiny::renderUI({
       if (!isTRUE(input$weight_enabled)) return(NULL)
@@ -132,7 +132,7 @@ mod_codebook_server <- function(id, rv) {
             "font-size:0.78rem;color:var(--sat-text-muted);",
             "display:flex;justify-content:space-between;",
             "margin-top:-10px;margin-bottom:8px;"),
-          shiny::span("−1  strongly negative"),
+          shiny::span("\u22121  strongly negative"),
           shiny::span("0  neutral"),
           shiny::span("+1  strongly positive")
         ),
@@ -164,14 +164,14 @@ mod_codebook_server <- function(id, rv) {
       lv$name_error <- NULL
     }, ignoreNULL = FALSE)
 
-    # ── Form header ───────────────────────────────────────────────────────
+    # -- Form header -------------------------------------------------------
 
     output$form_header <- shiny::renderText({
       if (is.null(lv$selected_id)) "Add Code"
       else paste0("Edit: ", lv$selected_name)
     })
 
-    # ── Context-aware action buttons ──────────────────────────────────────
+    # -- Context-aware action buttons --------------------------------------
 
     output$action_buttons <- shiny::renderUI({
       if (is.null(lv$selected_id)) {
@@ -195,9 +195,9 @@ mod_codebook_server <- function(id, rv) {
           ),
           shiny::div(
             class = "d-flex gap-2 mb-2",
-            shiny::actionButton(ns("btn_merge"), "Merge into…",
+            shiny::actionButton(ns("btn_merge"), "Merge into\u2026",
                                 class = "btn-outline-warning flex-grow-1"),
-            shiny::actionButton(ns("btn_split"), "Split…",
+            shiny::actionButton(ns("btn_split"), "Split\u2026",
                                 class = "btn-outline-warning flex-grow-1")
           ),
           shiny::actionButton(ns("btn_delete_code"), "Delete Code",
@@ -206,7 +206,7 @@ mod_codebook_server <- function(id, rv) {
       }
     })
 
-    # ── Codes table ───────────────────────────────────────────────────────
+    # -- Codes table -------------------------------------------------------
 
     output$tbl_codes <- DT::renderDataTable({
       all_codes <- codes()
@@ -239,7 +239,7 @@ mod_codebook_server <- function(id, rv) {
       )
     })
 
-    # ── Row click → enter edit mode ───────────────────────────────────────
+    # -- Row click -> enter edit mode ---------------------------------------
 
     shiny::observeEvent(input$tbl_codes_rows_selected, {
       row <- input$tbl_codes_rows_selected
@@ -272,7 +272,7 @@ mod_codebook_server <- function(id, rv) {
       }
     })
 
-    # ── Add code ──────────────────────────────────────────────────────────
+    # -- Add code ----------------------------------------------------------
 
     shiny::observeEvent(input$btn_add_code, {
       nm <- trimws(input$code_name %||% "")
@@ -304,7 +304,7 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
-    # ── Save edits ────────────────────────────────────────────────────────
+    # -- Save edits --------------------------------------------------------
 
     shiny::observeEvent(input$btn_save_code, {
       shiny::req(lv$selected_id)
@@ -340,7 +340,7 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
-    # ── New / clear selection ─────────────────────────────────────────────
+    # -- New / clear selection ---------------------------------------------
 
     shiny::observeEvent(input$btn_new_code_hdr, {
       lv$selected_id   <- NULL
@@ -350,7 +350,7 @@ mod_codebook_server <- function(id, rv) {
       DT::selectRows(tbl_codes_proxy, NULL)
     })
 
-    # ── Cancel edit ───────────────────────────────────────────────────────
+    # -- Cancel edit -------------------------------------------------------
 
     shiny::observeEvent(input$btn_cancel_edit, {
       lv$selected_id   <- NULL
@@ -359,7 +359,7 @@ mod_codebook_server <- function(id, rv) {
       DT::selectRows(tbl_codes_proxy, NULL)
     })
 
-    # ── View history modal ────────────────────────────────────────────────
+    # -- View history modal ------------------------------------------------
 
     shiny::observeEvent(input$btn_view_history, {
       shiny::req(lv$selected_id)
@@ -376,7 +376,7 @@ mod_codebook_server <- function(id, rv) {
         )
       })
       shiny::showModal(shiny::modalDialog(
-        title    = paste0("History — ", lv$selected_name),
+        title    = paste0("History \u2014 ", lv$selected_name),
         DT::dataTableOutput(ns("tbl_history_modal")),
         size     = "l",
         easyClose = TRUE,
@@ -384,7 +384,7 @@ mod_codebook_server <- function(id, rv) {
       ))
     })
 
-    # ── Review codings modal ──────────────────────────────────────────────
+    # -- Review codings modal ----------------------------------------------
 
     output$tbl_review <- DT::renderDataTable({
       shiny::req(!is.null(lv$review_segs))
@@ -410,7 +410,7 @@ mod_codebook_server <- function(id, rv) {
       other_codes <- codes()[codes()$id != lv$selected_id, ]
 
       shiny::showModal(shiny::modalDialog(
-        title    = paste0("Codings — ", lv$selected_name),
+        title    = paste0("Codings \u2014 ", lv$selected_name),
         size     = "l",
         easyClose = TRUE,
         DT::dataTableOutput(ns("tbl_review")),
@@ -457,7 +457,7 @@ mod_codebook_server <- function(id, rv) {
       shiny::showNotification("Coding deleted.", type = "message")
     })
 
-    # ── Merge modal ───────────────────────────────────────────────────────
+    # -- Merge modal -------------------------------------------------------
 
     shiny::observeEvent(input$btn_merge, {
       shiny::req(lv$selected_id)
@@ -505,7 +505,7 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
-    # ── Split modal ───────────────────────────────────────────────────────
+    # -- Split modal -------------------------------------------------------
 
     shiny::observeEvent(input$btn_split, {
       shiny::req(lv$selected_id)
@@ -516,7 +516,7 @@ mod_codebook_server <- function(id, rv) {
         shiny::p(paste0(
           'Two new codes will be created. "', lv$selected_name, '" (',
           n_segs, if (n_segs == 1L) ' passage' else ' passages',
-          ') is kept intact — use "Review Codings" to reassign its passages ',
+          ') is kept intact \u2014 use "Review Codings" to reassign its passages ',
           'to the new codes, then delete it when done.'
         )),
         shiny::textInput(ns("split_name1"), "New code 1 name"),
@@ -547,7 +547,7 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
-    # ── Delete confirm modal ──────────────────────────────────────────────
+    # -- Delete confirm modal ----------------------------------------------
 
     shiny::observeEvent(input$btn_delete_code, {
       shiny::req(lv$selected_id)
@@ -573,7 +573,7 @@ mod_codebook_server <- function(id, rv) {
       shiny::removeModal()
     })
 
-    # ── Validate codebook ─────────────────────────────────────────────────────
+    # -- Validate codebook -----------------------------------------------------
 
     shiny::observeEvent(input$btn_validate, {
       issues <- tryCatch(
@@ -588,7 +588,7 @@ mod_codebook_server <- function(id, rv) {
       output$tbl_validation <- DT::renderDataTable({
         if (nrow(issues) == 0L) {
           return(DT::datatable(
-            tibble::tibble(result = "No issues found — codebook looks good!"),
+            tibble::tibble(result = "No issues found \u2014 codebook looks good!"),
             rownames = FALSE, options = list(dom = "t")
           ))
         }
@@ -628,14 +628,14 @@ mod_codebook_server <- function(id, rv) {
       ))
     })
 
-    # ── Snapshots modal ────────────────────────────────────────────────────────
+    # -- Snapshots modal --------------------------------------------------------
 
     shiny::observeEvent(input$btn_snapshots, {
       snaps <- tryCatch(qc_list_snapshots(rv$project),
                         error = function(e) NULL)
       snap_choices <- if (!is.null(snaps) && nrow(snaps) > 0L) {
         lbl <- paste0(format(as.POSIXct(snaps$created_at), "%d %b %Y %H:%M"),
-                      " — ", ifelse(nchar(snaps$label) > 0, snaps$label, "(no label)"),
+                      " \u2014 ", ifelse(nchar(snaps$label) > 0, snaps$label, "(no label)"),
                       " (", snaps$n_codes, " codes)")
         stats::setNames(snaps$id, lbl)
       } else {
@@ -728,7 +728,7 @@ mod_codebook_server <- function(id, rv) {
       output$diff_result <- shiny::renderUI({
         if (nrow(diff) == 0L) {
           return(shiny::p(class = "text-success mt-2",
-                          "No differences — snapshots are identical."))
+                          "No differences \u2014 snapshots are identical."))
         }
         output$tbl_diff <- DT::renderDataTable({
           DT::datatable(
@@ -754,7 +754,7 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
-    # ── Import modal ──────────────────────────────────────────────────────
+    # -- Import modal ------------------------------------------------------
 
     shiny::observeEvent(input$btn_import, {
       shiny::showModal(shiny::modalDialog(
@@ -796,7 +796,7 @@ mod_codebook_server <- function(id, rv) {
       })
     })
 
-    # ── Export download handler ───────────────────────────────────────────
+    # -- Export download handler -------------------------------------------
 
     output$dl_export <- shiny::downloadHandler(
       filename = function() {
@@ -809,7 +809,7 @@ mod_codebook_server <- function(id, rv) {
       }
     )
 
-    # ── Category management ───────────────────────────────────────────────
+    # -- Category management -----------------------------------------------
 
     shiny::observe({
       shiny::updateSelectInput(session, "sel_code_assign",
@@ -856,7 +856,7 @@ mod_codebook_server <- function(id, rv) {
     depth[i] <- d
   }
   ifelse(depth == 0L, names,
-    paste0(strrep("   ", depth), "└ ", names))
+    paste0(strrep("   ", depth), "\u2514 ", names))
 }
 
 # Clear all form inputs and return to add-mode defaults

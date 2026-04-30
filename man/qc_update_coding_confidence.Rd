@@ -11,7 +11,7 @@ qc_update_coding_confidence(project, id, confidence)
 
 \item{id}{Integer. Coding id.}
 
-\item{confidence}{Integer 0–100 or \code{NULL} (unrated).}
+\item{confidence}{Integer 0-100 or \code{NULL} (unrated).}
 }
 \value{
 Invisibly \code{TRUE}.

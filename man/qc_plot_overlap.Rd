@@ -19,6 +19,6 @@ A ggplot2 object, or NULL (with a warning) when fewer than two
 coders are found.
 }
 \description{
-Displays mean Cohen's kappa across all code–document combinations for each
+Displays mean Cohen's kappa across all code-document combinations for each
 pair of coders. The diagonal (self-agreement) is fixed at 1.0.
 }

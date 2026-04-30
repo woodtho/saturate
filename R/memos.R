@@ -59,7 +59,7 @@ qc_list_project_memos <- function(project, type = NULL) {
   }
 }
 
-# ── Internal export helpers ───────────────────────────────────────────────────
+# -- Internal export helpers ---------------------------------------------------
 
 .export_memos_docx <- function(project) {
   if (!requireNamespace("officer", quietly = TRUE))
@@ -70,10 +70,10 @@ qc_list_project_memos <- function(project, type = NULL) {
   doc  <- officer::read_docx()
 
   doc <- officer::body_add_par(doc,
-    paste0(info$name, " — Research Journal"), style = "heading 1")
+    paste0(info$name, " \u2014 Research Journal"), style = "heading 1")
   doc <- officer::body_add_par(doc,
     paste0("Exported ", format(Sys.Date(), "%B %d, %Y"),
-           " — ", nrow(df), " entr", if (nrow(df) == 1L) "y" else "ies"),
+           " \u2014 ", nrow(df), " entr", if (nrow(df) == 1L) "y" else "ies"),
     style = "Normal")
 
   for (i in seq_len(nrow(df))) {
@@ -82,7 +82,7 @@ qc_list_project_memos <- function(project, type = NULL) {
     doc <- officer::body_add_break(doc)
     doc <- officer::body_add_par(doc,
       paste0(tools::toTitleCase(row$memo_type %||% "other"),
-             "  —  ", ts, "  —  ", row$created_by),
+             "  \u2014  ", ts, "  \u2014  ", row$created_by),
       style = "heading 2")
     doc <- officer::body_add_par(doc, as.character(row$content), style = "Normal")
   }
@@ -110,7 +110,7 @@ qc_list_project_memos <- function(project, type = NULL) {
     "<!DOCTYPE html><html lang='en'><head>",
     "<meta charset='UTF-8'>",
     "<meta name='viewport' content='width=device-width,initial-scale=1'>",
-    paste0("<title>", esc(info$name), " — Journal</title>"),
+    paste0("<title>", esc(info$name), " \u2014 Journal</title>"),
     "<style>",
     "body{font-family:Georgia,'Times New Roman',serif;max-width:760px;margin:2rem auto;padding:0 1.5rem;color:#1a1a1a;line-height:1.7}",
     "h1{font-size:1.6rem;border-bottom:3px solid #2c3e50;padding-bottom:.5rem;color:#2c3e50;margin-bottom:.25rem}",
@@ -121,7 +121,7 @@ qc_list_project_memos <- function(project, type = NULL) {
     ".entry-meta{font-size:.82rem;color:#6b7280}",
     ".entry-content{white-space:pre-wrap;margin:0}",
     "</style></head><body>",
-    paste0("<h1>", esc(info$name), " — Research Journal</h1>"),
+    paste0("<h1>", esc(info$name), " \u2014 Research Journal</h1>"),
     paste0("<p class='meta'>Exported ", format(Sys.Date(), "%B %d, %Y"),
            " &mdash; ", nrow(df), " entr", if (nrow(df) == 1L) "y" else "ies", "</p>")
   )

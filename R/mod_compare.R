@@ -3,7 +3,7 @@ mod_compare_ui <- function(id) {
   shiny::div(
     class = "p-3",
 
-    # ── Controls row ──────────────────────────────────────────────────────────
+    # -- Controls row ----------------------------------------------------------
     bslib::card(
       bslib::card_body(
         shiny::div(
@@ -43,7 +43,7 @@ mod_compare_ui <- function(id) {
       ))
     ),
 
-    # ── Side-by-side text ─────────────────────────────────────────────────────
+    # -- Side-by-side text -----------------------------------------------------
     bslib::layout_columns(
       col_widths = c(6, 6),
 
@@ -66,7 +66,7 @@ mod_compare_ui <- function(id) {
       )
     ),
 
-    # ── Differences table ─────────────────────────────────────────────────────
+    # -- Differences table -----------------------------------------------------
     bslib::card(
       bslib::card_header(
         shiny::div(
@@ -90,7 +90,7 @@ mod_compare_ui <- function(id) {
       )
     ),
 
-    # ── Reliability statistics (coders mode only) ─────────────────────────────
+    # -- Reliability statistics (coders mode only) -----------------------------
     shiny::uiOutput(ns("reliability_card"))
   )
 }
@@ -99,7 +99,7 @@ mod_compare_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # ── Dynamic controls ────────────────────────────────────────────────────
+    # -- Dynamic controls ----------------------------------------------------
 
     docs_rv <- shiny::reactive({
       rv$refresh_docs
@@ -174,7 +174,7 @@ mod_compare_server <- function(id, rv) {
       }
     })
 
-    # ── Left side data ────────────────────────────────────────────────────────
+    # -- Left side data --------------------------------------------------------
 
     left_doc_rv <- shiny::reactive({
       input$btn_refresh
@@ -198,7 +198,7 @@ mod_compare_server <- function(id, rv) {
       qc_list_codings(rv$project, left_doc_rv()$id, coder = coder)
     })
 
-    # ── Right side data ───────────────────────────────────────────────────────
+    # -- Right side data -------------------------------------------------------
 
     right_doc_rv <- shiny::reactive({
       input$btn_refresh
@@ -222,13 +222,13 @@ mod_compare_server <- function(id, rv) {
       qc_list_codings(rv$project, right_doc_rv()$id, coder = coder)
     })
 
-    # ── Panel titles ──────────────────────────────────────────────────────────
+    # -- Panel titles ----------------------------------------------------------
 
     output$left_title <- shiny::renderText({
       shiny::req(left_doc_rv())
       if (input$mode == "coders") {
         lc <- input$left_coder %||% "(all coders)"
-        paste0(left_doc_rv()$name, " — ", if (nchar(lc) > 0L) lc else "(all coders)")
+        paste0(left_doc_rv()$name, " \u2014 ", if (nchar(lc) > 0L) lc else "(all coders)")
       } else {
         left_doc_rv()$name
       }
@@ -238,13 +238,13 @@ mod_compare_server <- function(id, rv) {
       shiny::req(right_doc_rv())
       if (input$mode == "coders") {
         rc <- input$right_coder %||% "(all coders)"
-        paste0(right_doc_rv()$name, " — ", if (nchar(rc) > 0L) rc else "(all coders)")
+        paste0(right_doc_rv()$name, " \u2014 ", if (nchar(rc) > 0L) rc else "(all coders)")
       } else {
         right_doc_rv()$name
       }
     })
 
-    # ── Text display ──────────────────────────────────────────────────────────
+    # -- Text display ----------------------------------------------------------
 
     output$left_text <- shiny::renderUI({
       shiny::req(left_doc_rv())
@@ -256,14 +256,14 @@ mod_compare_server <- function(id, rv) {
       build_highlighted_html(right_doc_rv()$content, right_codings_rv())
     })
 
-    # ── Scroll sync ───────────────────────────────────────────────────────────
+    # -- Scroll sync -----------------------------------------------------------
 
     shiny::observe({
       session$sendCustomMessage("qc_compare_sync",
         list(enabled = isTRUE(input$sync_scroll)))
     })
 
-    # ── Differences ───────────────────────────────────────────────────────────
+    # -- Differences -----------------------------------------------------------
 
     diff_rv <- shiny::reactive({
       lc    <- left_codings_rv()
@@ -320,7 +320,7 @@ mod_compare_server <- function(id, rv) {
       )
     })
 
-    # ── Reliability statistics ─────────────────────────────────────────────────
+    # -- Reliability statistics -------------------------------------------------
 
     output$reliability_card <- shiny::renderUI({
       if (input$mode != "coders") return(NULL)
@@ -469,7 +469,7 @@ mod_compare_server <- function(id, rv) {
   })
 }
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# -- Helpers --------------------------------------------------------------------
 
 # For docs mode: code-level count comparison across two documents.
 .doc_diff <- function(left_c, right_c, left_label, right_label) {

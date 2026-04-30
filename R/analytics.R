@@ -97,7 +97,7 @@ qc_code_matrix <- function(project,
   }
 
   if (nrow(long) == 0L) {
-    cli::cli_warn("No codings found — returning empty tibble.")
+    cli::cli_warn("No codings found \u2014 returning empty tibble.")
     return(tibble::tibble())
   }
 
@@ -178,7 +178,7 @@ qc_code_metrics <- function(project, code_ids = NULL, source_ids = NULL) {
                   "total_chars_coded", "density", "dispersion")
 
   if (nrow(doc_info) == 0L || nrow(codings) == 0L) {
-    cli::cli_warn("No codings or documents found — returning empty tibble.")
+    cli::cli_warn("No codings or documents found \u2014 returning empty tibble.")
     empty <- tibble::tibble(
       code_id          = integer(),
       code_name        = character(),

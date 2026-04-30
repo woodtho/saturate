@@ -9,6 +9,8 @@ Description: A modern replacement for RQDA. Create and manage qualitative
     via a Shiny GUI, and retrieve coded segments as tidy tibbles.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
+Depends: R (>= 4.1.0)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
@@ -36,6 +38,10 @@ Suggests:
     jsonlite (>= 1.8.0),
     readtext (>= 0.90),
     writexl (>= 1.4.0),
+    openxlsx (>= 4.2.0),
+    openxlsx2 (>= 1.0.0),
+    wordcloud (>= 2.6),
+    wordcloud2 (>= 0.2.1),
     pdftools (>= 3.3.0),
     officer (>= 0.6.0),
     readxl (>= 1.4.0),

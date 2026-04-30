@@ -1,4 +1,4 @@
-# ── Internal helpers ───────────────────────────────────────────────────────────
+# -- Internal helpers -----------------------------------------------------------
 
 # Insert a row into `table` via RETURNING id; returns the new integer id.
 # `cols` is a character vector of column names; `vals` the matching param list.
@@ -24,13 +24,13 @@
   unname(id_map[as.character(ids)])
 }
 
-# ── Split ──────────────────────────────────────────────────────────────────────
+# -- Split ----------------------------------------------------------------------
 
 #' Create a coder copy of a project
 #'
 #' Copies the codebook, cases, themes, and a subset (or all) of documents into
 #' a new standalone `.duckdb` file. Codings are excluded by default so each
-#' coder starts fresh. IDs are NOT preserved — the copy gets fresh sequences —
+#' coder starts fresh. IDs are NOT preserved -- the copy gets fresh sequences --
 #' so the files can be merged back later by name / content-hash matching.
 #'
 #' @param project A `qc_project` object.
@@ -54,7 +54,7 @@ qc_split_project <- function(project,
   con_s <- project$con
   con_d <- dest$con
 
-  # ── Codes ──────────────────────────────────────────────────────────────────
+  # -- Codes ------------------------------------------------------------------
   codes_s  <- .query(con_s, "SELECT * FROM codes WHERE status = 1")
   code_map <- .make_id_map(codes_s$id)
 
@@ -83,7 +83,7 @@ qc_split_project <- function(project,
     }
   }
 
-  # ── Code categories ─────────────────────────────────────────────────────────
+  # -- Code categories ---------------------------------------------------------
   cats_s  <- .query(con_s, "SELECT * FROM code_categories WHERE status = 1")
   cat_map <- .make_id_map(cats_s$id)
 
@@ -113,7 +113,7 @@ qc_split_project <- function(project,
     }
   }
 
-  # ── Document categories ──────────────────────────────────────────────────────
+  # -- Document categories ------------------------------------------------------
   doccats_s  <- .query(con_s, "SELECT * FROM document_categories WHERE status = 1")
   doccat_map <- .make_id_map(doccats_s$id)
 
@@ -124,7 +124,7 @@ qc_split_project <- function(project,
     doccat_map[[as.character(r$id)]] <- as.integer(ni)
   }
 
-  # ── Cases ────────────────────────────────────────────────────────────────────
+  # -- Cases --------------------------------------------------------------------
   cases_s  <- .query(con_s, "SELECT * FROM cases WHERE status = 1")
   case_map <- .make_id_map(cases_s$id)
 
@@ -147,7 +147,7 @@ qc_split_project <- function(project,
     }
   }
 
-  # ── Sources ──────────────────────────────────────────────────────────────────
+  # -- Sources ------------------------------------------------------------------
   src_sql <- if (is.null(source_ids)) {
     "SELECT * FROM sources WHERE status = 1"
   } else {
@@ -231,7 +231,7 @@ qc_split_project <- function(project,
       }
     }
 
-    # ── Codings (optional) ─────────────────────────────────────────────────
+    # -- Codings (optional) -------------------------------------------------
     if (include_codings && nrow(codes_s) > 0L) {
       cod_s   <- .query(con_s, paste0(
         "SELECT * FROM codings WHERE status = 1 AND source_id IN (", in_s, ")"))
@@ -271,7 +271,7 @@ qc_split_project <- function(project,
     }
   }
 
-  # ── Themes ───────────────────────────────────────────────────────────────────
+  # -- Themes -------------------------------------------------------------------
   themes_s   <- .query(con_s, "SELECT * FROM themes WHERE status = 1")
   theme_map  <- .make_id_map(themes_s$id)
 
@@ -310,7 +310,7 @@ qc_split_project <- function(project,
     }
   }
 
-  # ── project_meta ─────────────────────────────────────────────────────────────
+  # -- project_meta -------------------------------------------------------------
   meta <- .query(con_s, "SELECT * FROM project_meta")
   for (i in seq_len(nrow(meta))) {
     key <- meta$key[[i]]
@@ -325,7 +325,7 @@ qc_split_project <- function(project,
   invisible(dest)
 }
 
-# ── Merge ──────────────────────────────────────────────────────────────────────
+# -- Merge ----------------------------------------------------------------------
 
 #' Merge a contributor project into a master project
 #'
@@ -364,7 +364,7 @@ qc_merge_project <- function(master,
                  codings_added = 0L, codings_skip  = 0L,
                  themes_added  = 0L, memos_added   = 0L)
 
-  # ── Master lookup maps ────────────────────────────────────────────────────────
+  # -- Master lookup maps --------------------------------------------------------
   m_codes  <- .query(con_m, "SELECT id, lower(name) AS nlc FROM codes WHERE status = 1")
   m_cats   <- .query(con_m, "SELECT id, lower(name) AS nlc FROM code_categories WHERE status = 1")
   m_srcs   <- .query(con_m,
@@ -377,7 +377,7 @@ qc_merge_project <- function(master,
   src_hash_to_id  <- setNames(m_srcs$id,   m_srcs$content_hash)
   src_nlc_to_id   <- setNames(m_srcs$id,   m_srcs$nlc)
 
-  # ── Merge codes ───────────────────────────────────────────────────────────────
+  # -- Merge codes ---------------------------------------------------------------
   b_codes  <- .query(con_b, "SELECT * FROM codes WHERE status = 1")
   code_map <- .make_id_map(b_codes$id)
 
@@ -403,7 +403,7 @@ qc_merge_project <- function(master,
     }
   }
 
-  # ── Merge code_categories ─────────────────────────────────────────────────────
+  # -- Merge code_categories -----------------------------------------------------
   b_cats  <- .query(con_b, "SELECT * FROM code_categories WHERE status = 1")
   cat_map <- .make_id_map(b_cats$id)
 
@@ -434,7 +434,7 @@ qc_merge_project <- function(master,
     }
   }
 
-  # ── Merge sources ─────────────────────────────────────────────────────────────
+  # -- Merge sources -------------------------------------------------------------
   b_srcs  <- .query(con_b, "SELECT * FROM sources WHERE status = 1")
   src_map <- .make_id_map(b_srcs$id)
 
@@ -462,7 +462,7 @@ qc_merge_project <- function(master,
     }
   }
 
-  # ── Merge themes ─────────────────────────────────────────────────────────────
+  # -- Merge themes -------------------------------------------------------------
   b_themes  <- .query(con_b, "SELECT * FROM themes WHERE status = 1")
   theme_map <- .make_id_map(b_themes$id)
 
@@ -506,7 +506,7 @@ qc_merge_project <- function(master,
     }
   }
 
-  # ── Merge codings ─────────────────────────────────────────────────────────────
+  # -- Merge codings -------------------------------------------------------------
   coder_sql <- if (!is.null(coders) && length(coders) > 0L)
     paste0(" AND coder IN (", paste(shQuote(coders), collapse = ","), ")")
   else ""
@@ -569,7 +569,7 @@ qc_merge_project <- function(master,
     }
   }
 
-  # ── Merge project_memos ───────────────────────────────────────────────────────
+  # -- Merge project_memos -------------------------------------------------------
   b_memos <- .query(con_b, "SELECT * FROM project_memos WHERE status = 1")
   if (nrow(b_memos) > 0L) {
     mm <- .query(con_m,
@@ -594,7 +594,7 @@ qc_merge_project <- function(master,
   }
 
   cli::cli_alert_success(paste0(
-    "Merge complete — ",
+    "Merge complete \u2014 ",
     result$codings_added, " coding(s), ",
     result$codes_added,   " code(s), ",
     result$sources_added, " document(s) added; ",

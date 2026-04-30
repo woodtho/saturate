@@ -3,7 +3,7 @@ mod_audit_ui <- function(id) {
   shiny::div(
     class = "p-3",
 
-    # ── Filters ───────────────────────────────────────────────────────────────
+    # -- Filters ---------------------------------------------------------------
     bslib::card(
       bslib::card_body(
         shiny::div(
@@ -67,11 +67,11 @@ mod_audit_ui <- function(id) {
       ))
     ),
 
-    # ── Summary badges ────────────────────────────────────────────────────────
+    # -- Summary badges --------------------------------------------------------
     shiny::uiOutput(ns("summary_badges")),
     shiny::uiOutput(ns("filter_summary")),
 
-    # ── Unified audit table ───────────────────────────────────────────────────
+    # -- Unified audit table ---------------------------------------------------
     bslib::card(
       bslib::card_header("Audit Trail"),
       shiny::div(
@@ -85,7 +85,7 @@ mod_audit_ui <- function(id) {
 mod_audit_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
 
-    # ── Document picker ───────────────────────────────────────────────────────
+    # -- Document picker -------------------------------------------------------
 
     docs_rv <- shiny::reactive({
       rv$refresh_docs
@@ -103,7 +103,7 @@ mod_audit_server <- function(id, rv) {
       )
     })
 
-    # ── Combined audit data ───────────────────────────────────────────────────
+    # -- Combined audit data ---------------------------------------------------
 
     audit_rv <- shiny::reactive({
       input$btn_refresh
@@ -196,7 +196,7 @@ mod_audit_server <- function(id, rv) {
       combined[order(combined$changed_at, decreasing = TRUE), ]
     })
 
-    # ── Summary badges ────────────────────────────────────────────────────────
+    # -- Summary badges --------------------------------------------------------
 
     output$summary_badges <- shiny::renderUI({
       df <- audit_rv()
@@ -220,7 +220,7 @@ mod_audit_server <- function(id, rv) {
       )
     })
 
-    # ── Filter summary bar ────────────────────────────────────────────────
+    # -- Filter summary bar ------------------------------------------------
 
     output$filter_summary <- shiny::renderUI({
       df <- audit_rv()
@@ -234,7 +234,7 @@ mod_audit_server <- function(id, rv) {
         "all types"
       )
       op_lbl <- if (nchar(input$filter_op %||% "") > 0L)
-        paste0(" · ", input$filter_op) else ""
+        paste0(" \u00b7 ", input$filter_op) else ""
 
       date_parts <- character(0)
       if (!is.null(input$filter_from) && !is.na(input$filter_from))
@@ -242,17 +242,17 @@ mod_audit_server <- function(id, rv) {
       if (!is.null(input$filter_to) && !is.na(input$filter_to))
         date_parts <- c(date_parts, paste0("to ", format(input$filter_to, "%d %b %Y")))
       date_lbl <- if (length(date_parts) > 0L)
-        paste0(" · ", paste(date_parts, collapse = " ")) else ""
+        paste0(" \u00b7 ", paste(date_parts, collapse = " ")) else ""
 
       shiny::div(
         class = "text-muted mb-2",
         style = "font-size:0.82rem;",
         paste0("Showing ", n, " event", if (n != 1L) "s" else "",
-               " · ", type_lbl, op_lbl, date_lbl)
+               " \u00b7 ", type_lbl, op_lbl, date_lbl)
       )
     })
 
-    # ── Audit table ───────────────────────────────────────────────────────────
+    # -- Audit table -----------------------------------------------------------
 
     output$tbl_audit <- DT::renderDataTable({
       df <- audit_rv()
@@ -290,7 +290,7 @@ mod_audit_server <- function(id, rv) {
       )
     })
 
-    # ── Export handlers ───────────────────────────────────────────────────────
+    # -- Export handlers -------------------------------------------------------
 
     output$btn_export <- shiny::downloadHandler(
       filename = function() {
@@ -329,10 +329,10 @@ mod_audit_server <- function(id, rv) {
   })
 }
 
-# ── Internal helper ────────────────────────────────────────────────────────────
+# -- Internal helper ------------------------------------------------------------
 
 .trunc <- function(x, n) {
   ifelse(!is.na(x) & nchar(x) > n,
-         paste0(substr(x, 1L, n), "…"),
+         paste0(substr(x, 1L, n), "\u2026"),
          x)
 }

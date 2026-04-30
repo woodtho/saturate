@@ -11,7 +11,7 @@ qc_validate_codebook(project)
 }
 \value{
 A tibble: \code{code_id}, \code{code_name}, \code{issue_type}, \code{severity}
-(\code{"error"}, \code{"warning"}, \code{"info"}), \code{message}. Ordered error → warning →
+(\code{"error"}, \code{"warning"}, \code{"info"}), \code{message}. Ordered error -> warning ->
 info, then alphabetically by code name. Returns an empty tibble (with a
 success message) when no issues are found.
 }

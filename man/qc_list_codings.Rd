@@ -14,7 +14,7 @@ qc_list_codings(project, source_id = NULL, code_id = NULL, coder = NULL)
 \item{code_id}{Integer or \code{NULL}. Restrict to a single code.}
 
 \item{coder}{Character or \code{NULL}. Restrict to a single coder. Used to
-implement blind coding — pass the current coder's name to hide all
+implement blind coding -- pass the current coder's name to hide all
 other coders' annotations.}
 }
 \value{

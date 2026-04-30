@@ -25,6 +25,6 @@ A tibble: \code{doc_index}, \code{doc_name}, \code{source_type}, \code{n_codings
 \description{
 Returns one row per document (in import order, or first-coded order) showing
 how many new codes were introduced and the running cumulative total. A curve
-that flattens signals theoretical saturation — new data is no longer
+that flattens signals theoretical saturation -- new data is no longer
 producing new codes.
 }

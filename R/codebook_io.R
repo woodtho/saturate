@@ -152,7 +152,7 @@ qc_export_codebook <- function(project, path, format = c("csv", "json", "md")) {
 #' `criteria`, `code_key`, `categories` (comma-separated names in a single
 #' cell).
 #'
-#' **JSON format:** array of objects — `name`, `color`, `memo`, `definition`,
+#' **JSON format:** array of objects -- `name`, `color`, `memo`, `definition`,
 #' `criteria`, `code_key`, `categories` (array of strings). JSON import
 #' requires \pkg{jsonlite}.
 #'

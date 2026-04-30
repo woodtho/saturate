@@ -26,6 +26,6 @@ A one-row tibble: \code{id}, \code{code_id_1}, \code{name_1}, \code{code_id_2},
 Records a directed or symmetric semantic link between codes, e.g.
 \code{"related_to"}, \code{"broader_than"}, \code{"narrower_than"}, or
 \code{"co_occurs_with"}. The relation is stored as a directed edge
-(\verb{code_id_1 → code_id_2}), but \code{\link[=qc_list_code_relations]{qc_list_code_relations()}} returns
+(\code{code_id_1 -> code_id_2}), but \code{\link[=qc_list_code_relations]{qc_list_code_relations()}} returns
 both directions when filtering by a single code.
 }

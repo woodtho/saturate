@@ -31,7 +31,7 @@ A one-row tibble: \code{id}, \code{source_id}, \code{selfirst}, \code{selast},
 \code{seltext}, \code{memo}, \code{coder}, \code{created_at}.
 }
 \description{
-Creates a labelled passage (selfirst–selast) within a document, separate
+Creates a labelled passage (selfirst-selast) within a document, separate
 from any coding. Excerpts can carry a memo and are displayed in the coding
 view as a distinct underline highlight.
 }

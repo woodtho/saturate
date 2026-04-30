@@ -3,7 +3,7 @@ mod_member_check_ui <- function(id) {
   shiny::div(
     class = "p-3",
 
-    # ── Checks table ───────────────────────────────────────────────────────────
+    # -- Checks table -----------------------------------------------------------
     bslib::card(
       bslib::card_header(
         shiny::div(
@@ -23,7 +23,7 @@ mod_member_check_ui <- function(id) {
       )
     ),
 
-    # ── Selected check detail ──────────────────────────────────────────────────
+    # -- Selected check detail --------------------------------------------------
     bslib::card(
       class = "mt-3",
       bslib::card_header(shiny::textOutput(ns("detail_title"))),
@@ -65,7 +65,7 @@ mod_member_check_server <- function(id, rv) {
       refresh_checks    = 0L
     )
 
-    # ── Checks table ──────────────────────────────────────────────────────────
+    # -- Checks table ----------------------------------------------------------
 
     checks_rv <- shiny::reactive({
       rv$refresh_docs
@@ -83,7 +83,7 @@ mod_member_check_server <- function(id, rv) {
       }
       disp <- df
       disp$sent_at     <- format(df$sent_at, "%Y-%m-%d")
-      disp$response_at <- ifelse(is.na(df$response_at), "—",
+      disp$response_at <- ifelse(is.na(df$response_at), "\u2014",
                                  format(df$response_at, "%Y-%m-%d"))
       DT::datatable(
         disp[, c("id", "doc_name", "participant_label", "status",
@@ -93,7 +93,7 @@ mod_member_check_server <- function(id, rv) {
         selection = "single",
         rownames  = FALSE,
         colnames  = c("ID", "Document", "Participant", "Status",
-                      "Items", "✓", "✗", "Sent", "Response"),
+                      "Items", "\u2713", "\u2717", "Sent", "Response"),
         options   = list(
           pageLength = 15, dom = "ftp",
           columnDefs = list(
@@ -105,7 +105,7 @@ mod_member_check_server <- function(id, rv) {
       )
     })
 
-    # ── New Check modal ────────────────────────────────────────────────────────
+    # -- New Check modal --------------------------------------------------------
 
     shiny::observeEvent(input$btn_new_check, {
       docs  <- qc_list_documents(rv$project)
@@ -123,7 +123,7 @@ mod_member_check_server <- function(id, rv) {
         shiny::textInput(ns("mc_participant"), "Participant label",
           placeholder = "e.g. Participant A"),
         shiny::selectizeInput(ns("mc_code_ids"),
-          "Restrict to codes (optional — blank = all)",
+          "Restrict to codes (optional \u2014 blank = all)",
           choices  = code_choices,
           multiple = TRUE,
           options  = list(placeholder = "All codes")),
@@ -142,14 +142,14 @@ mod_member_check_server <- function(id, rv) {
             "captures your experience. Return via email.")),
 
         shiny::hr(),
-        shiny::h6("Participant’s written response (optional)"),
+        shiny::h6("Participant's written response (optional)"),
         shiny::tags$small(
           class = "text-muted d-block mb-1",
-          "Paste the participant’s reply here to record it alongside the check."
+          "Paste the participant's reply here to record it alongside the check."
         ),
         shiny::textAreaInput(ns("mc_paste_response"), NULL,
           rows = 5,
-          placeholder = "Paste participant response text…"),
+          placeholder = "Paste participant response text\u2026"),
 
         footer = shiny::tagList(
           shiny::modalButton("Cancel"),
@@ -186,7 +186,7 @@ mod_member_check_server <- function(id, rv) {
       })
     })
 
-    # ── Row selection → detail ────────────────────────────────────────────────
+    # -- Row selection -> detail ------------------------------------------------
 
     shiny::observeEvent(input$tbl_checks_rows_selected, {
       row <- input$tbl_checks_rows_selected
@@ -194,7 +194,7 @@ mod_member_check_server <- function(id, rv) {
       lv$selected_check_id <- checks_rv()$id[[row]]
     })
 
-    # ── Detail panel title ────────────────────────────────────────────────────
+    # -- Detail panel title ----------------------------------------------------
 
     output$detail_title <- shiny::renderText({
       id_val <- lv$selected_check_id
@@ -202,12 +202,12 @@ mod_member_check_server <- function(id, rv) {
       checks <- checks_rv()
       check  <- checks[checks$id == id_val, ]
       if (nrow(check) == 0L) return("Check not found")
-      paste0("Check #", id_val, " — ",
+      paste0("Check #", id_val, " \u2014 ",
              check$participant_label, " | ", check$doc_name,
              " [", check$status, "]")
     })
 
-    # ── Bulk actions ──────────────────────────────────────────────────────────
+    # -- Bulk actions ----------------------------------------------------------
 
     shiny::observeEvent(input$btn_confirm_all, {
       shiny::req(lv$selected_check_id)
@@ -233,7 +233,7 @@ mod_member_check_server <- function(id, rv) {
       })
     })
 
-    # ── Download handlers ─────────────────────────────────────────────────────
+    # -- Download handlers -----------------------------------------------------
 
     output$btn_dl_html <- shiny::downloadHandler(
       filename = function() {
@@ -286,7 +286,7 @@ mod_member_check_server <- function(id, rv) {
       }
     )
 
-    # ── Check items UI ────────────────────────────────────────────────────────
+    # -- Check items UI --------------------------------------------------------
 
     output$check_items_ui <- shiny::renderUI({
       id_val <- lv$selected_check_id
@@ -354,7 +354,7 @@ mod_member_check_server <- function(id, rv) {
 
       shiny::tagList(
         ret_hdr,
-        shiny::h6(paste0(nrow(items), " item(s) — click Save to record each response")),
+        shiny::h6(paste0(nrow(items), " item(s) \u2014 click Save to record each response")),
         lapply(seq_len(nrow(items)), function(i) {
           r          <- items[i, ]
           col        <- r$code_color %||% "#4E79A7"
@@ -380,9 +380,9 @@ mod_member_check_server <- function(id, rv) {
             shiny::p(
               class = "fst-italic mb-2",
               style = "font-size:.9rem;",
-              paste0("“", substr(r$seltext, 1L, 250L),
-                     if (nchar(r$seltext) > 250L) "…" else "",
-                     "”")
+              paste0("\u201c", substr(r$seltext, 1L, 250L),
+                     if (nchar(r$seltext) > 250L) "\u2026" else "",
+                     "\u201d")
             ),
             shiny::div(
               class = "d-flex gap-2 align-items-start",
@@ -417,7 +417,7 @@ mod_member_check_server <- function(id, rv) {
       )
     })
 
-    # ── Record response (JS → R bridge) ──────────────────────────────────────
+    # -- Record response (JS -> R bridge) --------------------------------------
 
     shiny::observeEvent(input$record_response, {
       payload   <- input$record_response

@@ -29,6 +29,16 @@ includes all active codings on the document.}
 
 \item{created_by}{Character or \code{NULL}. Records who created this check.
 Defaults to the current system user.}
+
+\item{return_by}{Character. Requested return date for the participant's
+response (free text, e.g. \code{"2025-03-01"}).}
+
+\item{return_to}{Character. Contact name or address to return feedback to.}
+
+\item{return_instructions}{Character. Instructions for how the participant
+should return their response.}
+
+\item{notes}{Character. Internal notes about this member check.}
 }
 \value{
 A one-row tibble: \code{id}, \code{source_id}, \code{participant_label}, \code{status},

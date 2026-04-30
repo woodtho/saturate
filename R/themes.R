@@ -311,7 +311,7 @@ qc_unlink_theme_category <- function(project, theme_id, category_id) {
 
 #' Retrieve all coded excerpts for a theme
 #'
-#' Returns every active coding whose code belongs to this theme — either via a
+#' Returns every active coding whose code belongs to this theme -- either via a
 #' direct code link or via a linked category. Use this for internal homogeneity
 #' checks: all passages should cohere around the theme's central concept.
 #'

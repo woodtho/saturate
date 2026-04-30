@@ -61,7 +61,7 @@ mod_memos_ui <- function(id) {
                 width = "160px"
               ),
               shiny::textInput(ns("filter_search"), NULL,
-                placeholder = "Search…",
+                placeholder = "Search\u2026",
                 width       = "180px"
               )
             )
@@ -117,7 +117,7 @@ mod_memos_server <- function(id, rv) {
               class = "d-flex gap-2 align-items-center",
               badge,
               shiny::span(class = "text-muted small", ts),
-              shiny::span(class = "text-muted small", paste0("— ", row$created_by))
+              shiny::span(class = "text-muted small", paste0("\u2014 ", row$created_by))
             ),
             shiny::actionButton(
               ns(paste0("btn_del_memo_", row$id)),
@@ -208,7 +208,7 @@ mod_memos_server <- function(id, rv) {
           row <- df[i, , drop = FALSE]
           ts  <- format(as.POSIXct(row$created_at), "%d %b %Y %H:%M")
           lines <- c(lines,
-            paste0("[", toupper(row$memo_type), "] ", ts, " — ", row$created_by),
+            paste0("[", toupper(row$memo_type), "] ", ts, " \u2014 ", row$created_by),
             row$content,
             ""
           )

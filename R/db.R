@@ -1,4 +1,4 @@
-# Schema DDL — each statement run individually (DuckDB does not support
+# Schema DDL -- each statement run individually (DuckDB does not support
 # multi-statement dbExecute calls).
 .ddl <- c(
   # Sequences
@@ -21,7 +21,7 @@
   seq_member_check_items = "CREATE SEQUENCE IF NOT EXISTS member_check_items_id_seq START 1",
   seq_profiles           = "CREATE SEQUENCE IF NOT EXISTS profiles_id_seq START 1",
 
-  # project_meta — single-row KV store
+  # project_meta -- single-row KV store
   tbl_meta = "
     CREATE TABLE IF NOT EXISTS project_meta (
       key   VARCHAR PRIMARY KEY,
@@ -49,7 +49,7 @@
     )
   ",
 
-  # source_versions — append-only content history
+  # source_versions -- append-only content history
   tbl_srcvers = "
     CREATE TABLE IF NOT EXISTS source_versions (
       id           BIGINT PRIMARY KEY DEFAULT nextval('source_versions_id_seq'),
@@ -105,7 +105,7 @@
     )
   ",
 
-  # codings — selfirst/selast are 1-based, both inclusive
+  # codings -- selfirst/selast are 1-based, both inclusive
   tbl_codings = "
     CREATE TABLE IF NOT EXISTS codings (
       id             BIGINT PRIMARY KEY DEFAULT nextval('codings_id_seq'),
@@ -124,7 +124,7 @@
     )
   ",
 
-  # code_relations — non-hierarchical relationships between codes
+  # code_relations -- non-hierarchical relationships between codes
   tbl_code_rels = "
     CREATE TABLE IF NOT EXISTS code_relations (
       id            BIGINT PRIMARY KEY
@@ -186,7 +186,7 @@
     )
   ",
 
-  # case_attributes — EAV; UNIQUE on (case_id, variable) for upsert
+  # case_attributes -- EAV; UNIQUE on (case_id, variable) for upsert
   tbl_caseattrs = "
     CREATE TABLE IF NOT EXISTS case_attributes (
       id          BIGINT PRIMARY KEY DEFAULT nextval('case_attributes_id_seq'),
@@ -198,7 +198,7 @@
     )
   ",
 
-  # source_attributes — EAV
+  # source_attributes -- EAV
   tbl_srcattrs = "
     CREATE TABLE IF NOT EXISTS source_attributes (
       id          BIGINT PRIMARY KEY DEFAULT nextval('source_attributes_id_seq'),
@@ -210,7 +210,7 @@
     )
   ",
 
-  # annotations — optional character-offset memos on a document
+  # annotations -- optional character-offset memos on a document
   tbl_annots = "
     CREATE TABLE IF NOT EXISTS annotations (
       id          BIGINT PRIMARY KEY DEFAULT nextval('annotations_id_seq'),
@@ -222,7 +222,7 @@
     )
   ",
 
-  # code_history — append-only audit log for code mutations
+  # code_history -- append-only audit log for code mutations
   tbl_code_history = "
     CREATE TABLE IF NOT EXISTS code_history (
       id          BIGINT PRIMARY KEY
@@ -237,7 +237,7 @@
   ",
   idx_code_hist_code = "CREATE INDEX IF NOT EXISTS idx_code_hist_code ON code_history(code_id)",
 
-  # codebook_snapshots — point-in-time codebook JSON snapshots
+  # codebook_snapshots -- point-in-time codebook JSON snapshots
   tbl_snapshots = "
     CREATE TABLE IF NOT EXISTS codebook_snapshots (
       id            BIGINT PRIMARY KEY
@@ -248,7 +248,7 @@
     )
   ",
 
-  # auto_coding_rules — stored regex rules for automatic coding
+  # auto_coding_rules -- stored regex rules for automatic coding
   tbl_autorules = "
     CREATE TABLE IF NOT EXISTS auto_coding_rules (
       id          BIGINT PRIMARY KEY
@@ -262,7 +262,7 @@
     )
   ",
 
-  # coding_audit — append-only log of every coding operation
+  # coding_audit -- append-only log of every coding operation
   tbl_coding_audit = "
     CREATE TABLE IF NOT EXISTS coding_audit (
       id          BIGINT PRIMARY KEY
@@ -286,7 +286,7 @@
   idx_coding_audit_src    = "CREATE INDEX IF NOT EXISTS idx_coding_audit_src    ON coding_audit(source_id)",
   idx_coding_audit_at     = "CREATE INDEX IF NOT EXISTS idx_coding_audit_at     ON coding_audit(changed_at)",
 
-  # member_checks — per-participant review records
+  # member_checks -- per-participant review records
   tbl_member_checks = "
     CREATE TABLE IF NOT EXISTS member_checks (
       id                BIGINT PRIMARY KEY DEFAULT nextval('member_checks_id_seq'),
@@ -313,7 +313,7 @@
   idx_mc_source = "CREATE INDEX IF NOT EXISTS idx_mc_source ON member_checks(source_id)",
   idx_mci_check = "CREATE INDEX IF NOT EXISTS idx_mci_check ON member_check_items(check_id)",
 
-  # excerpts — reader passages separate from codings, with optional memo
+  # excerpts -- reader passages separate from codings, with optional memo
   seq_excerpts = "CREATE SEQUENCE IF NOT EXISTS excerpts_id_seq START 1",
 
   tbl_excerpts = "
@@ -331,7 +331,7 @@
   ",
   idx_excerpts_src = "CREATE INDEX IF NOT EXISTS idx_excerpts_source ON excerpts(source_id)",
 
-  # project_memos — append-only analytical / reflexivity journal
+  # project_memos -- append-only analytical / reflexivity journal
   seq_pmemos = "CREATE SEQUENCE IF NOT EXISTS project_memos_id_seq START 1",
 
   tbl_project_memos = "
@@ -345,7 +345,7 @@
     )
   ",
 
-  # themes — analytical theme objects (Braun & Clarke reflexive TA)
+  # themes -- analytical theme objects (Braun & Clarke reflexive TA)
   seq_themes          = "CREATE SEQUENCE IF NOT EXISTS themes_id_seq START 1",
 
   tbl_themes = "
@@ -368,7 +368,7 @@
   ",
   idx_theme_code = "CREATE INDEX IF NOT EXISTS idx_theme_code ON theme_code_links(theme_id)",
 
-  # theme_category_links — many-to-many themes ↔ code categories
+  # theme_category_links -- many-to-many themes <-> code categories
   tbl_theme_cat_links = "
     CREATE TABLE IF NOT EXISTS theme_category_links (
       theme_id    BIGINT NOT NULL,
@@ -379,7 +379,7 @@
   ",
   idx_theme_cat_links = "CREATE INDEX IF NOT EXISTS idx_theme_cat_links ON theme_category_links(theme_id)",
 
-  # theme_history — append-only audit log for theme mutations
+  # theme_history -- append-only audit log for theme mutations
   seq_theme_history = "CREATE SEQUENCE IF NOT EXISTS theme_history_id_seq START 1",
 
   tbl_theme_history = "
@@ -396,7 +396,7 @@
   ",
   idx_theme_history = "CREATE INDEX IF NOT EXISTS idx_theme_history ON theme_history(theme_id)",
 
-  # profiles — per-coder identity and display settings
+  # profiles -- per-coder identity and display settings
   tbl_profiles = "
     CREATE TABLE IF NOT EXISTS profiles (
       id            BIGINT PRIMARY KEY DEFAULT nextval('profiles_id_seq'),

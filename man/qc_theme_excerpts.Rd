@@ -17,7 +17,7 @@ A tibble: \code{id}, \code{source_id}, \code{code_id}, \code{selfirst}, \code{se
 \code{source_type}.
 }
 \description{
-Returns every active coding whose code belongs to this theme — either via a
+Returns every active coding whose code belongs to this theme -- either via a
 direct code link or via a linked category. Use this for internal homogeneity
 checks: all passages should cohere around the theme's central concept.
 }

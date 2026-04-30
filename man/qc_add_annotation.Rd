@@ -30,6 +30,6 @@ A one-row tibble: \code{id}, \code{source_id}, \code{position}, \code{annotation
 }
 \description{
 Annotations are free-text notes attached to a character position (or the
-document as a whole) and are distinct from coded segments — they do not
+document as a whole) and are distinct from coded segments -- they do not
 assign a code label, they express a thought or question about the text.
 }

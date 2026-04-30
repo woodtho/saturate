@@ -18,7 +18,7 @@
 #' @param project A `qc_project` object.
 #'
 #' @return A tibble: `code_id`, `code_name`, `issue_type`, `severity`
-#'   (`"error"`, `"warning"`, `"info"`), `message`. Ordered error → warning →
+#'   (`"error"`, `"warning"`, `"info"`), `message`. Ordered error -> warning ->
 #'   info, then alphabetically by code name. Returns an empty tibble (with a
 #'   success message) when no issues are found.
 #' @export
@@ -63,7 +63,7 @@ qc_validate_codebook <- function(project) {
     )
   }
 
-  # 2. Circular hierarchy (R-level walk — avoids running a broken recursive CTE)
+  # 2. Circular hierarchy (R-level walk -- avoids running a broken recursive CTE)
   for (i in seq_len(nrow(codes))) {
     visited <- codes$id[[i]]
     curr    <- codes$parent_id[[i]]

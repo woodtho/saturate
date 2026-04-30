@@ -29,6 +29,6 @@ The new \code{qc_project} (invisibly). Caller must call \code{\link[=qc_close]{q
 \description{
 Copies the codebook, cases, themes, and a subset (or all) of documents into
 a new standalone \code{.duckdb} file. Codings are excluded by default so each
-coder starts fresh. IDs are NOT preserved — the copy gets fresh sequences —
+coder starts fresh. IDs are NOT preserved -- the copy gets fresh sequences --
 so the files can be merged back later by name / content-hash matching.
 }

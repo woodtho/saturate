@@ -1,7 +1,7 @@
 #' Add an annotation to a document
 #'
 #' Annotations are free-text notes attached to a character position (or the
-#' document as a whole) and are distinct from coded segments — they do not
+#' document as a whole) and are distinct from coded segments -- they do not
 #' assign a code label, they express a thought or question about the text.
 #'
 #' @param project A `qc_project` object.

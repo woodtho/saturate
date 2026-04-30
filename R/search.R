@@ -14,7 +14,7 @@
 #' @param accent_fold Logical. When `TRUE` (requires `stringi`), both the
 #'   document text and `pattern` are converted to ASCII-equivalent characters
 #'   before matching, enabling accent-insensitive search (e.g. `"cafe"` matches
-#'   `"café"`).
+#'   `"cafe"`).
 #'
 #' @return A tibble: `source_id`, `source_name`, `match_n`, `match_start`,
 #'   `match_end`, `match_text`, `context`.

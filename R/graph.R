@@ -1,13 +1,13 @@
-#' Build graph data for the document–code network
+#' Build graph data for the document-code network
 #'
 #' Returns node and edge tibbles suitable for `visNetwork` or `igraph`.
 #' Three graph types are supported:
 #'
-#' * `"similarity"` — documents are nodes; edges connect documents that share
+#' * `"similarity"` -- documents are nodes; edges connect documents that share
 #'   at least `min_shared` codes, weighted by the number of shared codes.
-#' * `"bipartite"` — documents *and* codes are nodes; edges represent
+#' * `"bipartite"` -- documents *and* codes are nodes; edges represent
 #'   individual coding relationships.
-#' * `"cooccurrence"` — codes are nodes; edges connect codes that co-occur in
+#' * `"cooccurrence"` -- codes are nodes; edges connect codes that co-occur in
 #'   at least one document, weighted by the document count.
 #'
 #' @param project A `qc_project` object.
@@ -44,7 +44,7 @@ qc_document_graph <- function(project,
   }
 }
 
-# ── Internal graph builders ───────────────────────────────────────────────────
+# -- Internal graph builders ---------------------------------------------------
 
 .graph_similarity <- function(con, w_codes, w_sources, min_shared) {
   edges_raw <- .query(con, paste0("

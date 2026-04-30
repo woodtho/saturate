@@ -4,22 +4,28 @@
 \alias{shiny_saturate}
 \title{Launch the saturate Shiny GUI}
 \usage{
-shiny_saturate(project, brand = NULL, ...)
+shiny_saturate(project = NULL, brand = NULL, max_upload_mb = 500L, ...)
 }
 \arguments{
-\item{project}{A \code{qc_project} object created by \code{\link[=qc_new]{qc_new()}} or \code{\link[=qc_open]{qc_open()}}.}
+\item{project}{A \code{qc_project} object created by \code{\link[=qc_new]{qc_new()}} or \code{\link[=qc_open]{qc_open()}}.
+If \code{NULL} (the default), a project picker is shown before the main
+interface launches -- letting the user open an existing \code{.duckdb} file or
+create a new one.}
 
 \item{brand}{Optional named list for visual branding. Supported keys:
 \describe{
 \item{\code{name}}{App title shown in the navbar (default: \code{"saturate"}).}
 \item{\code{primary}}{CSS hex colour for the navbar and primary buttons
-(e.g. \code{"#003366"}). Ensure ≥ 4.5:1 contrast with white.}
+(e.g. \code{"#003366"}). Ensure >= 4.5:1 contrast with white.}
 \item{\code{primary_hover}}{Slightly darker version for hover states.}
 \item{\code{primary_fg}}{Foreground (text) colour on \code{primary} backgrounds
 (default: \code{"#ffffff"}).}
 \item{\code{accent}}{Accent colour used in charts and sparklines.}
-\item{\code{custom_css}}{A raw CSS string appended last — override anything.}
+\item{\code{custom_css}}{A raw CSS string appended last -- override anything.}
 }}
+
+\item{max_upload_mb}{Integer. Maximum file size (MB) accepted by the Merge
+file-upload input (default: 500 MB).}
 
 \item{...}{Additional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}.}
 }
@@ -28,6 +34,6 @@ Called for its side effect; does not return normally.
 }
 \description{
 Opens an interactive coding interface. Pass a \code{brand} list to apply
-organisation-specific colours and a custom app name — useful for
+organisation-specific colours and a custom app name -- useful for
 institutions that want to present the tool under their own branding.
 }

@@ -29,6 +29,15 @@ non-\code{NULL} to update.}
 
 \item{parent_id}{Integer or \code{NA}. Pass an integer to set a parent;
 \code{NA} to make the code a root node.}
+
+\item{level}{Character or \code{NULL}. Analytic level of the code.}
+
+\item{orientation}{Character or \code{NULL}. Theoretical orientation of the code.}
+
+\item{weight}{Numeric, \code{NA}, or \code{NULL}. Pass a number to set; \code{NA} to clear.}
+
+\item{weight_description}{Character or \code{NULL}. Description of what the weight
+represents.}
 }
 \value{
 The updated one-row tibble.

@@ -38,6 +38,15 @@ taxonomies.}
 \item{code_key}{Character or \code{NULL}. Stable slug (e.g. \code{"positive_affect"}).
 Auto-generated from \code{name} when \code{NULL}. Must be unique; may contain only
 lowercase letters, digits, and underscores.}
+
+\item{level}{Character. Analytic level of the code (e.g. \code{"descriptive"},
+\code{"interpretive"}).}
+
+\item{orientation}{Character. Theoretical orientation of the code.}
+
+\item{weight}{Numeric or \code{NULL}. Optional numeric weight for the code.}
+
+\item{weight_description}{Character. Description of what the weight represents.}
 }
 \value{
 A one-row tibble: \code{id}, \code{name}, \code{color}, \code{memo}, \code{created_at}.

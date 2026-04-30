@@ -1,6 +1,6 @@
-# ── Export: themes report, full codebook, raw project data ────────────────────
+# -- Export: themes report, full codebook, raw project data --------------------
 
-# ── Themes analytical report ──────────────────────────────────────────────────
+# -- Themes analytical report --------------------------------------------------
 
 #' Export an analytical themes report
 #'
@@ -47,7 +47,7 @@ qc_export_themes_report <- function(project,
   invisible(path)
 }
 
-# ── Full codebook export ──────────────────────────────────────────────────────
+# -- Full codebook export ------------------------------------------------------
 
 #' Export a rich codebook
 #'
@@ -111,7 +111,7 @@ qc_export_codebook_full <- function(project,
   invisible(path)
 }
 
-# ── Raw table export ──────────────────────────────────────────────────────────
+# -- Raw table export ----------------------------------------------------------
 
 #' Export a raw project database table
 #'
@@ -216,7 +216,7 @@ qc_export_project_data <- function(project,
   invisible(path)
 }
 
-# ── Private helpers ───────────────────────────────────────────────────────────
+# -- Private helpers -----------------------------------------------------------
 
 .write_xlsx <- function(sheets, path) {
   if (requireNamespace("openxlsx2", quietly = TRUE)) {
@@ -240,7 +240,7 @@ qc_export_project_data <- function(project,
   }
 }
 
-# ─── Themes DOCX ─────────────────────────────────────────────────────────────
+# --- Themes DOCX -------------------------------------------------------------
 
 .export_themes_docx <- function(project, themes, include_excerpts, include_narrative) {
   if (!requireNamespace("officer", quietly = TRUE))
@@ -249,7 +249,7 @@ qc_export_project_data <- function(project,
   info <- qc_project_info(project)
   doc  <- officer::read_docx()
 
-  doc <- officer::body_add_par(doc, paste0(info$name, " — Analytical Themes Report"),
+  doc <- officer::body_add_par(doc, paste0(info$name, " \u2014 Analytical Themes Report"),
                                 style = "heading 1")
   doc <- officer::body_add_par(doc, format(Sys.Date(), "%B %d, %Y"), style = "Normal")
   doc <- officer::body_add_par(doc, paste0(nrow(themes), " themes"), style = "Normal")
@@ -291,7 +291,7 @@ qc_export_project_data <- function(project,
       for (j in seq_len(nrow(td$linked_codes))) {
         cr <- td$linked_codes[j, ]
         doc <- officer::body_add_par(doc,
-          paste0(cr$name, " — ", cr$n_codings, " coding(s)"),
+          paste0(cr$name, " \u2014 ", cr$n_codings, " coding(s)"),
           style = "List Paragraph")
       }
     }
@@ -309,7 +309,7 @@ qc_export_project_data <- function(project,
             txt <- trimws(as.character(ex$seltext))
             doc <- officer::body_add_fpar(doc,
               officer::fpar(
-                officer::ftext(paste0("“", txt, "”"),
+                officer::ftext(paste0("\u201c", txt, "\u201d"),
                   prop = officer::fp_text(italic = TRUE, font.size = 11)),
                 fp_p = officer::fp_par(
                   padding.left = 30, padding.right = 15,
@@ -320,7 +320,7 @@ qc_export_project_data <- function(project,
             doc <- officer::body_add_fpar(doc,
               officer::fpar(
                 officer::ftext(
-                  paste0("— ", ex$code_name, "  |  coder: ", ex$coder),
+                  paste0("\u2014 ", ex$code_name, "  |  coder: ", ex$coder),
                   prop = officer::fp_text(font.size = 9, color = "#6c757d")),
                 fp_p = officer::fp_par(
                   padding.left = 30, padding.bottom = 8)
@@ -340,7 +340,7 @@ qc_export_project_data <- function(project,
   path
 }
 
-# ─── Themes HTML ─────────────────────────────────────────────────────────────
+# --- Themes HTML -------------------------------------------------------------
 
 .export_themes_html <- function(project, themes, include_excerpts, include_narrative) {
   info   <- qc_project_info(project)
@@ -367,7 +367,7 @@ qc_export_project_data <- function(project,
 
   pieces <- c(pieces, sprintf(
     "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n
-<title>%s — Analytical Themes Report</title>\n<style>%s</style>\n</head>\n<body>",
+<title>%s \u2014 Analytical Themes Report</title>\n<style>%s</style>\n</head>\n<body>",
     htmltools::htmlEscape(info$name), css
   ))
   pieces <- c(pieces, sprintf(
@@ -436,7 +436,7 @@ qc_export_project_data <- function(project,
           for (k in seq_len(nrow(de))) {
             ex <- de[k, ]
             pieces <- c(pieces, sprintf(
-              '<div class="excerpt">“%s”
+              '<div class="excerpt">\u201c%s\u201d
                <div class="excerpt-meta">%s &mdash; coder: %s</div></div>',
               htmltools::htmlEscape(trimws(as.character(ex$seltext))),
               htmltools::htmlEscape(as.character(ex$code_name)),
@@ -457,7 +457,7 @@ qc_export_project_data <- function(project,
   path
 }
 
-# ─── Themes TXT ──────────────────────────────────────────────────────────────
+# --- Themes TXT --------------------------------------------------------------
 
 .export_themes_txt <- function(project, themes, include_excerpts, include_narrative) {
   info  <- qc_project_info(project)
@@ -467,7 +467,7 @@ qc_export_project_data <- function(project,
 
   lines <- c(lines,
     sep80,
-    paste0(info$name, " — ANALYTICAL THEMES REPORT"),
+    paste0(info$name, " \u2014 ANALYTICAL THEMES REPORT"),
     paste0("Generated: ", format(Sys.Date(), "%B %d, %Y")),
     paste0("Themes: ", nrow(themes)),
     sep80, ""
@@ -522,10 +522,10 @@ qc_export_project_data <- function(project,
           for (k in seq_len(nrow(de))) {
             ex    <- de[k, ]
             wtext <- strwrap(trimws(as.character(ex$seltext)), width = 72,
-                              prefix = "    ", initial = "    “")
-            wtext[length(wtext)] <- paste0(wtext[length(wtext)], "”")
+                              prefix = "    ", initial = "    \u201c")
+            wtext[length(wtext)] <- paste0(wtext[length(wtext)], "\u201d")
             lines  <- c(lines, wtext)
-            lines  <- c(lines, paste0("    — ", ex$code_name,
+            lines  <- c(lines, paste0("    \u2014 ", ex$code_name,
                                        " | coder: ", ex$coder), "")
           }
         }
@@ -540,7 +540,7 @@ qc_export_project_data <- function(project,
   path
 }
 
-# ─── Themes JSON ─────────────────────────────────────────────────────────────
+# --- Themes JSON -------------------------------------------------------------
 
 .export_themes_json <- function(project, themes, include_excerpts) {
   if (!requireNamespace("jsonlite", quietly = TRUE))
@@ -596,7 +596,7 @@ qc_export_project_data <- function(project,
   path
 }
 
-# ─── Codebook helpers ─────────────────────────────────────────────────────────
+# --- Codebook helpers ---------------------------------------------------------
 
 .get_code_examples <- function(project, code_id, n) {
   .query(project$con,
@@ -682,10 +682,10 @@ qc_export_project_data <- function(project,
   info <- qc_project_info(project)
   doc  <- officer::read_docx()
 
-  doc <- officer::body_add_par(doc, paste0(info$name, " — Codebook"),
+  doc <- officer::body_add_par(doc, paste0(info$name, " \u2014 Codebook"),
                                 style = "heading 1")
   doc <- officer::body_add_par(doc,
-    paste0(format(Sys.Date(), "%B %d, %Y"), " • ", nrow(codes), " codes"),
+    paste0(format(Sys.Date(), "%B %d, %Y"), " \u2022 ", nrow(codes), " codes"),
     style = "Normal")
   doc <- officer::body_add_break(doc)
 
@@ -718,7 +718,7 @@ qc_export_project_data <- function(project,
         for (ex in exs) {
           doc <- officer::body_add_fpar(doc,
             officer::fpar(
-              officer::ftext(paste0("“", trimws(ex), "”"),
+              officer::ftext(paste0("\u201c", trimws(ex), "\u201d"),
                 prop = officer::fp_text(italic = TRUE, font.size = 11)),
               fp_p = officer::fp_par(padding.left = 24, padding.bottom = 6)
             )
@@ -759,11 +759,11 @@ qc_export_project_data <- function(project,
 
   pieces <- c(pieces, sprintf(
     "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n
-<title>%s — Codebook</title>\n<style>%s</style>\n</head>\n<body>",
+<title>%s \u2014 Codebook</title>\n<style>%s</style>\n</head>\n<body>",
     htmltools::htmlEscape(info$name), css
   ))
   pieces <- c(pieces, sprintf(
-    "<h1>%s — Codebook</h1><p class=\"meta\">%s &bull; %d codes</p>",
+    "<h1>%s \u2014 Codebook</h1><p class=\"meta\">%s &bull; %d codes</p>",
     htmltools::htmlEscape(info$name),
     format(Sys.Date(), "%B %d, %Y"),
     nrow(codes)
@@ -799,7 +799,7 @@ qc_export_project_data <- function(project,
       if (length(exs) > 0L) {
         pieces <- c(pieces, '<h3>Examples</h3>')
         for (ex in exs)
-          pieces <- c(pieces, sprintf('<div class="excerpt">“%s”</div>',
+          pieces <- c(pieces, sprintf('<div class="excerpt">\u201c%s\u201d</div>',
             htmltools::htmlEscape(trimws(ex))))
       }
     }

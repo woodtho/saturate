@@ -11,7 +11,7 @@ mod_cases_ui <- function(id) {
       ),
       shiny::textInput(ns("new_case_name"), "Name", placeholder = "e.g. Participant 01"),
       shiny::textAreaInput(ns("new_case_memo"), "Memo", rows = 2,
-        placeholder = "Optional description…"),
+        placeholder = "Optional description\u2026"),
       shiny::actionButton(ns("btn_add_case"), "Add case",
         class = "btn-primary w-100"),
 
@@ -67,7 +67,7 @@ mod_cases_server <- function(id, rv) {
       refresh_links = 0L
     )
 
-    # ── Case list ──────────────────────────────────────────────────────────────
+    # -- Case list --------------------------------------------------------------
 
     cases <- shiny::reactive({
       lv$refresh_cases
@@ -101,7 +101,7 @@ mod_cases_server <- function(id, rv) {
       lv$selected_id <- df$id[sel]
     })
 
-    # ── Add case ───────────────────────────────────────────────────────────────
+    # -- Add case ---------------------------------------------------------------
 
     shiny::observeEvent(input$btn_add_case, {
       name <- trimws(input$new_case_name %||% "")
@@ -120,7 +120,7 @@ mod_cases_server <- function(id, rv) {
       })
     })
 
-    # ── Edit case ──────────────────────────────────────────────────────────────
+    # -- Edit case --------------------------------------------------------------
 
     shiny::observeEvent(input$btn_edit_case, {
       cid <- lv$selected_id
@@ -162,7 +162,7 @@ mod_cases_server <- function(id, rv) {
       })
     })
 
-    # ── Delete case ────────────────────────────────────────────────────────────
+    # -- Delete case ------------------------------------------------------------
 
     shiny::observeEvent(input$btn_delete_case, {
       cid <- lv$selected_id
@@ -197,7 +197,7 @@ mod_cases_server <- function(id, rv) {
       })
     })
 
-    # ── Case detail panel ──────────────────────────────────────────────────────
+    # -- Case detail panel ------------------------------------------------------
 
     output$case_detail_ui <- shiny::renderUI({
       cid <- lv$selected_id
@@ -250,7 +250,7 @@ mod_cases_server <- function(id, rv) {
                 col_widths = c(8, 4),
                 shiny::selectizeInput(ns("link_doc_id"), "Link a document",
                   choices = NULL,
-                  options = list(placeholder = "Search documents…")),
+                  options = list(placeholder = "Search documents\u2026")),
                 shiny::div(
                   class = "mt-4",
                   shiny::actionButton(ns("btn_link_doc"), "Link",
@@ -264,7 +264,7 @@ mod_cases_server <- function(id, rv) {
       )
     })
 
-    # ── Attributes sub-panel ───────────────────────────────────────────────────
+    # -- Attributes sub-panel ---------------------------------------------------
 
     attrs <- shiny::reactive({
       lv$selected_id
@@ -339,7 +339,7 @@ mod_cases_server <- function(id, rv) {
       })
     })
 
-    # ── Documents sub-panel ────────────────────────────────────────────────────
+    # -- Documents sub-panel ----------------------------------------------------
 
     shiny::observe({
       lv$selected_id
@@ -444,7 +444,7 @@ mod_cases_server <- function(id, rv) {
       })
     })
 
-    # ── Attributes exports ─────────────────────────────────────────────────────
+    # -- Attributes exports -----------------------------------------------------
 
     .attrs_df <- function() {
       tryCatch(qc_case_attributes_wide(rv$project), error = function(e) tibble::tibble())

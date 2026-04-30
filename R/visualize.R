@@ -64,7 +64,7 @@ qc_plot_codes <- function(project, top_n = 20L,
   segs <- qc_get_coded_segments(project, code_ids = code_ids)
 
   if (nrow(segs) == 0L) {
-    cli::cli_warn("No coded segments found — returning NULL.")
+    cli::cli_warn("No coded segments found \u2014 returning NULL.")
     return(NULL)
   }
 
@@ -101,7 +101,7 @@ qc_plot_codes <- function(project, top_n = 20L,
 #' Symmetric tile heatmap of code co-occurrence
 #'
 #' Displays how frequently pairs of codes appear together within the same unit
-#' (document or overlapping segment). The heatmap is symmetric — each pair
+#' (document or overlapping segment). The heatmap is symmetric -- each pair
 #' appears once in each triangle.
 #'
 #' @param project A `qc_project` object.
@@ -134,7 +134,7 @@ qc_plot_cooccurrence <- function(project,
   }
 
   if (nrow(co) == 0L) {
-    cli::cli_warn("No co-occurrences found — returning NULL.")
+    cli::cli_warn("No co-occurrences found \u2014 returning NULL.")
     return(NULL)
   }
 
@@ -182,7 +182,7 @@ qc_plot_cooccurrence <- function(project,
 
 #' Inter-coder agreement heatmap (mean Cohen's kappa)
 #'
-#' Displays mean Cohen's kappa across all code–document combinations for each
+#' Displays mean Cohen's kappa across all code-document combinations for each
 #' pair of coders. The diagonal (self-agreement) is fixed at 1.0.
 #'
 #' @param project A `qc_project` object.
@@ -204,7 +204,7 @@ qc_plot_overlap <- function(project, code_ids = NULL, ...) {
   mat <- qc_agreement_matrix(project, code_ids = code_ids)
 
   if (nrow(mat) == 0L) {
-    cli::cli_warn("Agreement matrix is empty — returning NULL.")
+    cli::cli_warn("Agreement matrix is empty \u2014 returning NULL.")
     return(NULL)
   }
 
@@ -369,7 +369,7 @@ qc_plot_timeline <- function(project,
   )
 
   if (nrow(df) == 0L) {
-    cli::cli_warn("No temporal data found — returning NULL.")
+    cli::cli_warn("No temporal data found \u2014 returning NULL.")
     return(NULL)
   }
 
