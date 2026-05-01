@@ -1,0 +1,346 @@
+# Package index
+
+## Package overview
+
+Package-level documentation.
+
+- [`saturate-package`](https://thomaswood.github.io/saturate/reference/saturate-package.md)
+  [`saturate`](https://thomaswood.github.io/saturate/reference/saturate-package.md)
+  : saturate: Qualitative Text Coding with DuckDB and Shiny
+
+## Project management
+
+Create, open, and close projects; manage versions and locking.
+
+- [`qc_new()`](https://thomaswood.github.io/saturate/reference/qc_new.md)
+  : Create a new saturate project
+- [`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md)
+  : Open an existing saturate project
+- [`qc_close()`](https://thomaswood.github.io/saturate/reference/qc_close.md)
+  : Close a saturate project connection
+- [`qc_project_info()`](https://thomaswood.github.io/saturate/reference/qc_project_info.md)
+  : Retrieve or update project-level metadata
+- [`qc_lock_project()`](https://thomaswood.github.io/saturate/reference/qc_lock_project.md)
+  [`qc_unlock_project()`](https://thomaswood.github.io/saturate/reference/qc_lock_project.md)
+  [`qc_is_locked()`](https://thomaswood.github.io/saturate/reference/qc_lock_project.md)
+  : Lock or unlock a project against further edits
+- [`qc_get_version()`](https://thomaswood.github.io/saturate/reference/qc_get_version.md)
+  : Retrieve the content of a specific document version
+- [`qc_list_versions()`](https://thomaswood.github.io/saturate/reference/qc_list_versions.md)
+  : List all saved versions of a document
+- [`qc_restore_version()`](https://thomaswood.github.io/saturate/reference/qc_restore_version.md)
+  : Restore a document to a previous version
+
+## Multi-coder collaboration
+
+Split a project for independent coders, then merge results back.
+
+- [`qc_split_project()`](https://thomaswood.github.io/saturate/reference/qc_split_project.md)
+  : Create a coder copy of a project
+- [`qc_merge_project()`](https://thomaswood.github.io/saturate/reference/qc_merge_project.md)
+  : Merge a contributor project into a master project
+- [`qc_list_coders()`](https://thomaswood.github.io/saturate/reference/qc_list_coders.md)
+  : List coders and their coding activity
+- [`qc_list_profiles()`](https://thomaswood.github.io/saturate/reference/qc_list_profiles.md)
+  : List coder profiles stored in the project
+
+## Documents
+
+Import and manage source documents.
+
+- [`qc_import_document()`](https://thomaswood.github.io/saturate/reference/qc_import_document.md)
+  : Import a text document into the project
+- [`qc_import_batch()`](https://thomaswood.github.io/saturate/reference/qc_import_batch.md)
+  : Import multiple documents from a directory or tabular file
+- [`qc_list_documents()`](https://thomaswood.github.io/saturate/reference/qc_list_documents.md)
+  : List all documents in the project
+- [`qc_get_document()`](https://thomaswood.github.io/saturate/reference/qc_get_document.md)
+  : Retrieve a single document's full text
+- [`qc_update_document_content()`](https://thomaswood.github.io/saturate/reference/qc_update_document_content.md)
+  : Update a document's content, preserving the previous version
+- [`qc_update_document_memo()`](https://thomaswood.github.io/saturate/reference/qc_update_document_memo.md)
+  : Update the memo on a document
+- [`qc_delete_document()`](https://thomaswood.github.io/saturate/reference/qc_delete_document.md)
+  : Remove a document (soft delete)
+- [`qc_set_source_type()`](https://thomaswood.github.io/saturate/reference/qc_set_source_type.md)
+  : Set the source type of a document
+- [`qc_segment_document()`](https://thomaswood.github.io/saturate/reference/qc_segment_document.md)
+  : Segment a document into sub-units
+
+## Codes and codebook
+
+Create and manage codes, categories, and codebook snapshots.
+
+- [`qc_add_code()`](https://thomaswood.github.io/saturate/reference/qc_add_code.md)
+  : Add a code to the project codebook
+- [`qc_update_code()`](https://thomaswood.github.io/saturate/reference/qc_update_code.md)
+  : Update a code's fields
+- [`qc_list_codes()`](https://thomaswood.github.io/saturate/reference/qc_list_codes.md)
+  : List all codes
+- [`qc_delete_code()`](https://thomaswood.github.io/saturate/reference/qc_delete_code.md)
+  : Delete a code (soft delete)
+- [`qc_deprecate_code()`](https://thomaswood.github.io/saturate/reference/qc_deprecate_code.md)
+  : Mark a code as deprecated
+- [`qc_undeprecate_code()`](https://thomaswood.github.io/saturate/reference/qc_undeprecate_code.md)
+  : Restore a deprecated code to active status
+- [`qc_merge_codes()`](https://thomaswood.github.io/saturate/reference/qc_merge_codes.md)
+  : Merge one or more codes into a surviving code
+- [`qc_split_code()`](https://thomaswood.github.io/saturate/reference/qc_split_code.md)
+  : Split a code into new codes
+- [`qc_set_code_key()`](https://thomaswood.github.io/saturate/reference/qc_set_code_key.md)
+  : Assign a stable key to a code
+- [`qc_code_history()`](https://thomaswood.github.io/saturate/reference/qc_code_history.md)
+  : Retrieve the change history for one or all codes
+- [`qc_validate_codebook()`](https://thomaswood.github.io/saturate/reference/qc_validate_codebook.md)
+  : Validate the codebook for structural and quality issues
+- [`qc_import_codebook()`](https://thomaswood.github.io/saturate/reference/qc_import_codebook.md)
+  : Import a codebook from a file
+- [`qc_export_codebook()`](https://thomaswood.github.io/saturate/reference/qc_export_codebook.md)
+  : Export the codebook to a file
+- [`qc_export_codebook_full()`](https://thomaswood.github.io/saturate/reference/qc_export_codebook_full.md)
+  : Export a rich codebook
+- [`qc_snapshot_codebook()`](https://thomaswood.github.io/saturate/reference/qc_snapshot_codebook.md)
+  : Save a snapshot of the current codebook
+- [`qc_list_snapshots()`](https://thomaswood.github.io/saturate/reference/qc_list_snapshots.md)
+  : List codebook snapshots
+- [`qc_get_snapshot()`](https://thomaswood.github.io/saturate/reference/qc_get_snapshot.md)
+  : Retrieve a codebook snapshot as a tibble
+- [`qc_diff_snapshots()`](https://thomaswood.github.io/saturate/reference/qc_diff_snapshots.md)
+  : Compare two codebook snapshots
+- [`qc_add_code_relation()`](https://thomaswood.github.io/saturate/reference/qc_add_code_relation.md)
+  : Add a non-hierarchical relationship between two codes
+- [`qc_list_code_relations()`](https://thomaswood.github.io/saturate/reference/qc_list_code_relations.md)
+  : List code relations
+- [`qc_delete_code_relation()`](https://thomaswood.github.io/saturate/reference/qc_delete_code_relation.md)
+  : Delete a code relation (soft delete)
+
+## Categories
+
+Group codes laterally across the code hierarchy.
+
+- [`qc_add_category()`](https://thomaswood.github.io/saturate/reference/qc_add_category.md)
+  : Add a code category
+- [`qc_list_categories()`](https://thomaswood.github.io/saturate/reference/qc_list_categories.md)
+  : List all categories with their member codes
+- [`qc_link_code_category()`](https://thomaswood.github.io/saturate/reference/qc_link_code_category.md)
+  : Assign a code to a category
+- [`qc_unlink_code_category()`](https://thomaswood.github.io/saturate/reference/qc_unlink_code_category.md)
+  : Remove a code from a category
+
+## Codings
+
+Apply, retrieve, and manage coded passages.
+
+- [`qc_add_coding()`](https://thomaswood.github.io/saturate/reference/qc_add_coding.md)
+  : Add a coded segment
+- [`qc_list_codings()`](https://thomaswood.github.io/saturate/reference/qc_list_codings.md)
+  : List codings, optionally filtered
+- [`qc_get_coded_segments()`](https://thomaswood.github.io/saturate/reference/qc_get_coded_segments.md)
+  : Retrieve all coded segments, optionally filtered
+- [`qc_delete_coding()`](https://thomaswood.github.io/saturate/reference/qc_delete_coding.md)
+  : Delete a single coding (soft delete)
+- [`qc_reassign_coding()`](https://thomaswood.github.io/saturate/reference/qc_reassign_coding.md)
+  : Reassign a coding to a different code
+- [`qc_split_coding()`](https://thomaswood.github.io/saturate/reference/qc_split_coding.md)
+  : Split a coding into two at a character position
+- [`qc_merge_codings()`](https://thomaswood.github.io/saturate/reference/qc_merge_codings.md)
+  : Merge two or more codings into one
+- [`qc_update_coding_confidence()`](https://thomaswood.github.io/saturate/reference/qc_update_coding_confidence.md)
+  : Update the confidence score on a single coding
+- [`qc_update_coding_memo()`](https://thomaswood.github.io/saturate/reference/qc_update_coding_memo.md)
+  : Update the memo on a single coding
+- [`qc_uncoded_segments()`](https://thomaswood.github.io/saturate/reference/qc_uncoded_segments.md)
+  : Find uncoded text segments in a document
+- [`qc_disputed_segments()`](https://thomaswood.github.io/saturate/reference/qc_disputed_segments.md)
+  : Find disputed or draft-status segments in a document
+- [`qc_proximity_query()`](https://thomaswood.github.io/saturate/reference/qc_proximity_query.md)
+  : Find segments of one code near segments of another code
+- [`qc_coding_audit()`](https://thomaswood.github.io/saturate/reference/qc_coding_audit.md)
+  : Retrieve the coding audit log
+- [`qc_detect_duplicates()`](https://thomaswood.github.io/saturate/reference/qc_detect_duplicates.md)
+  : Detect exact and near-duplicate documents
+
+## Search and auto-coding
+
+Full-text search and regex-based automatic coding.
+
+- [`qc_search_documents()`](https://thomaswood.github.io/saturate/reference/qc_search_documents.md)
+  : Full-text search across documents
+- [`qc_auto_code()`](https://thomaswood.github.io/saturate/reference/qc_auto_code.md)
+  : Apply a code automatically using a regular expression
+
+## Cases
+
+Units of analysis with structured attributes and document links.
+
+- [`qc_add_case()`](https://thomaswood.github.io/saturate/reference/qc_add_case.md)
+  : Add a case (respondent / subject)
+- [`qc_update_case()`](https://thomaswood.github.io/saturate/reference/qc_update_case.md)
+  : Update a case name and/or memo
+- [`qc_delete_case()`](https://thomaswood.github.io/saturate/reference/qc_delete_case.md)
+  : Soft-delete a case
+- [`qc_list_cases()`](https://thomaswood.github.io/saturate/reference/qc_list_cases.md)
+  : List all cases
+- [`qc_set_case_attribute()`](https://thomaswood.github.io/saturate/reference/qc_set_case_attribute.md)
+  : Set a case attribute value (upsert)
+- [`qc_list_case_attributes()`](https://thomaswood.github.io/saturate/reference/qc_list_case_attributes.md)
+  : List attributes for one case (long format)
+- [`qc_delete_case_attribute()`](https://thomaswood.github.io/saturate/reference/qc_delete_case_attribute.md)
+  : Delete a case attribute
+- [`qc_case_attributes_wide()`](https://thomaswood.github.io/saturate/reference/qc_case_attributes_wide.md)
+  : Get all case attributes as a wide tibble
+- [`qc_link_case_source()`](https://thomaswood.github.io/saturate/reference/qc_link_case_source.md)
+  : Link a case to a document
+- [`qc_unlink_case_source()`](https://thomaswood.github.io/saturate/reference/qc_unlink_case_source.md)
+  : Remove a case-document link
+
+## Themes
+
+Higher-level thematic synthesis above codes.
+
+- [`qc_add_theme()`](https://thomaswood.github.io/saturate/reference/qc_add_theme.md)
+  : Create a new analytical theme
+- [`qc_update_theme()`](https://thomaswood.github.io/saturate/reference/qc_update_theme.md)
+  : Update a theme's fields
+- [`qc_get_theme()`](https://thomaswood.github.io/saturate/reference/qc_get_theme.md)
+  : Get full detail for a single theme
+- [`qc_list_themes()`](https://thomaswood.github.io/saturate/reference/qc_list_themes.md)
+  : List all themes
+- [`qc_delete_theme()`](https://thomaswood.github.io/saturate/reference/qc_delete_theme.md)
+  : Delete a theme (soft delete)
+- [`qc_link_theme_codes()`](https://thomaswood.github.io/saturate/reference/qc_link_theme_codes.md)
+  : Link codes to a theme
+- [`qc_link_theme_categories()`](https://thomaswood.github.io/saturate/reference/qc_link_theme_categories.md)
+  : Link categories to a theme
+- [`qc_unlink_theme_code()`](https://thomaswood.github.io/saturate/reference/qc_unlink_theme_code.md)
+  : Unlink a code from a theme
+- [`qc_unlink_theme_category()`](https://thomaswood.github.io/saturate/reference/qc_unlink_theme_category.md)
+  : Unlink a category from a theme
+- [`qc_theme_excerpts()`](https://thomaswood.github.io/saturate/reference/qc_theme_excerpts.md)
+  : Retrieve all coded excerpts for a theme
+- [`qc_export_themes_report()`](https://thomaswood.github.io/saturate/reference/qc_export_themes_report.md)
+  : Export an analytical themes report
+
+## Memos and annotations
+
+Project memos, reflexive journal entries, and passage annotations.
+
+- [`qc_add_project_memo()`](https://thomaswood.github.io/saturate/reference/qc_add_project_memo.md)
+  : Add an entry to the project analytical journal
+- [`qc_get_memos()`](https://thomaswood.github.io/saturate/reference/qc_get_memos.md)
+  : Retrieve memos across entity types
+- [`qc_list_project_memos()`](https://thomaswood.github.io/saturate/reference/qc_list_project_memos.md)
+  : List project journal entries
+- [`qc_delete_project_memo()`](https://thomaswood.github.io/saturate/reference/qc_delete_project_memo.md)
+  : Delete a project journal entry (soft delete)
+- [`qc_add_annotation()`](https://thomaswood.github.io/saturate/reference/qc_add_annotation.md)
+  : Add an annotation to a document
+- [`qc_list_annotations()`](https://thomaswood.github.io/saturate/reference/qc_list_annotations.md)
+  : List annotations
+- [`qc_update_annotation()`](https://thomaswood.github.io/saturate/reference/qc_update_annotation.md)
+  : Update annotation text
+- [`qc_delete_annotation()`](https://thomaswood.github.io/saturate/reference/qc_delete_annotation.md)
+  : Delete an annotation (soft delete)
+- [`qc_add_excerpt()`](https://thomaswood.github.io/saturate/reference/qc_add_excerpt.md)
+  : Add an excerpt to a document
+- [`qc_list_excerpts()`](https://thomaswood.github.io/saturate/reference/qc_list_excerpts.md)
+  : List excerpts
+- [`qc_update_excerpt_memo()`](https://thomaswood.github.io/saturate/reference/qc_update_excerpt_memo.md)
+  : Update an excerpt's memo
+- [`qc_delete_excerpt()`](https://thomaswood.github.io/saturate/reference/qc_delete_excerpt.md)
+  : Delete an excerpt (soft delete)
+
+## Member checking
+
+Generate summaries for participants and record their responses.
+
+- [`qc_create_member_check()`](https://thomaswood.github.io/saturate/reference/qc_create_member_check.md)
+  : Create a member check record
+- [`qc_list_member_checks()`](https://thomaswood.github.io/saturate/reference/qc_list_member_checks.md)
+  : List all member checks in the project
+- [`qc_record_member_response()`](https://thomaswood.github.io/saturate/reference/qc_record_member_response.md)
+  : Record a participant's response to a member check item
+- [`qc_bulk_set_member_status()`](https://thomaswood.github.io/saturate/reference/qc_bulk_set_member_status.md)
+  : Set all items in a member check to the same status
+- [`qc_export_member_check()`](https://thomaswood.github.io/saturate/reference/qc_export_member_check.md)
+  : Export a member check as a shareable document
+
+## Reliability and agreement
+
+Inter-rater reliability statistics.
+
+- [`qc_agreement()`](https://thomaswood.github.io/saturate/reference/qc_agreement.md)
+  : Pairwise inter-coder agreement (Cohen's kappa) for one code
+- [`qc_agreement_matrix()`](https://thomaswood.github.io/saturate/reference/qc_agreement_matrix.md)
+  : Agreement matrix across all coder pairs and codes
+- [`qc_krippendorff()`](https://thomaswood.github.io/saturate/reference/qc_krippendorff.md)
+  : Krippendorff's alpha for one code across multiple coders
+
+## Analysis and summaries
+
+Code metrics, co-occurrence, saturation, and cross-tabulation.
+
+- [`qc_code_summary()`](https://thomaswood.github.io/saturate/reference/qc_code_summary.md)
+  : Summarise coded segment counts per code
+- [`qc_code_metrics()`](https://thomaswood.github.io/saturate/reference/qc_code_metrics.md)
+  : Per-code prevalence, density, and Gries' DP dispersion
+- [`qc_code_by_unit()`](https://thomaswood.github.io/saturate/reference/qc_code_by_unit.md)
+  : Code a document by predefined text units
+- [`qc_code_matrix()`](https://thomaswood.github.io/saturate/reference/qc_code_matrix.md)
+  : Code-by-entity matrix
+- [`qc_code_cooccurrence()`](https://thomaswood.github.io/saturate/reference/qc_code_cooccurrence.md)
+  : Code co-occurrence matrix
+- [`qc_saturation_curve()`](https://thomaswood.github.io/saturate/reference/qc_saturation_curve.md)
+  : Compute the code saturation curve
+- [`qc_triangulate()`](https://thomaswood.github.io/saturate/reference/qc_triangulate.md)
+  : Triangulate codes across source types
+- [`qc_cross_tabulate()`](https://thomaswood.github.io/saturate/reference/qc_cross_tabulate.md)
+  : Cross-tabulate code frequency by a case attribute
+- [`qc_temporal_analysis()`](https://thomaswood.github.io/saturate/reference/qc_temporal_analysis.md)
+  : Time-series of code usage driven by a document-level date attribute
+
+## Visualisation
+
+Charts and network graphs.
+
+- [`qc_plot_codes()`](https://thomaswood.github.io/saturate/reference/qc_plot_codes.md)
+  : Horizontal bar chart of code frequency
+- [`qc_plot_saturation()`](https://thomaswood.github.io/saturate/reference/qc_plot_saturation.md)
+  : Plot the code saturation curve
+- [`qc_plot_cooccurrence()`](https://thomaswood.github.io/saturate/reference/qc_plot_cooccurrence.md)
+  : Symmetric tile heatmap of code co-occurrence
+- [`qc_plot_network()`](https://thomaswood.github.io/saturate/reference/qc_plot_network.md)
+  : Network diagram of code relationships
+- [`qc_plot_overlap()`](https://thomaswood.github.io/saturate/reference/qc_plot_overlap.md)
+  : Inter-coder agreement heatmap (mean Cohen's kappa)
+- [`qc_plot_timeline()`](https://thomaswood.github.io/saturate/reference/qc_plot_timeline.md)
+  : Line chart of code usage over time
+- [`qc_document_graph()`](https://thomaswood.github.io/saturate/reference/qc_document_graph.md)
+  : Build graph data for the document-code network
+- [`qc_as_igraph()`](https://thomaswood.github.io/saturate/reference/qc_as_igraph.md)
+  : Convert project network data to an igraph object
+
+## Export
+
+Export data in structured formats.
+
+- [`qc_export()`](https://thomaswood.github.io/saturate/reference/qc_export.md)
+  : Export coded segments to CSV or xlsx
+- [`qc_export_project_data()`](https://thomaswood.github.io/saturate/reference/qc_export_project_data.md)
+  : Export a raw project database table
+- [`qc_summary_report()`](https://thomaswood.github.io/saturate/reference/qc_summary_report.md)
+  : Project summary report
+
+## Shiny GUI
+
+Launch the interactive browser-based interface.
+
+- [`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+  : Launch the saturate Shiny GUI
+
+## Utilities
+
+Helper functions.
+
+- [`qc_cb_palette()`](https://thomaswood.github.io/saturate/reference/qc_cb_palette.md)
+  : Colour-blind-safe colour palette

@@ -1,0 +1,2163 @@
+# saturate: A Complete User Guide
+
+*Qualitative Data Analysis for R* – Version 0.1.0
+
+## Part 1 – Getting Started
+
+### Chapter 1: What Is saturate?
+
+saturate is an R package for qualitative data analysis. It gives you a
+browser-based graphical interface – a Shiny application – for reading
+interview transcripts, attaching codes to passages of text, organising
+those codes into hierarchies and themes, comparing the work of multiple
+coders, and exporting results for publication. You can also drive every
+operation from R scripts if you prefer to work programmatically.
+
+The name reflects a core concept in qualitative research: theoretical
+saturation, the point at which new data stops producing new insights.
+saturate helps you track that point systematically.
+
+#### Why saturate exists
+
+For many years, the most widely used free qualitative analysis tool in R
+was RQDA. It was archived by CRAN because it depended on an outdated
+version of the GTK graphics library that could no longer be distributed
+reliably. This left a gap in the R ecosystem for qualitative
+researchers.
+
+saturate fills that gap. It stores all project data in a single DuckDB
+file, which is portable, fast, and requires no database server. The
+Shiny interface runs in your browser, so it looks and behaves
+consistently on Windows, macOS, and Linux. And because every operation
+is also available as an R function, you can automate imports, run
+reliability statistics, and integrate qualitative data with quantitative
+analyses in a single script.
+
+#### The running example
+
+Throughout this guide you will follow Researcher A, a qualitative
+researcher studying remote working and wellbeing. Researcher A has
+conducted twelve semi-structured interviews with knowledge workers
+across three organisations – Organisation A, Organisation B, and
+Organisation C – covering topics such as work-life boundaries,
+isolation, productivity, management practices, and mental health. Their
+transcripts are saved as plain-text files. They have a research
+assistant, Researcher B, who will independently code a subset of the
+data so they can calculate inter-rater reliability.
+
+------------------------------------------------------------------------
+
+### Chapter 2: Installation
+
+#### Prerequisites
+
+You need R version 4.1 or later. You do not need to install DuckDB, a
+database server, or any other software separately – all dependencies are
+handled by R’s package manager.
+
+#### Installing saturate
+
+Install saturate from CRAN:
+
+``` r
+
+install.packages("saturate")
+```
+
+Or install the development version from GitHub:
+
+``` r
+
+# install.packages("pak")
+pak::pak("thomaswood/saturate")
+```
+
+After installation, load the package in your R session:
+
+``` r
+
+library(saturate)
+```
+
+#### A note on updates
+
+When a new version of saturate is released, reinstall from CRAN or
+GitHub. Your project files (`.satdb`) are forward-compatible – opening
+an old project in a newer version of saturate automatically adds any new
+database tables without altering existing data.
+
+------------------------------------------------------------------------
+
+### Chapter 3: Creating and Managing Projects
+
+#### What a saturate project is
+
+Every saturate study lives in a single file with the `.satdb` extension
+(older projects use `.duckdb`, which is equally supported). This file is
+a DuckDB database – a self-contained, portable data store that holds
+your documents, codes, codings, cases, journal entries, and every other
+piece of project data. You can copy it, email it, back it up to cloud
+storage, or hand it to a colleague, and the entire project travels with
+it.
+
+#### Creating a new project
+
+In R, create a new project with
+[`qc_new()`](https://thomaswood.github.io/saturate/reference/qc_new.md):
+
+``` r
+
+proj <- qc_new(
+  path  = "~/research/remote_work/remote_wellbeing.satdb",
+  name  = "Remote Working and Wellbeing",
+  owner = "Researcher A"
+)
+```
+
+The `path` argument is the full file path where you want the project
+file to be saved. The `name` and `owner` arguments are stored as project
+metadata and displayed in the interface. Both default to sensible values
+(`name` defaults to the filename, `owner` to the system user) if
+omitted.
+
+After running
+[`qc_new()`](https://thomaswood.github.io/saturate/reference/qc_new.md),
+the variable `proj` holds an open connection to the project. You can
+pass it directly to
+[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+to launch the interface, or use it with the API functions described in
+Part 6.
+
+#### Where to save your project file
+
+Choose a location on your local hard drive or a folder that syncs to
+cloud storage (such as OneDrive, Dropbox, or Google Drive). Avoid saving
+the file directly to a network drive that other users can access
+simultaneously – DuckDB uses file-level locking, and two sessions
+writing to the same file at the same time will cause one of them to
+error.
+
+#### Opening an existing project
+
+``` r
+
+proj <- qc_open("~/research/remote_work/remote_wellbeing.satdb")
+```
+
+[`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md)
+checks that the file exists and is a valid saturate project. If another
+R session already has the file open,
+[`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md)
+will return an error – only one session can write to a project at a
+time.
+
+#### Closing a project
+
+``` r
+
+qc_close(proj)
+```
+
+This flushes any pending writes and releases the file lock. Always call
+this when you finish a session.
+
+#### Launching the graphical interface
+
+``` r
+
+shiny_saturate(proj)
+```
+
+Your default browser will open automatically. The R console will show
+`Listening on http://127.0.0.1:XXXX` – this is a local web server
+running on your own computer. Your data never leaves your machine.
+
+To stop the app cleanly, click the **Quit** button in the top-right of
+the navbar and confirm. This releases the project file and closes the
+database connection gracefully. Pressing **Ctrl+C** in the R console
+also works but may trigger a Fortran runtime warning on Windows — use
+the Quit button when possible.
+
+#### Launching without a project (the project launcher)
+
+You can also call
+[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+without a project argument:
+
+``` r
+
+shiny_saturate()
+```
+
+This opens a **project launcher** screen in the browser. From there you
+can:
+
+- **Open** an existing `.satdb` or `.duckdb` file by typing or browsing
+  to its path.
+- **Create** a new project by choosing a folder and entering a project
+  name.
+
+The launcher is convenient when you want to let a non-technical
+colleague open or create a project without writing R code.
+
+------------------------------------------------------------------------
+
+### Chapter 4: The saturate Interface
+
+When you launch `shiny_saturate(proj)`, the browser window opens to the
+**Documents** tab. Across the top of the screen is the navigation bar
+(navbar) which gives you access to every section of the application.
+
+#### The navbar
+
+| Tab | Purpose |
+|----|----|
+| **Documents** | Import, view, and manage your source documents |
+| **Coding** | Read documents and attach codes to passages |
+| **Compare** | Compare two coders’ work side by side |
+| **Codebook** | Create and manage codes, categories, and codebook snapshots |
+| **Themes** | Organise codes into higher-level themes |
+| **Query** | Search documents, explore co-occurrence, triangulate, visualise, word clouds |
+| **Cases** | Manage participants or sites; set attributes; link documents |
+| **Journal** | Write reflexive and analytical memos |
+| **Members** | Member checking: generate summaries for participants to review |
+| **Export** | Download data in various formats |
+| **Audit** | View the full code change history and coding audit log |
+| **Help** | Built-in reference documentation |
+
+#### The session area (top right)
+
+**Coding As** text box: The name that will be attached to every coding
+you create. It is populated automatically when you choose a profile (see
+Chapter 5).
+
+**Blind** toggle: When on, you will not see any highlights from other
+coders while you work in the **Coding** tab. This allows two or more
+coders to work independently without being influenced by each other’s
+choices.
+
+**Settings** button: Opens the Settings panel.
+
+**Project** button: Opens the Project panel, which has three tabs –
+**Info** (project metadata), **Split** (create a contributor copy for
+independent coding), and **Merge** (import a contributor’s work back
+into the master). See Chapter 11.
+
+#### The profile gate
+
+The first time you open a project in a new browser session, saturate
+displays a splash screen titled **Choose a profile**. You must select or
+create a profile before the main interface becomes available.
+
+------------------------------------------------------------------------
+
+### Chapter 5: Settings and Profiles
+
+#### What a profile is
+
+A profile is a named coder identity. When you select a profile, saturate
+sets the **Coding As** text to that profile’s name and applies that
+profile’s saved interface preferences. Every coding you apply and every
+memo you write is stored with this coder name.
+
+For Researcher A’s study, they create a profile called “Researcher A”
+and their research assistant creates one called “Researcher B”.
+
+#### Managing profiles
+
+Click the **Settings** button in the navbar. In the **Profile** section:
+
+- **Creating a profile**: Type a name in “Create profile” and click
+  **Create and switch**.
+- **Switching profiles**: Choose from “Active profile” and click
+  **Switch**.
+- **Deleting a profile**: Choose a profile and click **Delete**. This
+  does not delete any codings or memos created under that name.
+
+#### Display settings
+
+| Setting | Description |
+|----|----|
+| **Colour profile** | Light, Dark, High contrast, High contrast dark, Ocean, or Warm |
+| **Interface font** | System UI, Serif, Readable sans, or Monospace |
+| **Interface size** | Scale from 90% to 125% |
+| **Document font** | Font used in the document pane |
+| **Document text size** | Scale from 85% to 150% |
+| **Document line spacing** | Line height from 1.4 to 2.4 |
+| **Document pane height** | Height in viewport units (48vh to 86vh) |
+| **Table density** | Compact, Comfortable, or Roomy |
+| **Highlight opacity** | How strongly code colours overlay the text |
+| **Show line numbers** | Display line numbers in the document margin |
+| **Reduce animation** | Disable transitions and animated effects |
+
+#### Text-to-speech settings
+
+| Setting | Description |
+|----|----|
+| **TTS voice** | Browser voice to use for read-aloud (leave blank for system default) |
+| **Reading speed** | Playback rate from 0.5x to 2.0x |
+
+------------------------------------------------------------------------
+
+## Part 2 – Building Your Dataset
+
+### Chapter 6: The Documents Tab
+
+#### What a document is in saturate
+
+In saturate, a **document** (also called a **source**) is any piece of
+text you want to analyse – interview transcripts, focus group
+transcripts, open-ended survey responses, field notes, policy documents,
+or any other textual material.
+
+Researcher A imports twelve documents – one per interview – each named
+with the participant’s pseudonym and organisation.
+
+#### Importing documents
+
+Navigate to the **Documents** tab and click **Import**. Select one or
+more files. Supported file types:
+
+- Plain text (`.txt`)
+- Microsoft Word documents (`.docx`)
+- PDF files (`.pdf`) – text-layer PDFs only; scanned PDFs require OCR
+  first
+- CSV files (`.csv`) – the first column is treated as the text content
+
+You can also click **Paste text** to type or paste document content
+directly into the interface without needing a file.
+
+#### The documents table
+
+| Column | Meaning |
+|----|----|
+| **Name** | The document title |
+| **Type** | The document type (interview, focus group, etc.) |
+| **Length** | Total character count |
+| **Codings** | How many coded segments exist across all coders |
+| **Coders** | How many distinct coder names have applied at least one coding |
+| **Memo** | Whether a document memo has been written |
+
+The **Coders** column tells you whether multiple team members have
+worked on the same document – relevant when you need to calculate
+inter-rater reliability.
+
+#### Audio recording and transcription
+
+saturate can capture audio from your microphone and transcribe it
+locally using the [whisper](https://github.com/bnosac/whisper) package.
+No audio is sent to any external service.
+
+##### Prerequisites
+
+Install the optional packages once:
+
+``` r
+
+install.packages(c("whisper", "av"))
+```
+
+`av` handles audio conversion; `whisper` runs the transcription model.
+Whisper models are downloaded on first use and cached in your user data
+directory. The `tiny` model (~74 MB) is a fast default; `small` or
+`medium` give better accuracy for accented speech or non-English
+languages.
+
+##### Opening the recording modal
+
+In the **Documents** sidebar, click **Record & transcribe…** A modal
+opens with two tabs.
+
+##### Record tab
+
+| Control | Purpose |
+|----|----|
+| **Record** | Start capturing from your default microphone |
+| **Pause / Resume** | Suspend and continue recording without losing audio |
+| **Stop** | End the recording and prepare the audio for transcription |
+| **Timer** | Running total of recorded time, pauses included |
+| **Waveform** | Live oscilloscope display while recording; orange midline while paused |
+
+Once recording is stopped, click **Save audio** to download the raw file
+before transcribing.
+
+##### Upload audio tab
+
+Click **Choose…** to upload an existing audio file. Accepted formats:
+`.webm`, `.ogg`, `.mp4`, `.mp3`, `.wav`, `.m4a`.
+
+##### Transcription settings
+
+| Setting | Purpose |
+|----|----|
+| **Model** | Whisper model size: `tiny` (74 MB), `base` (142 MB), `small` (466 MB), `medium` (1.5 GB) |
+| **Language** | BCP-47 tag (e.g. `en`, `fr`, `de`). Leave blank for automatic detection |
+| **Timestamps** | Include `[HH:MM:SS]` segment markers in the output. On by default |
+
+Click **Transcribe**. A progress bar tracks the steps: loading the
+model, converting the audio to 16 kHz WAV, and running the
+transcription. The resulting text appears in the **Transcript** area.
+
+##### Editing and exporting the transcript
+
+The transcript is fully editable before importing. Download it as plain
+text or Word with the **.txt** and **.docx** buttons above the
+transcript area.
+
+##### Importing as a document
+
+Fill in **Document name** and optionally **Source type**
+(e.g. `interview`) and **Memo**, then click **Import transcript**. The
+transcript is saved as a new document and immediately available for
+coding. The source type dropdown suggests values already used in the
+project while still accepting free text.
+
+##### A note on accuracy
+
+Whisper accuracy depends on audio quality, accent, and model size.
+Always review the transcript before coding. Segment timestamps
+(`[00:00:05]`) let you locate unclear passages in the original recording
+to re-listen and correct.
+
+#### Document memos
+
+Click a document row to open the viewer, then use the **Memo** controls
+to record methodological notes about the source (e.g., “This participant
+spoke quickly; transcript may have minor errors in turns 45-52”).
+
+#### Deleting a document
+
+Click the document’s row and then click **Delete**. You will be asked to
+confirm. The record is soft-deleted – marked inactive rather than
+physically erased. All codings attached to that document are also
+soft-deleted.
+
+------------------------------------------------------------------------
+
+### Chapter 7: The Cases Tab
+
+#### What a case is
+
+A **case** is the unit of analysis in your study – typically a
+participant, but it could be a site, an organisation, or any other
+bounded entity you are comparing. Cases allow you to group documents
+together and attach structured descriptive attributes that you can later
+use for triangulation.
+
+In Researcher A’s study, each case is one participant. They record
+attributes including organisation, role level, age group, working
+arrangement, and months remote.
+
+#### Creating a case
+
+Navigate to the **Cases** tab. In the sidebar, type a name in the
+**Name** field (e.g., “P01”), optionally add a **Memo**, and click **Add
+case**.
+
+#### Attributes sub-panel
+
+Click a case row to open its detail panel. In the **Attributes**
+sub-panel, type a variable name (e.g., `working_arrangement`) and a
+value (e.g., `fully remote`), then click **Set attribute**.
+
+Researcher A adds:
+
+    organisation        = Organisation A
+    role_level          = senior
+    age_group           = 40s+
+    working_arrangement = fully remote
+    months_remote       = 24
+
+Use consistent variable names across all cases. Inconsistent naming
+(e.g., `organisation` for P01 but `org` for P02) breaks the
+triangulation analysis.
+
+To delete an attribute, click the attribute row in the table and
+confirm.
+
+#### Documents sub-panel
+
+In the **Documents** sub-panel, choose a document from the dropdown and
+click **Link**. Click a linked document row to unlink it. A document can
+be linked to multiple cases.
+
+#### Exporting case attributes
+
+Click **Attributes CSV** at the top of the Cases tab. saturate generates
+a wide-format CSV where each row is a case and each column is an
+attribute.
+
+------------------------------------------------------------------------
+
+## Part 3 – Coding
+
+### Chapter 8: The Codebook Tab
+
+#### What codes are
+
+A **code** is a short label you apply to a passage of text to indicate
+that the passage represents a particular concept, theme, or phenomenon.
+
+In Researcher A’s study, early codes include `boundary_blurring`,
+`isolation_felt`, `flexibility_valued`, `manager_unavailability`,
+`home_interruptions`, and `digital_fatigue`.
+
+#### Creating a code
+
+Click the **New Code** button. The creation form has these fields:
+
+- **Name** (required): A short, distinctive label. Underscores
+  recommended over spaces.
+- **Colour**: Click the swatch to open a colour picker.
+- **Definition**: A one-to-two sentence explanation of what this code
+  means. Critical for team consistency.
+- **Criteria**: Notes on when to apply this code versus a similar one.
+- **Memo**: Free-text notes about the code’s development or status.
+- **Parent code**: Select a parent to place this code within a
+  hierarchy.
+- **Level**: Analytic level (e.g., `descriptive`, `interpretive`).
+- **Orientation**: Theoretical orientation (e.g., `phenomenological`).
+- **Weight**: Optional numeric weight for the code.
+
+#### Code hierarchy
+
+saturate supports parent-child hierarchies. Researcher A creates a
+parent code `wellbeing_impact` and beneath it: `isolation_felt`,
+`digital_fatigue`, `anxiety_work_performance`, and
+`positive_affect_flexibility`. Child codes appear indented beneath their
+parent in the codebook table.
+
+A code can only have one parent, but a parent can have any number of
+children.
+
+#### Categories
+
+A **category** is a lateral grouping of codes that cuts across the
+hierarchy. Use categories to group codes from several branches under a
+shared theme (e.g., “Management Relationships” could group codes from
+different branches that all relate to manager behaviour).
+
+#### Importing and exporting a codebook
+
+Click **Import** to load a codebook from CSV. Expected columns: `name`,
+`definition`, `criteria`, `memo`, `parent`, `colour`, `weight`. Any
+missing columns are treated as empty.
+
+Click **Export** to download a CSV of all codes and their metadata.
+Include this as a supplementary file in publications.
+
+#### The Validate button
+
+Click **Validate** to run a consistency check. saturate checks for:
+
+- **Orphan parents**: A code lists a parent that does not exist.
+- **Circular hierarchy**: Code A is an ancestor of Code B while B is an
+  ancestor of A.
+- **Missing definitions**: Codes with no definition text.
+- **Unused codes**: Codes created but not yet applied to any passage.
+
+#### The Snapshots button
+
+Click **Snapshots** to take a named, timestamped record of your codebook
+at a given point in time. Give it a meaningful name (e.g., “Post Phase 1
+fieldwork”).
+
+To compare two snapshots, select both from the list and click **Diff**.
+saturate shows which codes were added, removed, or modified between the
+two points. This documents how your interpretive framework evolved –
+important for rigorous reporting.
+
+#### Code lifecycle: deprecating and merging codes
+
+As your codebook matures you will sometimes need to retire a code or
+fold it into another. Two operations support this:
+
+- **Deprecate**: Marks a code as no longer in active use. It remains
+  visible in history and its codings are preserved, but it is excluded
+  from the code picker during coding.
+- **Merge into**: Reassigns all codings from one or more source codes to
+  a target code, then soft-deletes the sources. Use the **Merge into…**
+  button in the codebook form, or
+  [`qc_merge_codes()`](https://thomaswood.github.io/saturate/reference/qc_merge_codes.md)
+  in the API.
+
+------------------------------------------------------------------------
+
+### Chapter 9: The Coding Tab
+
+#### Opening a document for coding
+
+Navigate to the **Coding** tab. Select a document from the document
+selector. The transcript text appears in the main coding pane with any
+existing highlights.
+
+#### Selecting text to code
+
+Click and drag to select the text you want to code. Release the mouse
+button. A **code picker** dialogue appears – a searchable list of all
+codes in your codebook. Type to filter by name, then click a code to
+apply it. The selection is immediately highlighted in that code’s
+colour.
+
+To apply multiple codes to the same passage, select the same text again
+and choose a different code.
+
+#### How overlapping codes work
+
+Overlapping codes are handled correctly in saturate. The highlighting
+engine calculates colour bands in R before sending the HTML to the
+browser, rather than relying on the browser to manipulate the document
+structure. This means you can have Code A covering an entire sentence,
+Code B covering the first half, and Code C covering the last three
+words, and all three highlights render correctly.
+
+#### Blind mode
+
+The **Blind** button in the navbar hides other coders’ highlights so you
+see only your own work. This allows independent coding without being
+anchored by a colleague’s existing highlights.
+
+Researcher A asks Researcher B to turn Blind mode on before coding any
+document, ensuring their codes reflect their independent interpretation.
+After both have coded a document, Researcher A turns Blind mode off to
+compare their work in the **Compare** tab.
+
+#### Removing a coding
+
+Click a highlighted passage to see a context menu with the code name and
+a **Remove** button. Removing a coding does not affect other codes on
+the same passage.
+
+#### Confidence
+
+When applying a code, you can optionally set a **confidence** value
+(0-100). The default is 100. Use lower values for genuinely ambiguous
+passages. Confidence values can be retrieved via the API for sensitivity
+analysis.
+
+#### Text-to-speech (read aloud)
+
+The coding pane includes a **read-aloud** control bar beneath the
+document selector. Click **play** (the triangle button) to begin reading
+from the current scroll position. The document scrolls to follow along
+and the text cursor tracks the reading position.
+
+You can also start reading from a specific point by clicking anywhere in
+the document text, or by selecting a passage – playback begins from the
+start of your selection.
+
+Click **pause** to suspend reading; click **play** again to resume.
+Click the square **stop** button to end the session and return to the
+beginning.
+
+Voice and speed are controlled in the **Settings** panel under
+**Text-to-speech settings**. The voices available depend on your
+operating system and browser.
+
+------------------------------------------------------------------------
+
+### Chapter 10: Auto-Coding (R API)
+
+Auto-coding is available through the R API only. It applies a code
+automatically to every passage that matches a regular expression.
+
+``` r
+
+# Apply "mentions_flexibility" to every sentence containing "flexible"
+qc_auto_code(
+  proj,
+  code_id     = 12,
+  pattern     = "flexib",
+  ignore_case = TRUE
+)
+```
+
+Review auto-codings after applying them – they are a scanning tool, not
+a substitute for analytical reading. You can remove individual
+auto-codings in the GUI.
+
+------------------------------------------------------------------------
+
+### Chapter 11: Multi-Coder Workflows: Split and Merge
+
+#### Overview
+
+saturate supports file-based collaboration: one researcher holds the
+**master** project file, creates **contributor copies** for team
+members, and consolidates everyone’s work back into the master when
+analysis is complete. No shared server or network drive is required –
+files are exchanged by email, cloud storage, or any other file-transfer
+method.
+
+The workflow has three steps:
+
+1.  **Split**: The lead researcher creates one contributor copy per team
+    member – each a complete, self-contained `.satdb` file – and
+    distributes them.
+2.  **Code**: Each team member opens their copy and codes independently,
+    then returns the file.
+3.  **Merge**: The lead researcher uploads each returned file. saturate
+    adds any new codes, codings, themes, and memos to the master
+    automatically, skipping items that are already there.
+
+#### Splitting a project
+
+Click the **Project** button in the navbar and select the **Split** tab.
+
+**Documents to include:**
+
+- **All documents** – every active document is copied to the contributor
+  file.
+- **Select documents** – choose specific documents from the list. Use
+  this when you want Researcher B to code only a subset of documents for
+  reliability checking.
+
+**Include existing codings:** If unchecked (the default), the
+contributor file contains only the codebook and documents – the coder
+starts fresh. Check this box only when the coder needs to continue or
+review existing work.
+
+Click **Download split project (.satdb)**. Your browser saves a `.satdb`
+file named after the project and today’s date. Send this file to the
+coder.
+
+Researcher A creates a contributor file for Researcher B containing
+Documents 3, 7, and 11 with **Include existing codings** unchecked –
+Researcher B will code those three documents independently, producing a
+separate set of codings for inter-rater reliability analysis.
+
+#### What is in a contributor file
+
+The contributor file contains:
+
+- The complete codebook (all active codes, categories, hierarchies, code
+  relations)
+- All cases and case attributes
+- All themes and theme-code links
+- The selected documents and their metadata
+- Existing codings only if **Include existing codings** was checked
+- Project name, owner, and settings
+
+What is **not** copied: member checks, codebook snapshots, and the
+project lock state.
+
+#### Merging a contributor file
+
+When the coder returns their file, click the **Project** button and
+select the **Merge** tab.
+
+Click **Choose contributor file** and upload the returned file. Then
+click **Preview**.
+
+saturate scans the contributor file and shows what would be imported
+before anything is changed:
+
+    Would import:
+     * 2 new codes
+     * 0 new documents
+     * 47 codings  (3 duplicates will be skipped)
+     * 0 new themes
+     * 1 new memo
+
+Under **On conflict**, choose what happens if the same coding already
+exists in the master:
+
+- **Skip existing** (default): leave the master’s version untouched.
+- **Replace existing**: soft-delete the master’s version and insert the
+  contributor’s.
+
+Click **Merge into project** to confirm. The master project is updated
+immediately.
+
+#### What gets merged
+
+| Data type | Merged? | How duplicates are detected |
+|----|----|----|
+| Codes | Yes – new codes only | Matched by name (case-insensitive) |
+| Code categories | Yes – new only | Matched by name |
+| Documents | Yes – new only | Matched by content hash, then by name |
+| Codings | Yes | Same document + code + start + end + coder |
+| Themes | Yes – new themes only | Matched by name |
+| Project memos | Yes – new only | Same content + author + type |
+| Member checks | **No** | Always kept in the master only |
+| Codebook snapshots | **No** | Not copied or merged |
+
+#### Merging multiple contributor files
+
+Run the Merge step once per contributor file. Subsequent merges
+deduplicate correctly – if two contributors applied the same coding
+independently, it is added on the first merge and skipped on the second.
+
+#### Using the R API
+
+``` r
+
+# Split: create a contributor copy with Documents 3, 7, and 11
+contrib <- qc_split_project(
+  proj,
+  path       = "~/collab/contrib_B_2026-04.satdb",
+  source_ids = c(3L, 7L, 11L)
+)
+qc_close(contrib)
+
+# Merge: import the returned file into master
+result <- qc_merge_project(
+  proj,
+  contributor_path = "~/collab/contrib_B_returned.satdb"
+)
+result$codings_added  # new codings imported
+result$codings_skip   # duplicate codings skipped
+result$codes_added    # new codes propagated from contributor
+```
+
+To import codings from a specific coder only:
+
+``` r
+
+qc_merge_project(
+  proj,
+  contributor_path = "~/collab/contrib_B_returned.satdb",
+  coders           = "Researcher B"
+)
+```
+
+------------------------------------------------------------------------
+
+## Part 4 – Analysis
+
+### Chapter 12: The Compare Tab
+
+#### What the Compare tab is for
+
+The **Compare** tab places two coders’ work on the same document side by
+side, highlights where they agree and disagree, and calculates
+inter-rater reliability statistics.
+
+#### Selecting document and coders
+
+Navigate to the **Compare** tab. Choose the **Document**, **Coder A**,
+and **Coder B** from the selectors at the top.
+
+#### The differences card
+
+The **Differences** card lists every passage where the two coders’ work
+diverges:
+
+- Coder A applied a code that Coder B did not.
+- Coder B applied a code that Coder A did not.
+- Both applied a code to overlapping (but not identical) character
+  ranges.
+
+Click a row to scroll the document view to that passage. Use these
+differences as the basis for discussion and codebook refinement, and
+document your decisions in the Journal.
+
+#### The reliability card
+
+When in **coders** mode, a **Reliability** card appears showing:
+
+- **Cohen’s kappa per code**: How much better than chance the two coders
+  agreed on each code.
+- **Mean kappa**: Average across all codes.
+- **Percentage agreement**: How often both coders made the same
+  decision.
+- **N pairs**: Number of passage-code pairs compared.
+
+Kappa values are colour-coded: green (\> 0.61), yellow (0.41-0.60), red
+(\< 0.40). Codes with poor kappa usually indicate an ambiguous
+definition.
+
+------------------------------------------------------------------------
+
+### Chapter 13: The Themes Tab
+
+#### What a theme is
+
+A **theme** is a higher-level interpretive structure synthesising
+several codes and categories. Where a code is an observation (“this
+passage is about boundary blurring”), a theme is an argument (“remote
+workers experience boundary blurring primarily through temporal rather
+than spatial mechanisms”).
+
+#### Creating a theme
+
+Navigate to the **Themes** tab. Click **New Theme**. Give the theme a
+**Name** and write a substantive **Description**. Researcher A creates
+“Temporal Boundary Erosion”: *“Remote workers describe the boundaries of
+their workday becoming progressively undefined, with evening and weekend
+work normalised through always-on digital communication.”*
+
+#### Linking codes and categories to a theme
+
+Click a theme in the table to open its detail panel. Under **Linked
+codes**, add codes from your codebook. You can also link entire
+categories.
+
+#### Theme excerpts
+
+The **Excerpts** sub-panel shows every coded passage from every document
+tagged with any of the theme’s linked codes – a consolidated view across
+all participants and documents. Filter by coder, document, or case
+attribute to explore how the theme manifests in different subgroups.
+
+#### Exporting a themes report
+
+Click **Export themes report**. saturate generates a structured document
+with one section per theme, containing the description, linked codes,
+and all associated excerpts with source documents and coder names.
+
+------------------------------------------------------------------------
+
+### Chapter 14: The Query Tab
+
+The **Query** tab consolidates eight analytical panels in one place.
+
+#### Coded segments panel
+
+Retrieve all codings matching a combination of codes, documents, and
+coders. Download the results as CSV. This is the fastest way to compile
+all passages tagged with a particular code across your entire corpus.
+
+#### Full-text search panel
+
+Type a search term in the **Search** box. saturate searches the full
+text of all documents and returns every matching passage with
+surrounding context.
+
+**Options:**
+
+- **Regex**: Use regular expression patterns (e.g., `\bflexib\w*\b`
+  matches “flexible”, “flexibility”, “flexibly”).
+- **Case-insensitive**: Usually best left on.
+- **Context window**: Characters of surrounding text shown with each
+  match.
+
+Click **CSV** to download all results.
+
+#### Co-occurrence panel
+
+Shows how frequently pairs of codes appear together in the same document
+or the same overlapping passage. Useful for identifying codes that
+consistently travel together and may belong in the same theme.
+
+#### Saturation curve panel
+
+Plots the cumulative number of distinct codes introduced as documents
+are processed in order. A curve that flattens provides empirical
+evidence of theoretical saturation. See also
+[`qc_saturation_curve()`](https://thomaswood.github.io/saturate/reference/qc_saturation_curve.md)
+in the R API.
+
+#### Triangulation panel
+
+Cross-tabulate your codes against case attributes to reveal patterns
+across participant groups. Select codes or categories and choose a
+**Case attribute** to cross-tabulate against (e.g.,
+`working_arrangement`).
+
+Researcher A finds that `boundary_blurring` appears far more frequently
+in fully-remote participants than hybrid participants, while
+`flexibility_valued` appears at similar rates across both groups.
+
+Click **CSV** to export the triangulation table.
+
+#### Cross-tabulation panel
+
+Produce a code-by-document frequency table. Each cell contains the
+number of codings of a given code in a given document. Useful for
+reporting patterns across cases.
+
+#### Graph panel
+
+The **Graph** panel renders a network visualisation with three modes
+selectable from the dropdown:
+
+- **Co-occurrence network**: Codes as nodes; edges connect codes that
+  appear together in the same passage.
+- **Bipartite network**: Documents and codes as nodes; edges represent
+  coding links.
+- **Similarity network**: Documents as nodes; edges connect documents
+  that share codes.
+
+Drag nodes to rearrange, zoom in/out, and hover to see counts.
+
+#### Word cloud panel
+
+Generate a word cloud from your corpus or from the excerpts of a
+specific code. Two source options are available:
+
+- **All codes – sized by coding count**: Each code label is shown, sized
+  by how many times it has been applied.
+- **Single code – words in excerpts**: Shows the most frequent words
+  found within all passages tagged with a chosen code.
+
+Click **Generate** to render the cloud. Click **Download PNG** to save
+it.
+
+------------------------------------------------------------------------
+
+### Chapter 15: Saturation Analysis (R API)
+
+Theoretical saturation is the point at which new data stops producing
+new codes. Demonstrating saturation is increasingly expected in
+published qualitative research.
+
+``` r
+
+curve <- qc_saturation_curve(proj)
+plot(curve)
+```
+
+The function works through your documents in import order and counts how
+many new codes appear with each successive document. The curve typically
+rises steeply for the first few documents and then flattens.
+
+Researcher A’s curve flattens after document 9, providing empirical
+evidence of saturation included as a supplementary figure. The
+saturation curve is a descriptive tool – use it alongside analytical
+judgement and reflexive writing.
+
+------------------------------------------------------------------------
+
+## Part 5 – Quality and Output
+
+### Chapter 16: The Members Tab
+
+#### What member checking is
+
+Member checking returns a summary of your findings to participants for
+them to confirm, correct, or challenge. This strengthens credibility and
+trustworthiness by ensuring your interpretations are recognisable to the
+people who provided the data.
+
+#### Creating a member check
+
+Navigate to the **Members** tab and click **New member check**. Select a
+document and a participant label. Optionally restrict to specific codes.
+
+#### The check workflow
+
+Each member check tracks a set of coded segments for one participant.
+Items move through these statuses:
+
+| Status        | Meaning                                     |
+|---------------|---------------------------------------------|
+| **pending**   | No response recorded yet                    |
+| **confirmed** | Participant confirmed this interpretation   |
+| **disputed**  | Participant challenged this interpretation  |
+| **partial**   | Mixed – some items confirmed, some disputed |
+
+#### Recording a response
+
+Click a check row in the table, enter the participant’s response text,
+and choose a status for each coded item. Click **Save**.
+
+#### Exporting a member check
+
+Click **Download** on a check row to export a formatted HTML or
+plain-text document listing the coded passages. Send this document to
+the participant.
+
+------------------------------------------------------------------------
+
+### Chapter 17: The Journal Tab
+
+#### Why the journal matters
+
+Reflexivity – examining how your own perspective affects the research –
+is not optional in rigorous qualitative work. The **Journal** tab
+provides a dedicated, integrated space for this writing. Entries are
+date-stamped, attributed to the active coder, categorised by type,
+searchable, and exportable.
+
+#### The five entry types
+
+| Type | When to use it |
+|----|----|
+| **Analytical** | Interpretive insights, emerging ideas, code development reasoning |
+| **Reflexivity** | How your position or experiences may be shaping the analysis |
+| **Decision** | A specific analytical or methodological choice and why you made it |
+| **Methodological** | Notes on procedures, protocol adaptations, sampling decisions |
+| **Other** | Anything that does not fit the above |
+
+#### Writing an entry
+
+Navigate to the **Journal** tab. Select an entry type from the sidebar
+dropdown, write your entry in the text area, and click **Save entry**.
+
+#### Filtering and searching
+
+Use the type filter dropdown and the search box in the card header to
+find specific entries – useful when writing your methods section and
+retrieving all decisions about a particular code.
+
+#### Exporting
+
+- **Export DOCX/HTML/TXT**: A readable formatted document, suitable for
+  a reflexive appendix.
+- **Export CSV**: One row per entry with date, type, content, and
+  author.
+
+------------------------------------------------------------------------
+
+### Chapter 18: The Export Tab
+
+Navigate to the **Export** tab for structured data export:
+
+- **Analytical themes report**: One section per theme with description,
+  linked codes, and all associated excerpts. Available as DOCX, HTML,
+  TXT, or JSON.
+- **Full codebook export**: All codes with definitions, criteria, memos,
+  hierarchy, and colours. Available as DOCX, XLSX, CSV, HTML, or JSON.
+- **Raw table export**: Any internal table (codings, codes, sources,
+  cases, etc.) as CSV, JSON, or XLSX.
+
+------------------------------------------------------------------------
+
+### Chapter 19: The Audit Tab
+
+#### What the audit log is
+
+The **Audit** tab has two views:
+
+- **Code history**: A complete, append-only record of every change to
+  codes – create, update (name, colour, definition, weight, parent), and
+  delete operations. Records the timestamp, coder, field changed, old
+  value, and new value. This log cannot be edited or deleted.
+- **Coding audit**: A log of every coding operation – when each coded
+  segment was created, by whom, and whether it was later deleted.
+
+#### Why it matters
+
+The audit log allows you to:
+
+- Report when you introduced a particular code.
+- Confirm whether a code definition changed after reliability coding was
+  completed.
+- Count how many codes you refined between project phases.
+
+Both tables are sortable and filterable by timestamp, coder, and
+operation type.
+
+------------------------------------------------------------------------
+
+### Chapter 20: The Help Tab
+
+The **Help** tab contains built-in reference documentation organised by
+tab and feature area. Navigate to it at any time to look up how a
+specific feature works or what the expected input format is for a given
+field.
+
+------------------------------------------------------------------------
+
+## Part 6 – R API Reference
+
+The R API gives you programmatic access to everything in the project
+database, enables automation and batch processing, and connects
+saturate’s data to the full R ecosystem.
+
+### Chapter 21: Core Project Functions
+
+#### `qc_new()` – Create a project
+
+``` r
+
+proj <- qc_new(
+  path  = "~/studies/my_study.satdb",
+  name  = "My Study Title",
+  owner = "Researcher Name"
+)
+```
+
+#### `qc_open()` – Open an existing project
+
+``` r
+
+proj <- qc_open("~/studies/my_study.satdb")
+```
+
+#### `qc_close()` – Close a project
+
+``` r
+
+qc_close(proj)
+```
+
+Always call this when you finish a session.
+
+#### `qc_project_info()` – Read project metadata
+
+``` r
+
+info <- qc_project_info(proj)
+info$name   # project name
+info$owner  # owner
+```
+
+#### `qc_lock_project()` / `qc_unlock_project()` – Protect a project
+
+Locking prevents any write operations. Use this after finalising a
+dataset to guard against accidental changes.
+
+``` r
+
+qc_lock_project(proj)    # prevent writes
+qc_is_locked(proj)       # TRUE
+qc_unlock_project(proj)  # re-enable writes
+```
+
+#### `qc_split_project()` – Create a contributor copy
+
+Creates a new standalone `.satdb` file containing the codebook, cases,
+themes, and a subset (or all) of documents. The contributor file is
+completely independent – it can be coded offline and on a different
+computer.
+
+``` r
+
+contrib <- qc_split_project(
+  proj,
+  path            = "~/collab/contrib_B.satdb",
+  source_ids      = c(3L, 7L, 11L),  # NULL copies all documents
+  include_codings = FALSE,
+  overwrite       = FALSE
+)
+qc_close(contrib)
+```
+
+#### `qc_merge_project()` – Import a contributor’s work
+
+``` r
+
+result <- qc_merge_project(
+  proj,
+  contributor_path = "~/collab/contrib_B_returned.satdb",
+  on_conflict      = "skip",   # or "replace"
+  coders           = NULL      # or e.g. c("Researcher B")
+)
+
+result$codes_added    # new codes inserted into master
+result$sources_added  # new documents inserted into master
+result$codings_added  # new codings inserted
+result$codings_skip   # duplicate codings skipped
+result$themes_added   # new themes inserted
+result$memos_added    # new journal entries inserted
+```
+
+------------------------------------------------------------------------
+
+### Chapter 22: Documents
+
+#### `qc_import_document()` – Import a single document
+
+``` r
+
+qc_import_document(
+  proj,
+  path        = "~/transcripts/P01_OrgA.txt",
+  name        = "P01 -- Organisation A",
+  source_type = "interview",
+  language    = "en-GB"
+)
+```
+
+Pass `content = "..."` instead of `path` to import text directly from a
+character scalar.
+
+#### `qc_import_batch()` – Batch import from a folder or table
+
+Import an entire directory of text files, or a CSV/TSV/Excel file with
+one document per row:
+
+``` r
+
+# From a directory of .txt files
+qc_import_batch(proj, path = "~/transcripts/", format = "dir")
+
+# From a CSV file
+qc_import_batch(
+  proj,
+  path         = "~/data/survey_responses.csv",
+  format       = "csv",
+  text_col     = "response",
+  name_col     = "respondent_id",
+  metadata_cols = c("age_group", "region")
+)
+```
+
+#### `qc_list_documents()` – List all documents
+
+``` r
+
+docs <- qc_list_documents(proj)
+```
+
+Returns columns: `id`, `name`, `source_type`, character count,
+`n_codings`, `n_coders`.
+
+#### `qc_get_document()` – Retrieve a single document with its text
+
+``` r
+
+doc <- qc_get_document(proj, id = 3)
+cat(doc$content)
+```
+
+#### `qc_segment_document()` – Split a document into segments
+
+``` r
+
+qc_segment_document(
+  proj,
+  source_id   = 3,
+  method      = "paragraph",
+  keep_parent = TRUE
+)
+```
+
+`method` can be `"paragraph"` (split on blank lines), `"sentence"`, or a
+custom regex pattern. The original document is kept by default; set
+`keep_parent = FALSE` to replace it with the segments.
+
+#### `qc_detect_duplicates()` – Find near-duplicate documents
+
+``` r
+
+dups <- qc_detect_duplicates(proj, threshold = 0.85)
+```
+
+Returns pairs of documents with Jaccard similarity above the threshold.
+
+#### `qc_list_versions()` / `qc_restore_version()` – Document version history
+
+saturate preserves every version of a document’s text when content is
+edited.
+
+``` r
+
+versions <- qc_list_versions(proj, source_id = 3)
+qc_restore_version(proj, source_id = 3, version_id = 1)
+```
+
+------------------------------------------------------------------------
+
+### Chapter 23: Codes and the Codebook
+
+#### `qc_add_code()` – Create a code
+
+``` r
+
+new_code <- qc_add_code(
+  proj,
+  name       = "boundary_blurring",
+  color      = "#4A90D9",
+  definition = "Subjective experience of work and personal time merging.",
+  weight     = 1.0
+)
+code_id <- new_code$id
+```
+
+#### `qc_update_code()` – Update a code
+
+``` r
+
+qc_update_code(
+  proj,
+  id         = 7,
+  definition = "Updated definition after team discussion on 2026-02-14."
+)
+```
+
+Only changed fields are written to the audit log.
+
+#### `qc_list_codes()` – List all codes
+
+``` r
+
+codes <- qc_list_codes(proj)
+```
+
+Returns columns including `id`, `name`, `color`, `definition`,
+`criteria`, `parent_id`, `depth`, `n_codings`, `categories`, `weight`,
+`weight_description`, `level`, `orientation`, `deprecated`.
+
+#### `qc_deprecate_code()` / `qc_undeprecate_code()` – Code lifecycle
+
+``` r
+
+qc_deprecate_code(proj, code_id = 7, reason = "Merged into isolation_felt.")
+qc_undeprecate_code(proj, code_id = 7)
+```
+
+Deprecated codes are hidden from the code picker but their codings are
+preserved.
+
+#### `qc_merge_codes()` – Merge codes
+
+Reassigns all codings from one or more source codes to a target code,
+then soft-deletes the sources:
+
+``` r
+
+qc_merge_codes(
+  proj,
+  from_ids = c(12L, 15L),
+  into_id  = 7L
+)
+```
+
+#### `qc_split_code()` – Split a code
+
+Creates a new child code and optionally moves selected codings to it:
+
+``` r
+
+qc_split_code(
+  proj,
+  code_id  = 7,
+  new_name = "boundary_blurring_temporal",
+  color    = "#2ECC71"
+)
+```
+
+#### `qc_add_code_relation()` – Define a relationship between codes
+
+``` r
+
+qc_add_code_relation(
+  proj,
+  code_id_1   = 7,
+  code_id_2   = 12,
+  relation    = "causes"
+)
+```
+
+Relations are non-hierarchical (distinct from parent-child) and can
+carry any label.
+
+#### `qc_snapshot_codebook()` / `qc_diff_snapshots()` – Versioning
+
+``` r
+
+qc_snapshot_codebook(proj, name = "Post Phase 1 fieldwork")
+
+diff <- qc_diff_snapshots(
+  proj,
+  snap_a = "Initial codebook",
+  snap_b = "Post Phase 1 fieldwork"
+)
+```
+
+#### `qc_validate_codebook()` – Validate
+
+``` r
+
+issues <- qc_validate_codebook(proj)
+```
+
+------------------------------------------------------------------------
+
+### Chapter 24: Codings
+
+#### `qc_add_coding()` – Apply a code to a passage
+
+``` r
+
+qc_add_coding(
+  proj,
+  source_id = 3,
+  code_id   = 7,
+  selfirst  = 1452,
+  selast    = 1598,
+  coder     = "Researcher A"
+)
+```
+
+`selfirst` and `selast` are 1-based inclusive character positions.
+`substr(content, selfirst, selast)` extracts the exact coded passage.
+
+#### `qc_list_codings()` – List codings
+
+``` r
+
+all_codings     <- qc_list_codings(proj)
+coder_a_codings <- qc_list_codings(proj, coder = "Researcher A")
+doc3_codings    <- qc_list_codings(proj, source_id = 3)
+```
+
+#### `qc_get_coded_segments()` – Retrieve coded text with context
+
+``` r
+
+segments <- qc_get_coded_segments(
+  proj,
+  code_name     = "boundary_blurring",
+  context_chars = 100
+)
+```
+
+#### `qc_update_coding_confidence()` – Update confidence
+
+``` r
+
+qc_update_coding_confidence(proj, coding_id = 42, confidence = 75)
+```
+
+#### `qc_uncoded_segments()` – Find uncoded passages
+
+``` r
+
+uncoded <- qc_uncoded_segments(proj, source_id = 3)
+```
+
+Returns character ranges within the document that have no coding
+applied.
+
+#### `qc_disputed_segments()` – Find inter-coder disagreements
+
+``` r
+
+disputed <- qc_disputed_segments(proj, source_id = 3)
+```
+
+Returns passages where two or more coders’ coding boundaries do not
+align.
+
+------------------------------------------------------------------------
+
+### Chapter 25: Annotations and Excerpts
+
+#### Annotations
+
+Annotations are position-linked notes attached to a specific character
+range in a document, but distinct from codings – they do not belong to a
+code and are not counted in frequency analyses.
+
+``` r
+
+qc_add_annotation(
+  proj,
+  source_id = 3,
+  selfirst  = 500,
+  selast    = 600,
+  memo      = "Interesting contradiction with P07's account.",
+  coder     = "Researcher A"
+)
+
+annotations <- qc_list_annotations(proj, source_id = 3)
+```
+
+#### Excerpts
+
+Excerpts are labelled passages retained for their illustrative value,
+independent of any code.
+
+``` r
+
+qc_add_excerpt(
+  proj,
+  source_id = 3,
+  selfirst  = 1200,
+  selast    = 1350,
+  memo      = "Vivid description of the blurred boundary experience."
+)
+
+excerpts <- qc_list_excerpts(proj, source_id = 3)
+```
+
+------------------------------------------------------------------------
+
+### Chapter 26: Analysis Functions
+
+#### `qc_code_summary()` – Code frequency summary
+
+``` r
+
+summary_df <- qc_code_summary(proj)
+```
+
+One row per code: total count, documents, coders, mean coding length.
+
+#### `qc_code_cooccurrence()` – Co-occurrence matrix
+
+``` r
+
+cooc <- qc_code_cooccurrence(proj)
+```
+
+Returns a square matrix of code-by-code co-occurrence counts.
+
+#### `qc_code_metrics()` – Dispersion and keyness
+
+``` r
+
+metrics <- qc_code_metrics(proj)
+```
+
+Returns Gries’ deviation of proportions (DP) and related metrics per
+code.
+
+#### `qc_code_by_unit()` – Code frequency by unit
+
+``` r
+
+by_unit <- qc_code_by_unit(proj, unit = "document")
+```
+
+Returns a code-by-document frequency table.
+
+#### `qc_cross_tabulate()` – Codes by case attribute
+
+``` r
+
+tab <- qc_cross_tabulate(proj, attribute = "working_arrangement")
+```
+
+#### `qc_temporal_analysis()` – Coding patterns over time
+
+``` r
+
+temporal <- qc_temporal_analysis(proj, period = "month")
+plot(temporal)
+```
+
+#### `qc_proximity_query()` – Find co-occurring passages
+
+``` r
+
+prox <- qc_proximity_query(
+  proj,
+  code_id_a = 7,
+  code_id_b = 12,
+  max_gap   = 200
+)
+```
+
+Returns codings where code A and code B appear within `max_gap`
+characters of each other.
+
+#### `qc_triangulate()` – Tabulate codes against case attributes
+
+``` r
+
+tri <- qc_triangulate(proj, attribute = "working_arrangement")
+```
+
+#### `qc_agreement()` – Pairwise coder agreement
+
+``` r
+
+agreement <- qc_agreement(
+  proj,
+  coder_a = "Researcher A",
+  coder_b = "Researcher B"
+)
+```
+
+Returns kappa, percentage agreement, and comparison unit count per code.
+
+#### `qc_agreement_matrix()` – Multi-coder agreement matrix
+
+``` r
+
+mat <- qc_agreement_matrix(proj)
+```
+
+Coder-by-coder matrix of mean kappa values.
+
+#### `qc_krippendorff()` – Krippendorff’s alpha
+
+``` r
+
+alpha <- qc_krippendorff(proj, level = "nominal")
+```
+
+Handles multiple coders, missing data, and different measurement levels
+(`"nominal"`, `"ordinal"`, `"interval"`). Values above 0.80 are
+generally accepted.
+
+#### `qc_saturation_curve()` – Saturation curve
+
+``` r
+
+curve <- qc_saturation_curve(proj)
+plot(curve)
+```
+
+------------------------------------------------------------------------
+
+### Chapter 27: Visualisation Functions
+
+All plot functions return a `ggplot2` object and require `ggplot2` to be
+installed.
+
+#### `qc_plot_codes()` – Code frequency bar chart
+
+``` r
+
+qc_plot_codes(proj, top_n = 20)
+```
+
+#### `qc_plot_cooccurrence()` – Co-occurrence heatmap
+
+``` r
+
+qc_plot_cooccurrence(proj)
+```
+
+#### `qc_plot_overlap()` – Coding overlap chart
+
+``` r
+
+qc_plot_overlap(proj, source_id = 3)
+```
+
+Shows how much each pair of codes overlaps within a document.
+
+#### `qc_plot_timeline()` – Coding timeline
+
+``` r
+
+qc_plot_timeline(proj)
+```
+
+Plots coding activity over time.
+
+#### `qc_plot_saturation()` – Saturation curve plot
+
+``` r
+
+qc_plot_saturation(proj)
+```
+
+#### `qc_plot_network()` – Code network graph
+
+``` r
+
+qc_plot_network(proj)
+```
+
+Requires `igraph` and `ggraph`.
+
+#### `qc_as_igraph()` – Export as igraph object
+
+``` r
+
+g <- qc_as_igraph(proj)
+```
+
+Returns the code co-occurrence network as an `igraph` object for custom
+network analysis.
+
+#### `qc_cb_palette()` – Colour-blind-safe palette
+
+``` r
+
+colours <- qc_cb_palette(n = 8, type = "okabe_ito")
+```
+
+Returns `n` hex colour codes from a perceptually-distinct,
+colour-blind-safe palette. Types: `"okabe_ito"` (default), `"wong"`,
+`"tol"`.
+
+------------------------------------------------------------------------
+
+### Chapter 28: Cases, Memos, and Export
+
+#### `qc_add_case()` – Create a case
+
+``` r
+
+case    <- qc_add_case(proj, name = "P01", memo = "Senior developer, Organisation A.")
+case_id <- case$id
+```
+
+#### `qc_set_case_attribute()` – Set a case attribute
+
+``` r
+
+qc_set_case_attribute(
+  proj,
+  case_id  = 1,
+  variable = "working_arrangement",
+  value    = "fully remote"
+)
+```
+
+Setting an attribute that already exists updates the value.
+
+#### `qc_case_attributes_wide()` – Export case attributes
+
+``` r
+
+attrs <- qc_case_attributes_wide(proj)
+```
+
+Returns a wide data frame: one row per case, one column per attribute.
+
+#### `qc_add_project_memo()` – Add a journal entry
+
+``` r
+
+qc_add_project_memo(
+  proj,
+  content    = "Ethical approval granted by Faculty Ethics Committee.",
+  type       = "methodological",
+  created_by = "Researcher A"
+)
+```
+
+Valid `type` values: `"analytical"`, `"reflexivity"`, `"decision"`,
+`"methodological"`, `"other"`.
+
+#### `qc_list_project_memos()` – List journal entries
+
+``` r
+
+memos <- qc_list_project_memos(proj)
+```
+
+#### `qc_export_themes_report()` – Export analytical themes report
+
+``` r
+
+qc_export_themes_report(
+  proj,
+  format      = "docx",
+  output_path = "~/exports/themes_report.docx"
+)
+```
+
+Formats: `"docx"`, `"html"`, `"txt"`, `"json"`.
+
+#### `qc_export_codebook()` – Export codebook summary
+
+``` r
+
+qc_export_codebook(
+  proj,
+  format               = "xlsx",
+  include_definitions  = TRUE,
+  include_criteria     = TRUE,
+  include_examples     = TRUE,
+  n_examples           = 3,
+  output_path          = "~/exports/codebook.xlsx"
+)
+```
+
+Formats: `"docx"`, `"xlsx"`, `"csv"`, `"json"`, `"html"`.
+
+#### `qc_export_project_data()` – Export raw tables
+
+``` r
+
+qc_export_project_data(
+  proj,
+  table_name  = "codings",
+  format      = "csv",
+  output_path = "~/exports/codings.csv"
+)
+```
+
+#### `qc_summary_report()` – Generate a summary report
+
+``` r
+
+qc_summary_report(
+  proj,
+  path   = "~/exports/project_summary.txt",
+  format = "text"
+)
+```
+
+------------------------------------------------------------------------
+
+## Appendices
+
+### Appendix A: Glossary
+
+**Annotation**: A position-linked note attached to a character range in
+a document, distinct from a coding. Annotations are not counted in
+frequency analyses.
+
+**Blind mode**: A setting in the Coding tab that hides other coders’
+highlights, allowing independent coding.
+
+**Case**: A unit of analysis – typically a participant, site, or
+organisation. Cases can have structured attributes and be linked to
+documents.
+
+**Category**: A lateral grouping of codes that cuts across the code
+hierarchy.
+
+**Coder**: Any person who applies codes to passages. Identified by name
+via profiles.
+
+**Coding**: The act of attaching a code to a passage of text; also
+refers to a specific instance of that attachment.
+
+**Cohen’s kappa**: A statistic measuring inter-rater agreement,
+corrected for chance. Values: below 0.40 = poor; 0.41-0.60 = moderate;
+0.61-0.80 = good; above 0.80 = very good.
+
+**Contributor file**: A copy of a project created with
+[`qc_split_project()`](https://thomaswood.github.io/saturate/reference/qc_split_project.md)
+and sent to a coder for independent analysis.
+
+**Excerpt**: A labelled passage retained for its illustrative value,
+independent of any code.
+
+**Krippendorff’s alpha**: A reliability coefficient handling multiple
+coders, missing data, and different measurement levels. Values above
+0.80 are generally accepted.
+
+**Master file**: The central project file managed by the lead
+researcher.
+
+**Member check**: Returning a summary of your findings or interpretation
+to a participant for their feedback.
+
+**Merge**: Importing new codes, codings, themes, and memos from a
+contributor file into the master project.
+
+**Saturation**: The point at which new data stops producing new codes or
+insights.
+
+**selfirst / selast**: 1-based inclusive character positions of a
+coding. `substr(content, selfirst, selast)` extracts the coded passage.
+
+**Split**: Creating a standalone copy of a project for a coder to work
+in independently.
+
+**Theme**: A higher-level interpretive synthesis of multiple codes and
+categories – an analytical argument or finding.
+
+------------------------------------------------------------------------
+
+### Appendix B: Keyboard Shortcuts and Workflow Tips
+
+All shortcuts below are active in the **Coding tab** whenever focus is
+not inside a text field, dropdown, or open modal. Press **?** at any
+time to show the in-app shortcut reference.
+
+#### Coding shortcuts
+
+| Key | Action |
+|----|----|
+| **Enter** | Apply the currently selected code to the selected text |
+| **1** – **9** | Select the Nth code in the picker *and* apply it immediately – no Enter needed |
+| **/** | Focus the code search box |
+| **m** | Open the edit modal for the most recently applied coding (adjust memo or confidence) |
+| **r** | Remove the most recently applied coding |
+| **Esc** | Clear the current text selection and dismiss the code picker |
+
+#### Navigation shortcuts
+
+| Key       | Action                                                     |
+|-----------|------------------------------------------------------------|
+| **n**     | Next uncoded segment within the current document           |
+| **p**     | Previous uncoded segment within the current document       |
+| **d**     | Next disputed or draft segment within the current document |
+| **\]**    | Next document in the list                                  |
+| **\[**    | Previous document in the list                              |
+| **Alt+1** | Switch to the Documents tab                                |
+| **Alt+2** | Switch to the Coding tab                                   |
+| **Alt+3** | Switch to the Compare tab                                  |
+| **Alt+4** | Switch to the Codebook tab                                 |
+| **Alt+5** | Switch to the Themes tab                                   |
+| **Alt+6** | Switch to the Query tab                                    |
+| **Alt+7** | Switch to the Cases tab                                    |
+| **Alt+8** | Switch to the Journal tab                                  |
+
+#### Read-aloud shortcuts
+
+| Key | Action |
+|----|----|
+| **Space** | Play / pause read-aloud (starts from click point, scroll position, or beginning) |
+| **x** | Stop read-aloud and reset to the beginning |
+
+#### View shortcuts
+
+| Key   | Action                                                             |
+|-------|--------------------------------------------------------------------|
+| **b** | Toggle blind mode on/off                                           |
+| **c** | Toggle colour-blind highlight mode (solid fill vs border outlines) |
+| **l** | Toggle line numbers                                                |
+| **?** | Open the keyboard shortcuts reference modal                        |
+
+#### Any-tab shortcuts
+
+These work regardless of which tab is active, as long as the cursor is
+in the relevant field.
+
+| Key | Action |
+|----|----|
+| **Ctrl+Enter** in the Journal memo field | Save the current journal entry |
+| **Ctrl+Enter** in the Codebook code name field | Add or save the current code |
+| **Ctrl+Enter** in the Cases name field | Add the current case |
+
+On macOS, **Cmd+Enter** works in place of **Ctrl+Enter** for the form
+submit shortcuts.
+
+#### Mouse interactions in the document pane
+
+| Interaction | Action |
+|----|----|
+| Click and drag | Select a text passage; the code picker opens on release |
+| Click on a highlight | Open the edit/remove panel for that coding |
+| Click anywhere (no drag) | Set the read-aloud start point; a marker line appears at that position |
+| Click a line number | Start read-aloud from that line (requires **Show line numbers** to be on) |
+| Select text, then press **Space** | Reads only the selected passage aloud |
+
+#### Shortcut scope and limitations
+
+- Letter shortcuts (**n**, **p**, **m**, **r**, etc.) are suppressed
+  when any text input, dropdown, or SELECT element has focus – type
+  freely in the code search box and memo fields without accidentally
+  triggering them.
+- All Coding-tab shortcuts are suppressed when any modal dialogue is
+  open.
+- The digit shortcuts (**1**–**9**) apply the Nth code from the
+  *filtered* list, so typing a few letters in the code search box first
+  narrows the list before you press the digit.
+- **m** and **r** require a coding to have been applied in the current
+  session; they do nothing if no coding has been made yet.
+- **Space** prevents the default page-scroll behaviour while in the
+  Coding tab; use the mouse wheel or trackpad to scroll instead.
+- **Alt+digit** tab switching is suppressed when any input field has
+  focus, so it will not interfere with typing.
+
+#### Workflow tips
+
+**Code a document fully before moving to the next.** Reading each
+document completely maintains context and reduces the risk of missing
+important passages.
+
+**Write a journal entry after every analytical session.** Even a
+two-sentence note about what felt uncertain or what you decided captures
+reasoning that is easy to forget.
+
+**Use provisional codes freely.** You can always merge, rename, or
+deprecate codes. A codebook with 60 codes at the end of first-pass
+coding is normal. The Validate button identifies unused and orphan
+codes.
+
+**Run
+[`qc_validate_codebook()`](https://thomaswood.github.io/saturate/reference/qc_validate_codebook.md)
+before reliability coding begins.** Missing definitions and circular
+hierarchies are sources of coder confusion – fix them first.
+
+**Take a codebook snapshot at major milestones.** Before Phase 2, before
+submission, and after reviewer feedback are all good moments.
+
+**Back up your `.satdb` file before any bulk auto-code operation.**
+Auto-code creates many codings at once; if you apply the wrong pattern,
+restoring a backup is faster than removing hundreds of codings.
+
+**Keep attribute names consistent across cases.** `organisation` and
+`org` are treated as different variables.
+
+**When using split/merge, keep the master file closed while contributors
+are coding.** There is no requirement to do so, but editing the codebook
+in the master while a contributor has a copy can cause name conflicts on
+merge.
+
+**Lock the project after finalising a dataset.**
+[`qc_lock_project()`](https://thomaswood.github.io/saturate/reference/qc_lock_project.md)
+prevents accidental writes during analysis or writing-up.
+
+------------------------------------------------------------------------
+
+### Appendix C: Troubleshooting
+
+#### “Cannot open project – file is already locked”
+
+Another R session has the file open. Find it and run `qc_close(proj)`,
+or close that R session. The lock releases automatically when the
+process terminates; restart your computer if it persists.
+
+#### DuckDB file on a network drive
+
+Network filesystem latency can cause slow performance or intermittent
+errors. Work from a local copy and use cloud sync for backup. Never open
+the file from two machines simultaneously.
+
+#### “Accidentally deleted a code – can I get it back?”
+
+Yes. saturate never physically deletes data. Restore the soft-deleted
+code via the R API:
+
+``` r
+
+con <- DBI::dbConnect(duckdb::duckdb(), "path/to/study.satdb")
+DBI::dbExecute(con, "UPDATE codes SET status = 1 WHERE name = 'your_code_name'")
+DBI::dbDisconnect(con)
+```
+
+Then reconnect with
+[`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md).
+Codings attached to the code can be restored similarly by updating the
+`codings` table.
+
+#### Import fails – unsupported file type
+
+Supported extensions are `.txt`, `.docx`, `.pdf`, `.csv`. Convert
+`.doc`, `.odt`, or `.rtf` files to `.docx` or `.txt` before importing.
+For scanned PDFs, run OCR first.
+
+#### Stopping the app causes R to crash on Windows
+
+Use the **Quit** button in the navbar instead of **Ctrl+C**. The button
+calls [`shiny::stopApp()`](https://rdrr.io/pkg/shiny/man/stopApp.html),
+which unwinds cleanly. Pressing **Ctrl+C** sends a Windows BREAK signal
+that can crash Fortran BLAS/LAPACK threads loaded by numeric packages.
+
+#### The Shiny app shows a blank screen or error
+
+Stop the app via the **Quit** button, run `devtools::load_all()` if
+working from source, and relaunch with `shiny_saturate(proj)`. Try a
+different browser if the problem persists.
+
+#### “Transcription failed: unused argument”
+
+Your installed version of `whisper` does not recognise one of the
+arguments saturate is passing. Update to the latest version:
+
+``` r
+
+install.packages("whisper")
+```
+
+#### “Microphone access denied”
+
+The browser blocked microphone access. In Chrome or Edge, click the
+camera/lock icon in the address bar, set **Microphone** to **Allow**,
+then reload the page. In Firefox, allow the permission in the pop-up
+that appears when you first click **Record**.
+
+#### Timestamps show `[00:00:00]` for every segment
+
+This usually means the audio was very short or whisper returned only one
+segment. It can also happen when the model has trouble detecting speech
+pauses. Try a larger model (`base` or `small`) or record a longer
+sample.
+
+#### “Maximum upload size exceeded” when merging a contributor file
+
+The default Shiny upload limit is 5 MB. Raise it by passing
+`max_upload_mb` to
+[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md):
+
+``` r
+
+shiny_saturate(proj, max_upload_mb = 500L)
+```
+
+The default when launching with
+[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+is already 500 MB, so this error should not appear unless your project
+file is unusually large.
+
+------------------------------------------------------------------------
+
+*End of saturate User Guide – Version 0.1.0*
