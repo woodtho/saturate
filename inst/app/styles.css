@@ -2482,17 +2482,43 @@ html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
 
 /* ---- Recorder UI ---------------------------------------------------------- */
 .qc-recorder {
-  padding: .75rem;
+  padding: .85rem;
   border-radius: 8px;
-  background: var(--sat-surface-card);
+  background: color-mix(in srgb, var(--sat-surface-card) 82%, var(--sat-white));
   border: 1px solid var(--sat-border);
 }
 .qc-rec-controls {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: .6rem;
   flex-wrap: wrap;
   margin-bottom: .6rem;
+}
+.qc-rec-controls .btn,
+.qc-audio-controls .btn {
+  border-radius: 6px;
+}
+.qc-rec-start {
+  background: var(--sat-white) !important;
+  color: var(--sat-danger) !important;
+  border-color: var(--sat-danger) !important;
+}
+.qc-rec-start:hover,
+.qc-rec-start:focus {
+  color: var(--sat-primary-fg) !important;
+  background: var(--sat-danger) !important;
+  border-color: var(--sat-danger) !important;
+}
+.qc-rec-stop.btn-secondary {
+  color: var(--sat-text-label);
+  background: var(--sat-white);
+  border-color: var(--sat-border);
+}
+.qc-rec-stop.btn-secondary:hover,
+.qc-rec-stop.btn-secondary:focus {
+  color: var(--sat-selected-fg);
+  background: var(--sat-hover-bg);
+  border-color: var(--sat-button-alt);
 }
 .qc-rec-timer {
   font-size: 1rem;
@@ -2508,14 +2534,47 @@ html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
   display: block;
   height: 48px;
   border-radius: 4px;
-  background: var(--sat-bg);
+  background: var(--sat-white);
   border: 1px solid var(--sat-border);
 }
-.qc-audio-player {
-  padding: .65rem .75rem;
+.qc-audio-upload {
+  padding: .85rem;
   border-radius: 8px;
-  background: var(--sat-surface-card);
+  background: color-mix(in srgb, var(--sat-surface-card) 82%, var(--sat-white));
   border: 1px solid var(--sat-border);
+}
+.qc-audio-upload .form-group,
+.qc-audio-upload .mb-3 {
+  margin-bottom: 0 !important;
+}
+.qc-audio-player {
+  padding: .7rem .85rem .85rem;
+  border-radius: 8px;
+  background: var(--sat-white);
+  border: 1px solid var(--sat-border);
+  box-shadow: 0 1px 0 var(--sat-border-row);
+}
+.qc-audio-player-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .55rem;
+}
+.qc-audio-player-title {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--sat-text-label);
+  font-size: .84rem;
+  font-weight: 700;
+}
+.qc-audio-status {
+  min-width: 0;
+  color: var(--sat-text-muted);
+  font-size: .78rem;
+  line-height: 1.2;
+  text-align: right;
 }
 .qc-audio-controls {
   display: grid;
@@ -2531,6 +2590,17 @@ html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
   align-items: center;
   justify-content: center;
 }
+.qc-audio-player--ready {
+  border-color: color-mix(in srgb, var(--sat-button-alt) 38%, var(--sat-border));
+}
+.qc-audio-player--ready .qc-audio-status {
+  color: var(--sat-button-alt-hover);
+}
+.qc-audio-player--playing .qc-audio-play {
+  color: var(--sat-button-alt-fg) !important;
+  background: var(--sat-button-alt) !important;
+  border-color: var(--sat-button-alt) !important;
+}
 .qc-audio-current,
 .qc-audio-duration {
   color: var(--sat-text);
@@ -2540,26 +2610,49 @@ html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
 .qc-audio-timeline {
   width: 100%;
   min-width: 0;
+  accent-color: var(--sat-button-alt);
 }
-.qc-audio-status {
-  margin-top: .35rem;
-  color: var(--sat-text-muted);
+.qc-audio-timeline:focus-visible,
+.qc-rec-controls .btn:focus-visible,
+.qc-audio-controls .btn:focus-visible {
+  outline: 3px solid var(--sat-focus-color);
+  outline-offset: 2px;
+  box-shadow: var(--sat-focus-shadow);
+}
+.qc-rec-controls .btn:disabled,
+.qc-audio-controls .btn:disabled,
+.qc-audio-timeline:disabled {
+  opacity: .55;
 }
 /* Pulsing glow on the Record button while recording is active */
 @keyframes qc-rec-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(220, 53, 69, 0.55); }
-  60%  { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);    }
-  100% { box-shadow: 0 0 0 0   rgba(220, 53, 69, 0);    }
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sat-danger) 42%, transparent); }
+  60%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 .qc-rec-active {
   animation: qc-rec-pulse 1.1s ease-out infinite;
-  border-color: #dc3545 !important;
-  color: #dc3545 !important;
+  background: var(--sat-white) !important;
+  border-color: var(--sat-danger) !important;
+  color: var(--sat-danger) !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .qc-rec-active { animation: none; }
 }
 @media (max-width: 575.98px) {
+  .qc-recorder,
+  .qc-audio-upload,
+  .qc-audio-player {
+    padding: .7rem;
+  }
+  .qc-audio-player-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  .qc-audio-status {
+    text-align: left;
+  }
   .qc-audio-controls {
     grid-template-columns: auto auto 1fr auto;
   }

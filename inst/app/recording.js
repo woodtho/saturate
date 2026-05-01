@@ -57,6 +57,11 @@
     return { W: W, H: H };
   }
 
+  function cssVar(name, fallback) {
+    var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
+
   function drawWaveform(canvas, analyser) {
     var ctx    = canvas.getContext('2d');
     var bufLen = analyser.frequencyBinCount;
@@ -70,7 +75,7 @@
       var W = dim.W, H = dim.H;
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth   = 2;
-      ctx.strokeStyle = '#dc3545';
+      ctx.strokeStyle = cssVar('--sat-danger', '#b42318');
       ctx.beginPath();
       var step = W / bufLen, x = 0;
       for (var i = 0; i < bufLen; i++) {
@@ -90,7 +95,7 @@
     var dim = syncCanvasSize(canvas);
     ctx.clearRect(0, 0, dim.W, dim.H);
     ctx.lineWidth   = 1;
-    ctx.strokeStyle = color || '#adb5bd';
+    ctx.strokeStyle = color || cssVar('--sat-border', '#adb5bd');
     ctx.beginPath();
     ctx.moveTo(0, dim.H / 2);
     ctx.lineTo(dim.W, dim.H / 2);
@@ -99,12 +104,12 @@
 
   function stopWaveform(canvas) {
     if (_rec.animFrame) { cancelAnimationFrame(_rec.animFrame); _rec.animFrame = null; }
-    drawIdleLine(canvas, '#adb5bd');
+    drawIdleLine(canvas, cssVar('--sat-border', '#adb5bd'));
   }
 
   function pauseWaveform(canvas) {
     if (_rec.animFrame) { cancelAnimationFrame(_rec.animFrame); _rec.animFrame = null; }
-    drawIdleLine(canvas, '#fd7e14'); /* orange "paused" midline */
+    drawIdleLine(canvas, cssVar('--sat-blind-locked', '#c45500'));
   }
 
   function playback(container) {
@@ -144,6 +149,10 @@
     }
     if (p.current) p.current.textContent = formatSeconds(current);
     if (p.duration) p.duration.textContent = formatSeconds(duration);
+    if (container) {
+      container.classList.toggle('qc-audio-player--ready', hasSource);
+      container.classList.toggle('qc-audio-player--playing', hasSource && !p.audio.paused);
+    }
   }
 
   function bindPlaybackEvents(container) {
@@ -183,7 +192,10 @@
       p.playBtn.title = 'Play audio';
     }
     if (p.stopBtn) p.stopBtn.disabled = true;
-    if (p.status) p.status.textContent = 'Record or upload audio to enable playback.';
+    if (container) {
+      container.classList.remove('qc-audio-player--ready', 'qc-audio-player--playing');
+    }
+    if (p.status) p.status.textContent = 'No audio loaded';
   }
 
   function setPlaybackSource(container, source, label) {
@@ -195,7 +207,7 @@
     p.audio.pause();
     p.audio.src = _rec.playbackUrl;
     p.audio.load();
-    if (p.status) p.status.textContent = label || 'Audio ready.';
+    if (p.status) p.status.textContent = label || 'Audio ready';
     syncPlaybackUi(container);
   }
 
@@ -286,7 +298,7 @@
           var reader = new FileReader();
           reader.onloadend = function () {
             Shiny.setInputValue(ns + 'audio_dataurl', reader.result, { priority: 'event' });
-            if (statusEl) statusEl.textContent = '✓ Ready — ' + formatTime(finalMs);
+            if (statusEl) statusEl.textContent = 'Ready - ' + formatTime(finalMs);
             if (timerEl)  timerEl.textContent  = '0:00';
           };
           reader.readAsDataURL(_rec.blob);
@@ -416,11 +428,6 @@
     if (!p.audio) return;
     var target = parseFloat(this.value);
     if (isFinite(target)) p.audio.currentTime = target;
-    syncPlaybackUi(container);
-  });
-
-  $(document).on('loadedmetadata timeupdate play pause ended', '.qc-audio-el', function () {
-    var container = $(this).closest('[data-ns]')[0];
     syncPlaybackUi(container);
   });
 

@@ -247,7 +247,7 @@ mod_transcribe_server <- function(id, rv) {
       bslib::nav_panel(
         shiny::tagList(shiny::icon("upload"), " Upload audio"),
         shiny::div(
-          class = "mt-3",
+          class = "qc-audio-upload mt-3",
           shiny::fileInput(ns("audio_file"), "Audio file",
             accept      = c(".webm", ".ogg", ".mp4", ".mp3", ".wav", ".m4a"),
             buttonLabel = "Choose…",
@@ -261,17 +261,27 @@ mod_transcribe_server <- function(id, rv) {
       `data-ns` = ns(""),
       shiny::tags$audio(class = "qc-audio-el", preload = "metadata"),
       shiny::div(
+        class = "qc-audio-player-head",
+        shiny::span(class = "qc-audio-player-title",
+          shiny::icon("headphones"), " Playback"),
+        shiny::span(class = "qc-audio-status", "No audio loaded")
+      ),
+      shiny::div(
         class = "qc-audio-controls",
         shiny::tags$button(
           type     = "button",
           class    = "qc-audio-play btn btn-outline-secondary btn-sm",
           disabled = NA,
+          title    = "Play audio",
+          `aria-label` = "Play audio",
           shiny::icon("play")
         ),
         shiny::tags$button(
           type     = "button",
           class    = "qc-audio-stop btn btn-outline-secondary btn-sm",
           disabled = NA,
+          title    = "Stop audio",
+          `aria-label` = "Stop audio",
           shiny::icon("stop")
         ),
         shiny::span(class = "qc-audio-current font-monospace", "0:00"),
@@ -286,9 +296,7 @@ mod_transcribe_server <- function(id, rv) {
           `aria-label` = "Audio timeline"
         ),
         shiny::span(class = "qc-audio-duration font-monospace", "0:00")
-      ),
-      shiny::div(class = "qc-audio-status text-muted small",
-        "Record or upload audio to enable playback.")
+      )
     ),
 
     shiny::hr(class = "my-2"),
@@ -323,7 +331,7 @@ mod_transcribe_server <- function(id, rv) {
         class = "mt-auto d-flex gap-2",
         shinyjs::disabled(
           shiny::downloadButton(ns("btn_dl_audio"),
-            shiny::tagList(shiny::icon("download"), " Save audio"),
+            "Save audio",
             class = "btn-outline-secondary")
         ),
         shinyjs::disabled(
@@ -345,13 +353,13 @@ mod_transcribe_server <- function(id, rv) {
           class = "d-flex gap-1",
           shinyjs::disabled(
             shiny::downloadButton(ns("dl_transcript_txt"),
-              shiny::tagList(shiny::icon("download"), " .txt"),
+              ".txt",
               class = "btn-outline-secondary btn-sm",
               title = "Download transcript as plain text")
           ),
           shinyjs::disabled(
             shiny::downloadButton(ns("dl_transcript_docx"),
-              shiny::tagList(shiny::icon("download"), " .docx"),
+              ".docx",
               class = "btn-outline-secondary btn-sm",
               title = "Download transcript as Word document")
           )
