@@ -34,7 +34,7 @@ and multi-coder collaboration.
 ``` r
 
 # Install from GitHub
-pak::pak("thomaswood/saturate")
+pak::pak("woodtho/saturate")
 ```
 
 ## Quick start
