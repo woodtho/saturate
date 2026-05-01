@@ -7,6 +7,8 @@ Authors@R:
 Description: A modern replacement for RQDA. Create and manage qualitative
     coding projects backed by DuckDB, annotate text passages interactively
     via a Shiny GUI, and retrieve coded segments as tidy tibbles.
+URL: https://thomaswood.github.io/saturate, https://github.com/thomaswood/saturate
+BugReports: https://github.com/thomaswood/saturate/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-GB

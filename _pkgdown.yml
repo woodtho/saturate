@@ -33,6 +33,11 @@ articles:
       - user-guide
 
 reference:
+  - title: "Package overview"
+    desc: "Package-level documentation."
+    contents:
+      - saturate-package
+
   - title: "Project management"
     desc: "Create, open, and close projects; manage versions and locking."
     contents:
