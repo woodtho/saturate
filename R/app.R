@@ -130,6 +130,12 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
             shiny::tagList(shiny::icon("id-card-clip"), "Project"),
             class = "btn-sm btn-outline-light ms-1 qc-navbar-project",
             `aria-label` = "View project information"
+          ),
+          shiny::actionButton("btn_quit_app",
+            shiny::tagList(shiny::icon("power-off"), "Quit"),
+            class = "btn-sm btn-outline-danger ms-1",
+            title = "Close the app and release the project file",
+            `aria-label` = "Quit saturate"
           )
         )
       )
@@ -372,6 +378,28 @@ saturate_server <- function(input, output, session, project) {
     shinyjs::runjs(
       "$('.navbar-nav .nav-link').filter(function(){ return $(this).text().trim()==='Help'; }).click();"
     )
+  })
+
+  session$onSessionEnded(function() {
+    try(qc_close(project), silent = TRUE)
+  })
+
+  shiny::observeEvent(input$btn_quit_app, {
+    shiny::showModal(shiny::modalDialog(
+      title     = "Quit saturate?",
+      size      = "s",
+      easyClose = TRUE,
+      shiny::p("This will close the app and release the project file."),
+      footer = shiny::tagList(
+        shiny::modalButton("Cancel"),
+        shiny::actionButton("btn_quit_confirm", "Quit",
+          class = "btn-danger")
+      )
+    ))
+  })
+
+  shiny::observeEvent(input$btn_quit_confirm, {
+    shiny::stopApp()
   })
 
   mod_documents_server("docs",       rv)
@@ -729,11 +757,11 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
   if (is.null(project)) {
     project <- .run_project_launcher(...)
     if (is.null(project)) return(invisible(NULL))
-    on.exit(try(qc_close(project), silent = TRUE), add = TRUE)
   } else {
     assert_class(project, "qc_project")
     assert_con(project$con)
   }
+  on.exit(try(qc_close(project), silent = TRUE), add = TRUE)
   options(shiny.maxRequestSize = max_upload_mb * 1024^2)
   shiny::addResourcePath("saturate-assets",
     system.file("app", package = "saturate"))
@@ -750,7 +778,9 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
       saturate_server(input, output, session, .env$project)
     }
   )
-  shiny::runApp(app, ...)
+  run_args <- list(...)
+  if (is.null(run_args$launch.browser)) run_args$launch.browser <- TRUE
+  do.call(shiny::runApp, c(list(app), run_args))
 }
 
 # -- Profile/settings helpers -------------------------------------------------

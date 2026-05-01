@@ -141,6 +141,18 @@ qc_import_document <- function(project,
   )
 }
 
+# Write text to a .docx file using officer, falling back to plain UTF-8 text.
+.export_as_docx <- function(text, file) {
+  if (!requireNamespace("officer", quietly = TRUE)) {
+    writeLines(text, file, useBytes = FALSE)
+    return(invisible(NULL))
+  }
+  doc   <- officer::read_docx()
+  lines <- strsplit(text, "\n", fixed = TRUE)[[1L]]
+  for (ln in lines) doc <- officer::body_add_par(doc, ln)
+  print(doc, target = file)
+}
+
 # NFC-normalise and clean up common encoding artefacts.
 .normalize_content <- function(text) {
   if (requireNamespace("stringi", quietly = TRUE))
@@ -152,6 +164,19 @@ qc_import_document <- function(project,
   text <- trimws(text)
   if (nchar(text) == 0L) return(0L)
   length(strsplit(text, "\\s+")[[1L]])
+}
+
+# Returns distinct non-empty source_type values from the project, merged with
+# a fixed set of common defaults. Safe to call even on a fresh project.
+.source_type_options <- function(project) {
+  defaults <- c("interview", "focus_group", "survey", "observation", "document")
+  tryCatch({
+    df <- .query(project$con,
+      "SELECT DISTINCT source_type FROM sources
+       WHERE status = 1 AND source_type IS NOT NULL AND source_type != ''
+       ORDER BY source_type")
+    unique(c(defaults, df$source_type))
+  }, error = function(e) defaults)
 }
 
 #' List all documents in the project

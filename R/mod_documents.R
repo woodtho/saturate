@@ -21,8 +21,9 @@ mod_documents_ui <- function(id) {
       ),
 
       shiny::hr(),
+      mod_transcribe_ui(ns("transcribe")),
       shiny::actionButton(ns("btn_open_paste_modal"), "Paste text\u2026",
-        class = "btn-outline-secondary w-100")
+        class = "btn-outline-secondary w-100 mt-2")
     ),
 
     bslib::card(
@@ -65,10 +66,31 @@ mod_documents_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    mod_transcribe_server("transcribe", rv)
+
     lv <- shiny::reactiveValues(
       selected_id      = NULL,
       pending_content  = NULL,
       pending_filename = NULL
+    )
+
+    # Export parsed import content as plain text or docx (available once a file is parsed)
+    output$dl_import_txt <- shiny::downloadHandler(
+      filename = function() {
+        paste0(fs::path_ext_remove(lv$pending_filename %||% "document"), ".txt")
+      },
+      content = function(file) {
+        writeLines(lv$pending_content %||% "", file, useBytes = FALSE)
+      }
+    )
+
+    output$dl_import_docx <- shiny::downloadHandler(
+      filename = function() {
+        paste0(fs::path_ext_remove(lv$pending_filename %||% "document"), ".docx")
+      },
+      content = function(file) {
+        .export_as_docx(lv$pending_content %||% "", file)
+      }
     )
 
     docs <- shiny::reactive({
@@ -80,7 +102,7 @@ mod_documents_server <- function(id, rv) {
       df <- docs()
       tbl <- DT::datatable(
         dplyr::select(df, id, name, source_type, word_count, char_count,
-          n_codings, n_coders, memo),
+          n_codings, n_coders, created_at, memo),
         class     = "table table-hover",
         selection = "single",
         rownames  = FALSE,
@@ -91,11 +113,12 @@ mod_documents_server <- function(id, rv) {
             list(targets = 2, width = "110px", className = "text-muted"),
             list(targets = c(3, 4, 5, 6), width = "80px",
               className = "text-center"),
-            list(targets = 7, className = "dt-muted dt-truncate")
+            list(targets = 7, width = "130px", className = "text-muted"),
+            list(targets = 8, className = "dt-muted dt-truncate")
           )
         ),
         colnames = c("ID", "Name", "Type", "Words", "Chars",
-          "Codings", "Coders", "Memo")
+          "Codings", "Coders", "Imported", "Memo")
       )
       DT::formatRound(tbl, columns = c("word_count", "char_count"),
         digits = 0, mark = ",")
@@ -122,7 +145,7 @@ mod_documents_server <- function(id, rv) {
     .docs_export_df <- function() {
       tryCatch(
         dplyr::select(docs(), id, name, source_type, word_count,
-                      char_count, n_codings, n_coders, memo),
+                      char_count, n_codings, n_coders, created_at, memo),
         error = function(e) tibble::tibble()
       )
     }
@@ -207,18 +230,22 @@ mod_documents_server <- function(id, rv) {
             list        = ns("import_modal_source_type_list"),
             placeholder = "interview, survey, \u2026"
           ),
-          shiny::tags$datalist(
-            id = ns("import_modal_source_type_list"),
-            shiny::tags$option(value = "interview"),
-            shiny::tags$option(value = "focus_group"),
-            shiny::tags$option(value = "survey"),
-            shiny::tags$option(value = "observation"),
-            shiny::tags$option(value = "document")
-          )
+          do.call(shiny::tags$datalist, c(
+            list(id = ns("import_modal_source_type_list")),
+            lapply(.source_type_options(rv$project), function(t) shiny::tags$option(value = t))
+          ))
         ),
 
         footer = shiny::tagList(
           shiny::modalButton("Cancel"),
+          shiny::downloadButton(ns("dl_import_txt"),
+            shiny::tagList(shiny::icon("download"), " .txt"),
+            class = "btn-outline-secondary btn-sm",
+            title = "Download parsed text for manual cleanup"),
+          shiny::downloadButton(ns("dl_import_docx"),
+            shiny::tagList(shiny::icon("download"), " .docx"),
+            class = "btn-outline-secondary btn-sm",
+            title = "Download as Word document for manual cleanup"),
           shiny::actionButton(ns("btn_confirm_import"), "Import",
             class = "btn-primary")
         )
@@ -276,14 +303,10 @@ mod_documents_server <- function(id, rv) {
             list        = ns("paste_modal_source_type_list"),
             placeholder = "interview, survey, \u2026"
           ),
-          shiny::tags$datalist(
-            id = ns("paste_modal_source_type_list"),
-            shiny::tags$option(value = "interview"),
-            shiny::tags$option(value = "focus_group"),
-            shiny::tags$option(value = "survey"),
-            shiny::tags$option(value = "observation"),
-            shiny::tags$option(value = "document")
-          )
+          do.call(shiny::tags$datalist, c(
+            list(id = ns("paste_modal_source_type_list")),
+            lapply(.source_type_options(rv$project), function(t) shiny::tags$option(value = t))
+          ))
         ),
 
         footer = shiny::tagList(
