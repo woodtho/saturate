@@ -6,7 +6,7 @@ mod_transcribe_ui <- function(id) {
     shiny::includeScript(js_file),
     shiny::actionButton(
       ns("btn_open"),
-      shiny::tagList(shiny::icon("microphone"), " Record & transcribe…"),
+      shiny::tagList(shiny::icon("microphone"), " Record & transcribe\u2026"),
       class = "btn-outline-secondary w-100"
     )
   )
@@ -107,7 +107,7 @@ mod_transcribe_server <- function(id, rv) {
 
       result <- tryCatch(
         shiny::withProgress(
-          message = "Starting transcription…",
+          message = "Starting transcription\u2026",
           detail  = "",
           value   = 0,
           .transcribe_audio(
@@ -129,11 +129,11 @@ mod_transcribe_server <- function(id, rv) {
       shiny::req(!is.null(result))
 
       # result$segments (start/end in seconds) is the current API;
-      # result$data (from/to in ms) was an older layout — handle both.
+      # result$data (from/to in ms) was an older layout -- handle both.
       seg_data <- result$segments %||% result$data
       if (!is.null(seg_data) && "start" %in% names(seg_data)) {
         ts_col  <- "start"
-        ts_mult <- 1000   # seconds → ms for .format_ms
+        ts_mult <- 1000   # seconds \u2192 ms for .format_ms
       } else if (!is.null(seg_data) && "from" %in% names(seg_data)) {
         ts_col  <- "from"
         ts_mult <- 1      # already ms
@@ -250,7 +250,7 @@ mod_transcribe_server <- function(id, rv) {
           class = "qc-audio-upload mt-3",
           shiny::fileInput(ns("audio_file"), "Audio file",
             accept      = c(".webm", ".ogg", ".mp4", ".mp3", ".wav", ".m4a"),
-            buttonLabel = "Choose…",
+            buttonLabel = "Choose\u2026",
             width       = "100%")
         )
       )
@@ -307,10 +307,10 @@ mod_transcribe_server <- function(id, rv) {
         shiny::tags$label("Model", class = "form-label mb-1"),
         shiny::selectInput(ns("model"), NULL,
           choices  = c(
-            "tiny — 74 MB"    = "tiny",
-            "base — 142 MB"   = "base",
-            "small — 466 MB"  = "small",
-            "medium — 1.5 GB" = "medium"),
+            "tiny \u2014 74 MB"    = "tiny",
+            "base \u2014 142 MB"   = "base",
+            "small \u2014 466 MB"  = "small",
+            "medium \u2014 1.5 GB" = "medium"),
           selected = "tiny",
           width    = "160px")
       ),
@@ -369,7 +369,7 @@ mod_transcribe_server <- function(id, rv) {
         value       = "",
         rows        = 8,
         width       = "100%",
-        placeholder = "Transcript will appear here after transcription…")
+        placeholder = "Transcript will appear here after transcription\u2026")
     ),
 
     shiny::hr(class = "my-2"),
@@ -389,7 +389,7 @@ mod_transcribe_server <- function(id, rv) {
           class       = "form-control form-control-sm",
           type        = "text",
           list        = ns("source_type_list"),
-          placeholder = "interview, survey, …"
+          placeholder = "interview, survey, \u2026"
         ),
         do.call(shiny::tags$datalist, c(
           list(id = ns("source_type_list")),

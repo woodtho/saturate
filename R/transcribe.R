@@ -1,4 +1,4 @@
-# Audio transcription helpers — wraps the whisper + av packages.
+# Audio transcription helpers - wraps the whisper + av packages.
 # Both are in Suggests; availability is checked at call time.
 
 .whisper_available <- function() {
@@ -37,7 +37,7 @@
 }
 
 # Convert audio to 16 kHz WAV and transcribe with whisper.
-# Returns the list from whisper::transcribe() — $text always present.
+# Returns the list from whisper::transcribe() - $text always present.
 # .progress is an optional function(message, detail) called at key steps.
 .transcribe_audio <- function(path, model = "tiny", language = NULL,
                                .progress = NULL) {
@@ -49,22 +49,22 @@
 
   if (!is.null(.progress)) {
     if (.whisper_model_cached(model)) {
-      .progress("Loading whisper model…", paste0("model: ", model))
+      .progress("Loading whisper model\u2026", paste0("model: ", model))
     } else {
-      .progress("Downloading whisper model…",
-                paste0("'", model, "' — this may take several minutes on first use"))
+      .progress("Downloading whisper model\u2026",
+                paste0("'", model, "' \u2014 this may take several minutes on first use"))
     }
   }
 
   if (!is.null(.progress))
-    .progress("Converting audio…", "resampling to 16 kHz WAV")
+    .progress("Converting audio\u2026", "resampling to 16 kHz WAV")
 
   wav <- tempfile(fileext = ".wav")
   on.exit(unlink(wav), add = TRUE)
   av::av_audio_convert(path, wav, sample_rate = 16000L)
 
   if (!is.null(.progress))
-    .progress("Transcribing…", "this may take a moment for long recordings")
+    .progress("Transcribing\u2026", "this may take a moment for long recordings")
 
   lang <- if (length(language) == 0L || !nzchar(language %||% "")) NULL else language
 
