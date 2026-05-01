@@ -13,6 +13,13 @@
   file.exists(bin)
 }
 
+# Returns the largest cached model from the UI set, or "tiny" if none cached.
+.whisper_default_model <- function() {
+  models <- c("medium", "small", "base", "tiny")
+  for (m in models) if (.whisper_model_cached(m)) return(m)
+  "tiny"
+}
+
 # Decode a data-URL base64 audio string to a temp file.
 # Returns the temp file path; caller is responsible for unlink().
 .decode_audio_dataurl <- function(data_url) {

@@ -196,7 +196,8 @@ mod_transcribe_server <- function(id, rv) {
   })
 }
 
-.rec_modal <- function(ns, source_types = c("interview", "focus_group", "survey", "observation", "document")) {
+.rec_modal <- function(ns, source_types = c("interview", "focus_group", "survey", "observation", "document"),
+                       default_model = .whisper_default_model()) {
   shiny::modalDialog(
     title     = shiny::tagList(shiny::icon("microphone"), " Record & Transcribe"),
     size      = "l",
@@ -311,7 +312,7 @@ mod_transcribe_server <- function(id, rv) {
             "base \u2014 142 MB"   = "base",
             "small \u2014 466 MB"  = "small",
             "medium \u2014 1.5 GB" = "medium"),
-          selected = "tiny",
+          selected = default_model,
           width    = "160px")
       ),
       shiny::div(
