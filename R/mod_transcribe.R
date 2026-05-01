@@ -256,6 +256,41 @@ mod_transcribe_server <- function(id, rv) {
       )
     ),
 
+    shiny::div(
+      class     = "qc-audio-player mt-3",
+      `data-ns` = ns(""),
+      shiny::tags$audio(class = "qc-audio-el", preload = "metadata"),
+      shiny::div(
+        class = "qc-audio-controls",
+        shiny::tags$button(
+          type     = "button",
+          class    = "qc-audio-play btn btn-outline-secondary btn-sm",
+          disabled = NA,
+          shiny::icon("play")
+        ),
+        shiny::tags$button(
+          type     = "button",
+          class    = "qc-audio-stop btn btn-outline-secondary btn-sm",
+          disabled = NA,
+          shiny::icon("stop")
+        ),
+        shiny::span(class = "qc-audio-current font-monospace", "0:00"),
+        shiny::tags$input(
+          class    = "qc-audio-timeline",
+          type     = "range",
+          min      = "0",
+          max      = "0",
+          step     = "0.01",
+          value    = "0",
+          disabled = NA,
+          `aria-label` = "Audio timeline"
+        ),
+        shiny::span(class = "qc-audio-duration font-monospace", "0:00")
+      ),
+      shiny::div(class = "qc-audio-status text-muted small",
+        "Record or upload audio to enable playback.")
+    ),
+
     shiny::hr(class = "my-2"),
 
     shiny::div(

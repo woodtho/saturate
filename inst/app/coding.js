@@ -100,7 +100,9 @@
   }
 
   function _normalizeSpeechText(text) {
+    var timestampPrefix = /^[ \t]*(?:\[(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?\]|(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?)[ \t-]*/gm;
     return (text || '')
+      .replace(timestampPrefix, '')
       .replace(/ /g, ' ')
       .replace(/[ \t]+\n/g, '\n')
       .replace(/\n[ \t]+/g, '\n')

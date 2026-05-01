@@ -2511,6 +2511,40 @@ html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
   background: var(--sat-bg);
   border: 1px solid var(--sat-border);
 }
+.qc-audio-player {
+  padding: .65rem .75rem;
+  border-radius: 8px;
+  background: var(--sat-surface-card);
+  border: 1px solid var(--sat-border);
+}
+.qc-audio-controls {
+  display: grid;
+  grid-template-columns: auto auto minmax(3rem, auto) minmax(12rem, 1fr) minmax(3rem, auto);
+  align-items: center;
+  gap: .55rem;
+}
+.qc-audio-play,
+.qc-audio-stop {
+  width: 2.15rem;
+  height: 2.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.qc-audio-current,
+.qc-audio-duration {
+  color: var(--sat-text);
+  font-size: .86rem;
+  text-align: center;
+}
+.qc-audio-timeline {
+  width: 100%;
+  min-width: 0;
+}
+.qc-audio-status {
+  margin-top: .35rem;
+  color: var(--sat-text-muted);
+}
 /* Pulsing glow on the Record button while recording is active */
 @keyframes qc-rec-pulse {
   0%   { box-shadow: 0 0 0 0   rgba(220, 53, 69, 0.55); }
@@ -2524,4 +2558,12 @@ html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
 }
 @media (prefers-reduced-motion: reduce) {
   .qc-rec-active { animation: none; }
+}
+@media (max-width: 575.98px) {
+  .qc-audio-controls {
+    grid-template-columns: auto auto 1fr auto;
+  }
+  .qc-audio-timeline {
+    grid-column: 1 / -1;
+  }
 }
