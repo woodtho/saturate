@@ -705,7 +705,16 @@
       setTimeout(_attachSyncListeners, 150);
     }
     if (e.name === window._qc_ns + 'text_display') {
+      // shiny:value fires before renderUI replaces the DOM — snapshot scroll now
+      var _sc = document.querySelector('.qc-text-display');
+      var _prevTop = _sc ? _sc.scrollTop : 0;
+      var _prevLen = _sc ? _sc.textContent.length : 0;
       setTimeout(_handleTtsOutputUpdate, 75);
+      // Restore scroll after DOM update, but only for same document (same text length)
+      setTimeout(function () {
+        var c = document.querySelector('.qc-text-display');
+        if (c && c.textContent.length === _prevLen) c.scrollTop = _prevTop;
+      }, 0);
     }
   });
 

@@ -2232,3 +2232,250 @@ html[data-sat-theme="contrast-dark"] .qc-stat-pill .value {
 .qc-text-display::-webkit-scrollbar-track {
   background: var(--sat-white);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * Tutorial / guided-tour panel  (tutorial.js)
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Panel shell ──────────────────────────────────────────────────────────── */
+.qc-tour-panel {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  width: 360px;
+  background: var(--sat-white);
+  border: 1px solid var(--sat-border);
+  border-radius: .5rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.13), 0 2px 6px rgba(0,0,0,.08);
+  padding: 1rem 1.1rem .85rem;
+  z-index: 9050;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.qc-tour-panel--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.qc-tour-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .5rem;
+}
+
+.qc-tour-counter {
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--sat-text-muted);
+}
+
+.qc-tour-close {
+  background: none;
+  border: none;
+  padding: 0 .15rem;
+  line-height: 1;
+  font-size: 1.15rem;
+  color: var(--sat-text-muted);
+  cursor: pointer;
+  transition: color 140ms ease;
+}
+
+.qc-tour-close:hover,
+.qc-tour-close:focus-visible {
+  color: var(--sat-text);
+  outline: 2px solid var(--sat-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Progress dots ────────────────────────────────────────────────────────── */
+.qc-tour-progress {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .3rem;
+  margin-bottom: .75rem;
+}
+
+.qc-tour-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid var(--sat-border);
+  transition: background 200ms ease, border-color 200ms ease, width 200ms ease, height 200ms ease;
+  flex-shrink: 0;
+}
+
+.qc-tour-dot--done {
+  background: var(--sat-accent);
+  border-color: var(--sat-accent);
+}
+
+.qc-tour-dot--active {
+  width: 8px;
+  height: 8px;
+  background: var(--sat-primary);
+  border-color: var(--sat-primary);
+}
+
+/* ── Content ──────────────────────────────────────────────────────────────── */
+.qc-tour-title {
+  font-size: .875rem;
+  font-weight: 700;
+  color: var(--sat-text);
+  margin: 0 0 .45rem;
+  line-height: 1.3;
+}
+
+.qc-tour-body {
+  font-size: .82rem;
+  color: var(--sat-text-muted);
+  line-height: 1.55;
+  margin-bottom: .85rem;
+}
+
+.qc-tour-body strong {
+  color: var(--sat-text-label);
+  font-weight: 600;
+}
+
+.qc-tour-body kbd {
+  display: inline-block;
+  padding: .05em .38em;
+  font-size: .78rem;
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  color: var(--sat-text-label);
+  background: var(--sat-surface-card);
+  border: 1px solid var(--sat-border);
+  border-radius: .2rem;
+  box-shadow: 0 1px 0 var(--sat-border);
+  line-height: 1.4;
+}
+
+/* ── Footer buttons ───────────────────────────────────────────────────────── */
+.qc-tour-footer {
+  display: flex;
+  flex-direction: row;
+  gap: .45rem;
+  margin-bottom: .6rem;
+}
+
+.qc-tour-btn {
+  flex: 1;
+  padding: .3rem .5rem;
+  font-size: .8rem;
+  border: 1px solid var(--sat-border);
+  border-radius: .3rem;
+  background: var(--sat-white);
+  color: var(--sat-text-label);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  line-height: 1.4;
+}
+
+.qc-tour-btn:hover:not(:disabled) {
+  background: var(--sat-hover-bg);
+  border-color: var(--sat-accent);
+}
+
+.qc-tour-btn:focus-visible {
+  outline: 2px solid var(--sat-accent);
+  outline-offset: 2px;
+}
+
+.qc-tour-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.qc-tour-btn--primary {
+  background: var(--sat-primary);
+  color: var(--sat-primary-fg);
+  border-color: var(--sat-primary);
+}
+
+.qc-tour-btn--primary:hover:not(:disabled) {
+  background: var(--sat-primary-hover);
+  border-color: var(--sat-primary-hover);
+  color: var(--sat-primary-fg);
+}
+
+.qc-tour-btn--success {
+  background: #198754;
+  color: #ffffff;
+  border-color: #198754;
+}
+
+.qc-tour-btn--success:hover:not(:disabled) {
+  background: #157347;
+  border-color: #157347;
+  color: #ffffff;
+}
+
+/* ── Skip checkbox ────────────────────────────────────────────────────────── */
+.qc-tour-skip-label {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .72rem;
+  color: var(--sat-text-muted);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.4;
+}
+
+.qc-tour-skip-check {
+  accent-color: var(--sat-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Highlight pulse ──────────────────────────────────────────────────────── */
+@keyframes qc-tour-pulse {
+  0%   { outline-color: var(--sat-accent);   box-shadow: 0 0 0 4px rgba(62,140,122,.22); }
+  50%  { outline-color: var(--sat-primary);  box-shadow: 0 0 0 6px rgba(29, 61, 53,.18); }
+  100% { outline-color: var(--sat-accent);   box-shadow: 0 0 0 4px rgba(62,140,122,.22); }
+}
+
+.qc-tour-highlight {
+  outline: 3px solid var(--sat-accent) !important;
+  outline-offset: 3px !important;
+  border-radius: 3px;
+  animation: qc-tour-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qc-tour-highlight {
+    animation: none;
+    outline: 3px solid var(--sat-accent) !important;
+  }
+  .qc-tour-panel,
+  .qc-tour-panel--visible {
+    transition: none;
+  }
+}
+
+/* ── Dark theme overrides ─────────────────────────────────────────────────── */
+html[data-sat-theme="dark"] .qc-tour-panel,
+html[data-sat-theme="contrast-dark"] .qc-tour-panel {
+  background: var(--sat-white);
+  border-color: var(--sat-border);
+  box-shadow: 0 8px 28px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.3);
+}
+
+html[data-sat-theme="dark"] .qc-tour-body kbd,
+html[data-sat-theme="contrast-dark"] .qc-tour-body kbd {
+  background: var(--sat-surface-card);
+  border-color: var(--sat-border);
+  box-shadow: 0 1px 0 var(--sat-border);
+  color: var(--sat-text-label);
+}

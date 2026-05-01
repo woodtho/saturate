@@ -2,8 +2,9 @@
 
 saturate_ui <- function(app_name = "saturate", brand_css = "") {
   default_coder <- Sys.info()[["user"]] %||% "default"
-  css_file      <- system.file("app", "styles.css", package = "saturate")
-  profile_js    <- system.file("app", "profile.js", package = "saturate")
+  css_file      <- system.file("app", "styles.css",  package = "saturate")
+  profile_js    <- system.file("app", "profile.js",  package = "saturate")
+  tutorial_js   <- system.file("app", "tutorial.js", package = "saturate")
 
   shiny::tagList(
 
@@ -17,6 +18,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
     shiny::tags$head(
       shiny::includeCSS(css_file),
       shiny::includeScript(profile_js),
+      shiny::includeScript(tutorial_js),
       # Brand CSS variable overrides -- injected when brand != NULL
       if (nchar(brand_css) > 0L)
         shiny::tags$style(shiny::HTML(brand_css))
@@ -103,6 +105,13 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
 
           # -- Blind mode toggle ---------------------------------------------
           shiny::uiOutput("ui_blind_btn", inline = TRUE),
+
+          shiny::actionButton("btn_tour",
+            shiny::tagList(shiny::icon("graduation-cap"), "Tour"),
+            class = "btn-sm btn-outline-light qc-navbar-tour",
+            title = "Start guided tour",
+            `aria-label` = "Start guided tutorial tour"
+          ),
 
           shiny::actionButton("btn_help_modal",
             shiny::tagList(shiny::icon("circle-question"), "Help"),
@@ -216,6 +225,22 @@ saturate_server <- function(input, output, session, project) {
       )
     })
     session$sendCustomMessage("qc_load_profiles", list(profiles = profiles_list))
+  }, once = TRUE)
+
+  # -- Auto-tutorial: show for brand-new projects (no docs and no codes) ------
+  session$onFlushed(function() {
+    n_docs <- tryCatch(
+      .query(rv$project$con,
+             "SELECT COUNT(*) AS n FROM sources WHERE status = 1")$n[[1L]],
+      error = function(e) 1L
+    )
+    n_codes <- tryCatch(
+      .query(rv$project$con,
+             "SELECT COUNT(*) AS n FROM codes WHERE status = 1")$n[[1L]],
+      error = function(e) 1L
+    )
+    if (n_docs == 0L && n_codes == 0L)
+      session$sendCustomMessage("qc_tutorial_auto", list())
   }, once = TRUE)
 
   shiny::observeEvent(input$profile_selected, {
@@ -337,6 +362,10 @@ saturate_server <- function(input, output, session, project) {
   shiny::observeEvent(input$btn_profile_signout, {
     session$sendCustomMessage("qc_profile_action", list(action = "logout"))
     shiny::removeModal()
+  })
+
+  shiny::observeEvent(input$btn_tour, {
+    session$sendCustomMessage("qc_tutorial_start", list(step = 0L))
   })
 
   shiny::observeEvent(input$btn_help_modal, {

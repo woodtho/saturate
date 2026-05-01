@@ -55,6 +55,22 @@ mod_help_ui <- function(id) {
         "Start",
         shiny::div(
           class = "qc-help-section",
+          shiny::div(
+            class = "mb-3 d-flex align-items-center gap-3",
+            shiny::actionButton(
+              ns("btn_start_tour"),
+              shiny::tagList(shiny::icon("graduation-cap"), " Start guided tour"),
+              class = "btn-primary",
+              title = "Walk through the main workflow step by step"
+            ),
+            shiny::tags$a(
+              href   = "https://thomaswood.github.io/saturate/articles/user-guide.html",
+              target = "_blank",
+              rel    = "noopener",
+              class  = "btn btn-outline-secondary btn-sm",
+              shiny::tagList(shiny::icon("book-open"), " User guide")
+            )
+          ),
           shiny::h5("Recommended workflow"),
           shiny::tags$ol(
             class = "qc-help-steps",
@@ -187,6 +203,11 @@ mod_help_ui <- function(id) {
 
 mod_help_server <- function(id, rv) {
   shiny::moduleServer(id, function(input, output, session) {
+
+    shiny::observeEvent(input$btn_start_tour, {
+      session$sendCustomMessage("qc_tutorial_start", list(step = 0L))
+    })
+
     output$project_summary <- shiny::renderUI({
       if (is.null(rv) || is.null(rv$project)) return(NULL)
 

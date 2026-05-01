@@ -228,14 +228,14 @@ mod_documents_server <- function(id, rv) {
     # -- Confirm import from modal ----------------------------------------------
 
     shiny::observeEvent(input$btn_confirm_import, {
-      shiny::req(lv$pending_content, input$file_upload)
+      shiny::req(lv$pending_content)
       nm  <- trimws(input$import_modal_name %||% "")
       sty <- trimws(input$import_modal_source_type %||% "")
       if (nchar(nm) == 0L) nm <- fs::path_ext_remove(lv$pending_filename)
       tryCatch({
         qc_import_document(
           rv$project,
-          path        = input$file_upload$datapath,
+          content     = lv$pending_content,
           name        = nm,
           memo        = input$import_modal_memo %||% "",
           source_type = sty
