@@ -8,3 +8,4 @@
 ^test project\.duckdb$
 ^test2\.satdb$
 ^test_study\.duckdb$
+^codecov\.yml$
