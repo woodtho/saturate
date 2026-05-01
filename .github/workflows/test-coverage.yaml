@@ -6,6 +6,10 @@ on:
 
 name: test-coverage
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
@@ -22,22 +26,18 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::covr, any::xml2
+          extra-packages: any::covr
           needs: coverage
 
       - name: Test coverage
         run: |
-          cov <- covr::package_coverage(
-            quiet   = FALSE,
-            clean   = FALSE,
-            install_path = file.path(Sys.getenv("RUNNER_TEMP"), "package")
-          )
-          covr::to_cobertura(cov)
+          cov <- covr::package_coverage(quiet = FALSE)
+          print(cov)
+          covr::report(cov, file = "coverage-report.html", browse = FALSE)
         shell: Rscript {0}
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./cobertura.xml
-          fail_ci_if_error: false
+          name: coverage-report
+          path: coverage-report.html
