@@ -166,7 +166,7 @@ Your default browser will open automatically. The R console will show
 `Listening on http://127.0.0.1:XXXX` -- this is a local web server running on
 your own computer. Your data never leaves your machine.
 
-To stop the app, press **Escape** or **Ctrl+C** in the R console.
+To stop the app cleanly, click the **Quit** button in the top-right of the navbar and confirm. This releases the project file and closes the database connection gracefully. Pressing **Ctrl+C** in the R console also works but may trigger a Fortran runtime warning on Windows — use the Quit button when possible.
 
 ### Launching without a project (the project launcher)
 
@@ -320,6 +320,78 @@ into the interface without needing a file.
 
 The **Coders** column tells you whether multiple team members have worked on the
 same document -- relevant when you need to calculate inter-rater reliability.
+
+### Audio recording and transcription
+
+saturate can capture audio from your microphone and transcribe it locally using
+the [whisper](https://github.com/bnosac/whisper) package. No audio is sent to
+any external service.
+
+#### Prerequisites
+
+Install the optional packages once:
+
+```{r}
+install.packages(c("whisper", "av"))
+```
+
+`av` handles audio conversion; `whisper` runs the transcription model. Whisper
+models are downloaded on first use and cached in your user data directory. The
+`tiny` model (~74 MB) is a fast default; `small` or `medium` give better
+accuracy for accented speech or non-English languages.
+
+#### Opening the recording modal
+
+In the **Documents** sidebar, click **Record & transcribe...** A modal opens
+with two tabs.
+
+#### Record tab
+
+| Control | Purpose |
+|---|---|
+| **Record** | Start capturing from your default microphone |
+| **Pause / Resume** | Suspend and continue recording without losing audio |
+| **Stop** | End the recording and prepare the audio for transcription |
+| **Timer** | Running total of recorded time, pauses included |
+| **Waveform** | Live oscilloscope display while recording; orange midline while paused |
+
+Once recording is stopped, click **Save audio** to download the raw file before
+transcribing.
+
+#### Upload audio tab
+
+Click **Choose...** to upload an existing audio file. Accepted formats:
+`.webm`, `.ogg`, `.mp4`, `.mp3`, `.wav`, `.m4a`.
+
+#### Transcription settings
+
+| Setting | Purpose |
+|---|---|
+| **Model** | Whisper model size: `tiny` (74 MB), `base` (142 MB), `small` (466 MB), `medium` (1.5 GB) |
+| **Language** | BCP-47 tag (e.g. `en`, `fr`, `de`). Leave blank for automatic detection |
+| **Timestamps** | Include `[HH:MM:SS]` segment markers in the output. On by default |
+
+Click **Transcribe**. A progress bar tracks the steps: loading the model,
+converting the audio to 16 kHz WAV, and running the transcription. The
+resulting text appears in the **Transcript** area.
+
+#### Editing and exporting the transcript
+
+The transcript is fully editable before importing. Download it as plain text or
+Word with the **.txt** and **.docx** buttons above the transcript area.
+
+#### Importing as a document
+
+Fill in **Document name** and optionally **Source type** (e.g. `interview`) and
+**Memo**, then click **Import transcript**. The transcript is saved as a new
+document and immediately available for coding. The source type dropdown
+suggests values already used in the project while still accepting free text.
+
+#### A note on accuracy
+
+Whisper accuracy depends on audio quality, accent, and model size. Always
+review the transcript before coding. Segment timestamps (`[00:00:05]`) let you
+locate unclear passages in the original recording to re-listen and correct.
 
 ### Document memos
 
@@ -1888,11 +1960,40 @@ Supported extensions are `.txt`, `.docx`, `.pdf`, `.csv`. Convert `.doc`,
 `.odt`, or `.rtf` files to `.docx` or `.txt` before importing. For scanned
 PDFs, run OCR first.
 
+### Stopping the app causes R to crash on Windows
+
+Use the **Quit** button in the navbar instead of **Ctrl+C**. The button calls
+`shiny::stopApp()`, which unwinds cleanly. Pressing **Ctrl+C** sends a
+Windows BREAK signal that can crash Fortran BLAS/LAPACK threads loaded by
+numeric packages.
+
 ### The Shiny app shows a blank screen or error
 
-Stop the app (**Ctrl+C**), run `devtools::load_all()` if working from source,
-and relaunch with `shiny_saturate(proj)`. Try a different browser if the
-problem persists.
+Stop the app via the **Quit** button, run `devtools::load_all()` if working
+from source, and relaunch with `shiny_saturate(proj)`. Try a different browser
+if the problem persists.
+
+### "Transcription failed: unused argument"
+
+Your installed version of `whisper` does not recognise one of the arguments
+saturate is passing. Update to the latest version:
+
+```{r}
+install.packages("whisper")
+```
+
+### "Microphone access denied"
+
+The browser blocked microphone access. In Chrome or Edge, click the camera/lock
+icon in the address bar, set **Microphone** to **Allow**, then reload the page.
+In Firefox, allow the permission in the pop-up that appears when you first click
+**Record**.
+
+### Timestamps show `[00:00:00]` for every segment
+
+This usually means the audio was very short or whisper returned only one
+segment. It can also happen when the model has trouble detecting speech pauses.
+Try a larger model (`base` or `small`) or record a longer sample.
 
 ### "Maximum upload size exceeded" when merging a contributor file
 

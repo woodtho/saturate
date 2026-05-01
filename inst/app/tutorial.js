@@ -47,11 +47,28 @@
       title:  'Documents — the list',
       navTo:  null,
       hlSel:  '[id$="-btn_code_doc"]',
-      body:   'The table shows word count, coding density, and memo for each document. ' +
-              'Select a row then click <strong>Code →</strong> to open it in the ' +
-              'Coding panel. <strong>Edit</strong> replaces the content and flags ' +
-              'existing codings for review — a full version history is kept. ' +
+      body:   'The table shows word count, coding density, import timestamp, and memo ' +
+              'for each document. Select a row then click <strong>Code →</strong> to ' +
+              'open it in the Coding panel. <strong>Edit</strong> replaces the content ' +
+              'and flags existing codings for review — a full version history is kept. ' +
               'Export the list as CSV, Excel, or JSON.'
+    },
+    {
+      title:  'Documents — Record & Transcribe',
+      navTo:  null,
+      hlSel:  '[id$="-transcribe-btn_open"]',
+      body:   'Click <strong>Record &amp; transcribe…</strong> to open the audio ' +
+              'workflow. The <em>Record</em> tab captures audio from your microphone — ' +
+              'hit <strong>Record</strong>, <strong>Pause/Resume</strong>, and ' +
+              '<strong>Stop</strong>. The <em>Upload audio</em> tab accepts ' +
+              '.webm, .mp3, .wav, .m4a, and other formats. ' +
+              'Once you have audio, click <strong>Transcribe</strong> — ' +
+              'a local <a href="https://github.com/bnosac/whisper" target="_blank" rel="noopener">whisper</a> ' +
+              'model processes it on your machine (no data leaves). ' +
+              'With <strong>Timestamps</strong> ticked (the default), each segment ' +
+              'gets a <code>[HH:MM:SS]</code> marker. Edit the transcript, then ' +
+              'click <strong>Import transcript</strong> to save it as a document, ' +
+              'or download it as <strong>.txt</strong> or <strong>.docx</strong>.'
     },
 
     // ── Prep: Codebook ───────────────────────────────────────────────────────

@@ -10,10 +10,11 @@
 
 ## Features
 
-- **File-based projects** — each project is a single `.duckdb` file; no server required
+- **File-based projects** — each project is a single `.satdb` file; no server required
 - **Rich coding UI** — select passages, assign codes, add confidence levels and memos
 - **Codebook management** — hierarchical categories, code relations, weights, and full history
 - **Multi-coder workflows** — split a project for independent coders, merge results back
+- **Audio recording & transcription** — record directly in the browser or upload audio, transcribe with local [whisper](https://github.com/bnosac/whisper), import with optional timestamps
 - **Saturation analysis** — plot theoretical saturation curves and triangulation grids
 - **Inter-rater reliability** — Cohen's kappa, Krippendorff's alpha, and agreement matrices
 - **Member checking** — generate and track participant feedback on interpreted themes
@@ -80,6 +81,24 @@ segments <- qc_get_coded_segments(proj, codes = "empowerment")
 # Export full report to DOCX
 qc_export(proj, "report.docx", format = "docx")
 ```
+
+## Audio transcription
+
+saturate can transcribe audio recordings directly inside the GUI. This requires the optional `whisper` and `av` packages:
+
+```r
+install.packages(c("whisper", "av"))
+```
+
+Open the **Documents** tab and click **Record & transcribe…** to:
+
+- Record audio from your microphone (pause, resume, and save the raw file)
+- Upload an existing audio file (`.webm`, `.ogg`, `.mp4`, `.mp3`, `.wav`, `.m4a`)
+- Transcribe with a local whisper model (no data leaves your machine)
+- Include segment timestamps in the transcript (on by default)
+- Import the edited transcript as a document, or export it as `.txt` or `.docx`
+
+Whisper models are downloaded once and cached locally. The `tiny` model (~74 MB) works well for English; `small` or `medium` are better for accented speech or other languages.
 
 ## License
 
