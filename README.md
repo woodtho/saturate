@@ -4,7 +4,7 @@
 [![R-CMD-check](https://github.com/woodtho/saturate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/woodtho/saturate/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Codecov test coverage](https://codecov.io/gh/woodtho/Qual-Codes/graph/badge.svg)](https://app.codecov.io/gh/woodtho/Qual-Codes)
+[![Codecov test coverage](https://codecov.io/gh/woodtho/saturate/graph/badge.svg)](https://app.codecov.io/gh/woodtho/saturate)
 <!-- badges: end -->
 
 **saturate** is a modern R replacement for the [RQDA](https://github.com/RQDA/RQDA) package. It provides a full qualitative data analysis (CAQDAS) workflow backed by [DuckDB](https://duckdb.org/) — one portable `.satdb`/`.duckdb` file per project — with an interactive Shiny GUI for text coding, codebook management, and multi-coder collaboration.
