@@ -3,9 +3,9 @@
 **saturate** is a modern R replacement for the
 [RQDA](https://github.com/RQDA/RQDA) package. It provides a full
 qualitative data analysis (CAQDAS) workflow backed by
-[DuckDB](https://duckdb.org/) — one portable `.duckdb` file per project
-— with an interactive Shiny GUI for text coding, codebook management,
-and multi-coder collaboration.
+[DuckDB](https://duckdb.org/) — one portable `.satdb`/`.duckdb` file per
+project — with an interactive Shiny GUI for text coding, codebook
+management, and multi-coder collaboration.
 
 ## Features
 
