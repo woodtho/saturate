@@ -20,7 +20,16 @@ segments as tidy tibbles.
 }
 }
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://woodtho.github.io/saturate}
+  \item \url{https://github.com/woodtho/saturate}
+  \item Report bugs at \url{https://github.com/woodtho/saturate/issues}
+}
+
+}
 \author{
-\strong{Maintainer}: Thomas Wood \email{thomaswood1994@gmail.com}
+\strong{Maintainer}: Thomas Wood \email{thomawood1994@gmail.com}
 
 }

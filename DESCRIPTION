@@ -2,13 +2,13 @@ Package: saturate
 Title: Qualitative Text Coding with DuckDB and Shiny
 Version: 0.1.0
 Authors@R:
-    person("Thomas", "Wood", email = "thomaswood1994@gmail.com",
+    person("Thomas", "Wood", email = "thomawood1994@gmail.com",
            role = c("aut", "cre"))
 Description: A modern replacement for RQDA. Create and manage qualitative
     coding projects backed by DuckDB, annotate text passages interactively
     via a Shiny GUI, and retrieve coded segments as tidy tibbles.
-URL: https://thomaswood.github.io/saturate, https://github.com/thomaswood/saturate
-BugReports: https://github.com/thomaswood/saturate/issues
+URL: https://woodtho.github.io/saturate, https://github.com/woodtho/saturate
+BugReports: https://github.com/woodtho/saturate/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-GB

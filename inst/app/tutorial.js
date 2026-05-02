@@ -379,7 +379,7 @@
       body:   'Visit <strong>Help</strong> any time for keyboard shortcuts, ' +
               'detailed workflow guides, and to restart this tour. ' +
               'For a full walkthrough with worked examples, read the ' +
-              '<a href="https://thomaswood.github.io/saturate/articles/user-guide.html" ' +
+              '<a href="https://woodtho.github.io/saturate/articles/user-guide.html" ' +
               'target="_blank" rel="noopener">user guide</a>. ' +
               'Good luck with your research.'
     }

@@ -64,7 +64,7 @@ mod_help_ui <- function(id) {
               title = "Walk through the main workflow step by step"
             ),
             shiny::tags$a(
-              href   = "https://thomaswood.github.io/saturate/articles/user-guide.html",
+              href   = "https://woodtho.github.io/saturate/articles/user-guide.html",
               target = "_blank",
               rel    = "noopener",
               class  = "btn btn-outline-secondary btn-sm",

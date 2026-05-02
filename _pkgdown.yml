@@ -1,4 +1,4 @@
-url: https://thomaswood.github.io/saturate
+url: https://woodtho.github.io/saturate
 
 template:
   bootstrap: 5
@@ -23,7 +23,7 @@ navbar:
   components:
     github:
       icon: fab fa-github
-      href: https://github.com/thomaswood/saturate
+      href: https://github.com/woodtho/saturate
       aria-label: GitHub
 
 articles:
