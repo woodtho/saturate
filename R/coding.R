@@ -593,13 +593,17 @@ build_highlighted_html <- function(content, codings,
                                     highlight_codes   = NULL,
                                     excerpts          = NULL,
                                     show_line_numbers = FALSE,
+                                    show_timestamps   = TRUE,
                                     search_ranges     = NULL) {
   n <- nchar(content)
 
   make_div <- function(inner_html, with_ln = FALSE) {
-    cls <- if (with_ln) "qc-text-display qc-line-numbers-on" else "qc-text-display"
+    cls <- paste(
+      if (with_ln) "qc-text-display qc-line-numbers-on" else "qc-text-display",
+      if (isTRUE(show_timestamps)) "qc-timestamps-on" else ""
+    )
     htmltools::div(
-      class        = cls,
+      class        = trimws(cls),
       role         = "region",
       tabindex     = "0",
       `aria-label` = "Document text \u2014 select a passage then choose a code to apply",
@@ -622,6 +626,7 @@ build_highlighted_html <- function(content, codings,
 
   if ((no_codings && no_excerpts && no_search) || n == 0L) {
     raw <- .apply_bold(htmltools::htmlEscape(content))
+    if (isTRUE(show_timestamps)) raw <- .wrap_timestamps(raw)
     if (show_line_numbers) raw <- .add_line_numbers(raw)
     return(make_div(raw, with_ln = show_line_numbers))
   }
@@ -743,6 +748,7 @@ build_highlighted_html <- function(content, codings,
   }
 
   html_out <- paste(html_parts, collapse = "")
+  if (isTRUE(show_timestamps)) html_out <- .wrap_timestamps(html_out)
   if (show_line_numbers) html_out <- .add_line_numbers(html_out)
   make_div(html_out, with_ln = show_line_numbers)
 }
@@ -751,6 +757,17 @@ build_highlighted_html <- function(content, codings,
 # Double-asterisks are not HTML-special so no entity mangling occurs.
 .apply_bold <- function(html) {
   gsub("\\*\\*([^*\n]+)\\*\\*", "<strong>\\1</strong>", html, perl = TRUE)
+}
+
+# Wrap [HH:MM:SS] timestamp markers with a styled span so CSS can render them
+# like line-number gutters. The container must carry class qc-timestamps-on.
+.wrap_timestamps <- function(html) {
+  gsub(
+    "(\\[)(\\d{2}:\\d{2}:\\d{2})(\\])",
+    '<span class="qc-ts-marker" aria-hidden="true">\\1\\2\\3</span>',
+    html,
+    perl = TRUE
+  )
 }
 
 # Wrap each newline-delimited line in a flex row with a gutter number column.

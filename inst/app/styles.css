@@ -1580,6 +1580,26 @@ html[data-sat-theme="contrast-dark"] .qc-line:hover {
   opacity: .75;
 }
 
+/* ── Timestamp markers [HH:MM:SS] ───────────────────────────────────────── */
+.qc-ts-marker {
+  display: none;
+}
+.qc-timestamps-on .qc-ts-marker {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .72em;
+  color: var(--sat-text-muted);
+  background: var(--sat-surface-card);
+  border: 1px solid var(--sat-border);
+  border-radius: 3px;
+  padding: 0 .35em;
+  margin-right: .4em;
+  vertical-align: baseline;
+  line-height: 1.6;
+  user-select: none;
+  letter-spacing: .02em;
+}
+
 /* ── TTS reading cursor ──────────────────────────────────────────────────── */
 .qc-tts-active-line {
   background: color-mix(in srgb, var(--sat-accent) 12%, transparent) !important;

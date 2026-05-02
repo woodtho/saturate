@@ -21,7 +21,8 @@
     showLineNumbers: false,
     highlightOpacity: 0.33,
     ttsVoice: "auto",
-    ttsRate: 1
+    ttsRate: 1,
+    showTimestamps: true
   };
 
   var handlerRegistered = false;
@@ -364,7 +365,7 @@
       var sorted = message.profiles.slice().sort(function(a, b) {
         return String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""));
       });
-      if (sorted.length > 0 && sorted[0].lastUsedAt) target = sorted[0];
+      if (sorted.length > 0) target = sorted[0];
     }
 
     if (target) {

@@ -20,7 +20,7 @@
     )
   } else {
     .exec(project$con,
-      "INSERT INTO profiles (name) VALUES (?)",
+      "INSERT INTO profiles (name, last_used_at) VALUES (?, now())",
       list(name)
     )
   }

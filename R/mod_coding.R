@@ -42,6 +42,23 @@ mod_coding_ui <- function(id) {
                   "Lines"
                 )
               ),
+              shiny::div(
+                class = "qc-doc-ts-toggle form-check form-switch d-flex align-items-center gap-1 me-1",
+                style = "margin-bottom:0;",
+                shiny::tags$input(
+                  id      = ns("show_timestamps"),
+                  class   = "form-check-input",
+                  type    = "checkbox",
+                  role    = "switch",
+                  checked = NA
+                ),
+                shiny::tags$label(
+                  `for` = ns("show_timestamps"),
+                  class = "form-check-label text-muted",
+                  style = "font-size:0.75rem;white-space:nowrap;",
+                  "Timestamps"
+                )
+              ),
               shiny::actionButton(ns("btn_nav_prev"), "\u2190 Prev",
                 class = "btn-sm btn-outline-secondary",
                 title = "Previous uncoded segment  (p)"),
@@ -243,6 +260,8 @@ mod_coding_server <- function(id, rv, parent_session) {
         value = settings$highlightOpacity)
       shiny::updateCheckboxInput(session, "show_line_numbers",
         value = isTRUE(settings$showLineNumbers))
+      shiny::updateCheckboxInput(session, "show_timestamps",
+        value = !isFALSE(settings$showTimestamps))
     }, ignoreInit = FALSE, ignoreNULL = FALSE)
 
     # -- Core reactives ---------------------------------------------------------
@@ -368,6 +387,7 @@ mod_coding_server <- function(id, rv, parent_session) {
         cb_mode           = lv$cb_mode,
         excerpts          = excerpts_rv(),
         show_line_numbers = isTRUE(input$show_line_numbers),
+        show_timestamps   = !isFALSE(input$show_timestamps),
         search_ranges     = search_rv()
       )
     })
