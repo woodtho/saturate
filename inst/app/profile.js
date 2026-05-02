@@ -1,10 +1,6 @@
 (function() {
   "use strict";
 
-  var PROFILE_KEY = "saturate.profiles.v1";
-  var ACTIVE_KEY = "saturate.activeProfile.v1";
-  var SETTINGS_KEY = "saturate.settings.v1";
-
   var fontStacks = {
     system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
@@ -27,65 +23,18 @@
     ttsVoice: "auto",
     ttsRate: 1
   };
+
   var handlerRegistered = false;
 
-  function readJson(key, fallback) {
-    try {
-      var raw = window.localStorage.getItem(key);
-      if (!raw) return fallback;
-      var parsed = JSON.parse(raw);
-      return parsed == null ? fallback : parsed;
-    } catch (e) {
-      return fallback;
-    }
-  }
-
-  function writeJson(key, value) {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
-      window.console && window.console.warn("Could not save saturate settings", e);
-    }
-  }
+  // In-memory state - DB is the sole persistent store.
+  var state = {
+    profiles:      [],
+    activeProfile: "",
+    settings:      Object.assign({}, defaultSettings)
+  };
 
   function cleanName(name) {
     return String(name || "").replace(/\s+/g, " ").trim();
-  }
-
-  function readProfiles() {
-    var raw = readJson(PROFILE_KEY, []);
-    if (!Array.isArray(raw)) return [];
-    var seen = {};
-    return raw.reduce(function(out, p) {
-      var name = cleanName(typeof p === "string" ? p : p.name);
-      if (!name || seen[name.toLowerCase()]) return out;
-      seen[name.toLowerCase()] = true;
-      out.push({
-        name: name,
-        createdAt: p.createdAt || new Date().toISOString(),
-        lastUsedAt: p.lastUsedAt || null
-      });
-      return out;
-    }, []);
-  }
-
-  function saveProfiles(profiles) {
-    writeJson(PROFILE_KEY, profiles);
-  }
-
-  function readSettings() {
-    var settings = readJson(SETTINGS_KEY, {});
-    return Object.assign({}, defaultSettings, settings || {});
-  }
-
-  function saveSettings(settings) {
-    writeJson(SETTINGS_KEY, Object.assign({}, defaultSettings, settings || {}));
-  }
-
-  function resetSettings() {
-    var settings = Object.assign({}, defaultSettings);
-    saveSettings(settings);
-    return settings;
   }
 
   function numberSetting(settings, key, fallback, min, max) {
@@ -138,7 +87,7 @@
       ttsVoiceSetting(settings) ||
       cleanName(select.dataset.preferredVoice) ||
       cleanName(select.value) ||
-      ttsVoiceSetting(readSettings());
+      ttsVoiceSetting(state.settings);
     var voices = supported ? listSpeechVoices() : [];
     var currentValue = cleanName(select.value);
 
@@ -172,66 +121,6 @@
       note.textContent = "Voice list is still loading from this browser.";
     } else {
       note.textContent = "Voice choices come from this browser and device.";
-    }
-  }
-
-  function activeProfile() {
-    try {
-      return cleanName(window.localStorage.getItem(ACTIVE_KEY));
-    } catch (e) {
-      return "";
-    }
-  }
-
-  function setActiveProfile(name) {
-    name = cleanName(name);
-    try {
-      if (name) window.localStorage.setItem(ACTIVE_KEY, name);
-      else window.localStorage.removeItem(ACTIVE_KEY);
-    } catch (e) {
-      window.console && window.console.warn("Could not save saturate profile", e);
-    }
-  }
-
-  function ensureProfile(name) {
-    name = cleanName(name);
-    if (!name) return null;
-
-    var profiles = readProfiles();
-    var existing = profiles.find(function(p) {
-      return p.name.toLowerCase() === name.toLowerCase();
-    });
-
-    if (existing) return existing.name;
-
-    profiles.push({
-      name: name,
-      createdAt: new Date().toISOString(),
-      lastUsedAt: null
-    });
-    saveProfiles(profiles);
-    return name;
-  }
-
-  function touchProfile(name) {
-    var profiles = readProfiles();
-    profiles.forEach(function(p) {
-      if (p.name.toLowerCase() === name.toLowerCase()) {
-        p.lastUsedAt = new Date().toISOString();
-      }
-    });
-    saveProfiles(profiles);
-  }
-
-  function deleteProfile(name) {
-    name = cleanName(name);
-    if (!name) return;
-    var profiles = readProfiles().filter(function(p) {
-      return p.name.toLowerCase() !== name.toLowerCase();
-    });
-    saveProfiles(profiles);
-    if (activeProfile().toLowerCase() === name.toLowerCase()) {
-      setActiveProfile("");
     }
   }
 
@@ -304,14 +193,14 @@
 
   function sendState(reason) {
     if (!window.Shiny || !window.Shiny.setInputValue) return;
-    var state = {
-      profiles: readProfiles(),
-      activeProfile: activeProfile(),
-      settings: readSettings(),
-      reason: reason || "sync",
-      nonce: Date.now()
+    var s = {
+      profiles:      state.profiles,
+      activeProfile: state.activeProfile,
+      settings:      state.settings,
+      reason:        reason || "sync",
+      nonce:         Date.now()
     };
-    window.Shiny.setInputValue("profile_state", state, { priority: "event" });
+    window.Shiny.setInputValue("profile_state", s, { priority: "event" });
     if (state.activeProfile) {
       window.Shiny.setInputValue(
         "profile_selected",
@@ -335,10 +224,20 @@
   }
 
   function chooseProfile(name) {
-    name = ensureProfile(name);
+    name = cleanName(name);
     if (!name) return;
-    setActiveProfile(name);
-    touchProfile(name);
+    // Add to in-memory list if new
+    var exists = state.profiles.some(function(p) {
+      return p.name.toLowerCase() === name.toLowerCase();
+    });
+    if (!exists) {
+      state.profiles.push({
+        name: name,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null
+      });
+    }
+    state.activeProfile = name;
     setCoderInput(name);
     hideGate();
     renderGate();
@@ -348,10 +247,9 @@
   function renderGate() {
     var list = document.getElementById("qc-profile-list");
     if (!list) return;
-    var profiles = readProfiles();
     list.innerHTML = "";
 
-    if (profiles.length === 0) {
+    if (state.profiles.length === 0) {
       var empty = document.createElement("p");
       empty.className = "qc-profile-empty";
       empty.textContent = "No saved profiles yet.";
@@ -359,7 +257,7 @@
       return;
     }
 
-    profiles
+    state.profiles
       .slice()
       .sort(function(a, b) {
         return String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""));
@@ -408,26 +306,35 @@
 
   function handleProfileAction(message) {
     var action = message && message.action;
-    if (action === "create") {
-      chooseProfile(message.name);
-    } else if (action === "switch") {
+    if (action === "create" || action === "switch") {
       chooseProfile(message.name);
     } else if (action === "delete") {
-      deleteProfile(message.name);
-      if (activeProfile()) hideGate();
-      else showGate();
+      var deleteName = cleanName(message.name);
+      state.profiles = state.profiles.filter(function(p) {
+        return p.name.toLowerCase() !== deleteName.toLowerCase();
+      });
+      if (state.activeProfile.toLowerCase() === deleteName.toLowerCase()) {
+        state.activeProfile = "";
+        state.settings = Object.assign({}, defaultSettings);
+        applySettings(state.settings);
+        showGate();
+      } else {
+        renderGate();
+      }
       sendState("delete");
     } else if (action === "settings") {
       var settings = Object.assign({}, defaultSettings, message.settings || {});
-      saveSettings(settings);
+      state.settings = settings;
       applySettings(settings);
       sendState("settings");
     } else if (action === "reset_settings") {
-      var defaulted = resetSettings();
-      applySettings(defaulted);
+      state.settings = Object.assign({}, defaultSettings);
+      applySettings(state.settings);
       sendState("reset_settings");
     } else if (action === "logout") {
-      setActiveProfile("");
+      state.activeProfile = "";
+      state.settings = Object.assign({}, defaultSettings);
+      applySettings(state.settings);
       showGate();
       sendState("logout");
     }
@@ -436,31 +343,37 @@
   function handleLoadProfiles(message) {
     if (!message || !Array.isArray(message.profiles)) return;
 
-    // Seed localStorage from DB (DB is the authoritative source)
-    var dbProfiles = message.profiles.map(function(p) {
+    state.profiles = message.profiles.map(function(p) {
       return {
         name:       cleanName(p.name),
         createdAt:  p.createdAt  || new Date().toISOString(),
         lastUsedAt: p.lastUsedAt || null
       };
     });
-    saveProfiles(dbProfiles);
 
-    // Apply settings for whichever profile is active (or most recently used)
-    var active = activeProfile();
-    var target = message.profiles.find(function(p) {
-      return active && cleanName(p.name).toLowerCase() === active.toLowerCase();
-    });
+    // Auto-select: prefer suggestedActive (most recently used from DB),
+    // then fall back to highest lastUsedAt in the list.
+    var suggested = cleanName(message.suggestedActive || "");
+    var target = null;
+    if (suggested) {
+      target = message.profiles.find(function(p) {
+        return cleanName(p.name).toLowerCase() === suggested.toLowerCase();
+      });
+    }
     if (!target) {
       var sorted = message.profiles.slice().sort(function(a, b) {
         return String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""));
       });
       if (sorted.length > 0 && sorted[0].lastUsedAt) target = sorted[0];
     }
-    if (target && target.settings && Object.keys(target.settings).length > 0) {
-      var merged = Object.assign({}, defaultSettings, target.settings);
-      saveSettings(merged);
+
+    if (target) {
+      var merged = Object.assign({}, defaultSettings, target.settings || {});
+      state.settings      = merged;
+      state.activeProfile = cleanName(target.name);
       applySettings(merged);
+      setCoderInput(state.activeProfile);
+      hideGate();
     }
 
     renderGate();
@@ -484,10 +397,9 @@
     registerHandler();
     document.addEventListener("shiny:connected", function() {
       registerHandler();
-      applySettings(readSettings());
+      applySettings(state.settings);
       renderGate();
-      var active = activeProfile();
-      if (active) chooseProfile(active);
+      if (state.activeProfile) hideGate();
       else showGate();
       sendState("connected");
     });
@@ -502,19 +414,19 @@
 
     document.addEventListener("shown.bs.modal", function() {
       window.setTimeout(function() {
-        syncTtsVoiceSelect(readSettings());
+        syncTtsVoiceSelect(state.settings);
       }, 0);
     });
 
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
       window.speechSynthesis.addEventListener("voiceschanged", function() {
-        syncTtsVoiceSelect(readSettings());
+        syncTtsVoiceSelect(state.settings);
       });
     }
   }
 
   document.addEventListener("DOMContentLoaded", function() {
-    applySettings(readSettings());
+    applySettings(state.settings);
     initGate();
     initTtsSettingsBridge();
     initShinyBridge();

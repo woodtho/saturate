@@ -230,7 +230,15 @@ saturate_server <- function(input, output, session, project) {
         settings   = settings
       )
     })
-    session$sendCustomMessage("qc_load_profiles", list(profiles = profiles_list))
+    # Most recently used profile — JS will auto-select it
+    most_recent <- tryCatch({
+      df_sorted <- profiles_df[order(
+        profiles_df$last_used_at, decreasing = TRUE, na.last = TRUE), ]
+      if (!is.na(df_sorted$last_used_at[[1L]])) df_sorted$name[[1L]] else NULL
+    }, error = function(e) NULL)
+
+    session$sendCustomMessage("qc_load_profiles",
+      list(profiles = profiles_list, suggestedActive = most_recent))
   }, once = TRUE)
 
   # -- Auto-tutorial: show for brand-new projects (no docs and no codes) ------
