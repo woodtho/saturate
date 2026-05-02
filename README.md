@@ -15,7 +15,7 @@
 - **Rich coding UI** — select passages, assign codes, add confidence levels and memos
 - **Codebook management** — hierarchical categories, code relations, weights, and full history
 - **Multi-coder workflows** — split a project for independent coders, merge results back
-- **Audio recording & transcription** — record directly in the browser or upload audio, transcribe with local [whisper](https://github.com/bnosac/whisper), import with optional timestamps
+- **Audio recording & transcription** — record directly in the browser or upload audio, transcribe with local [whisper](https://github.com/cornball-ai/whisper), import with optional timestamps
 - **Saturation analysis** — plot theoretical saturation curves and triangulation grids
 - **Inter-rater reliability** — Cohen's kappa, Krippendorff's alpha, and agreement matrices
 - **Member checking** — generate and track participant feedback on interpreted themes
