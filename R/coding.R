@@ -627,7 +627,7 @@ build_highlighted_html <- function(content, codings,
   if ((no_codings && no_excerpts && no_search) || n == 0L) {
     raw <- .apply_bold(htmltools::htmlEscape(content))
     if (isTRUE(show_timestamps)) raw <- .wrap_timestamps(raw)
-    if (show_line_numbers) raw <- .add_line_numbers(raw)
+    if (show_line_numbers) raw <- .add_line_numbers(raw, merge_timestamps = isTRUE(show_timestamps))
     return(make_div(raw, with_ln = show_line_numbers))
   }
 
@@ -749,7 +749,7 @@ build_highlighted_html <- function(content, codings,
 
   html_out <- paste(html_parts, collapse = "")
   if (isTRUE(show_timestamps)) html_out <- .wrap_timestamps(html_out)
-  if (show_line_numbers) html_out <- .add_line_numbers(html_out)
+  if (show_line_numbers) html_out <- .add_line_numbers(html_out, merge_timestamps = isTRUE(show_timestamps))
   make_div(html_out, with_ln = show_line_numbers)
 }
 
@@ -771,15 +771,36 @@ build_highlighted_html <- function(content, codings,
 }
 
 # Wrap each newline-delimited line in a flex row with a gutter number column.
-.add_line_numbers <- function(html) {
+# merge_timestamps: when TRUE, any qc-ts-marker at the very start of a line is
+# pulled into the gutter (below the line number) instead of staying inline.
+.add_line_numbers <- function(html, merge_timestamps = FALSE) {
   lines    <- strsplit(html, "\n", fixed = TRUE)[[1L]]
   n_digits <- nchar(as.character(length(lines)))
+
+  # Pattern that matches a leading timestamp marker span (produced by .wrap_timestamps)
+  ts_pattern <- '^<span class="qc-ts-marker" aria-hidden="true">(\\[\\d{2}:\\d{2}:\\d{2}\\])</span>'
+
   rows <- vapply(seq_along(lines), function(i) {
-    num <- formatC(i, width = n_digits, flag = " ")
+    line_html <- lines[[i]]
+    num       <- formatC(i, width = n_digits, flag = " ")
+
+    gutter <- num
+    if (merge_timestamps) {
+      m <- regmatches(line_html, regexpr(ts_pattern, line_html, perl = TRUE))
+      if (length(m) == 1L && nchar(m) > 0L) {
+        ts_text <- regmatches(m, regexpr("\\[\\d{2}:\\d{2}:\\d{2}\\]", m))
+        gutter  <- paste0(
+          num,
+          '<span class="qc-ln-ts" aria-hidden="true">', ts_text, '</span>'
+        )
+        line_html <- sub(ts_pattern, "", line_html, perl = TRUE)
+      }
+    }
+
     paste0(
       '<div class="qc-line">',
-      '<span class="qc-line-num" aria-hidden="true">', num, '</span>',
-      '<span class="qc-line-text">', lines[[i]], '</span>',
+      '<span class="qc-line-num" aria-hidden="true">', gutter, '</span>',
+      '<span class="qc-line-text">', line_html, '</span>',
       '</div>'
     )
   }, character(1L))
