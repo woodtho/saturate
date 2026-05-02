@@ -30,6 +30,36 @@
     speechTextOffset: 0      // char offset into full docText where current speech starts
   };
 
+  // ── Timestamp jump ─────────────────────────────────────────────────────────
+  function _tsToSecs(str) {
+    var p = str.trim().split(':').map(Number);
+    if (p.some(isNaN)) return NaN;
+    if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+    if (p.length === 2) return p[0] * 60 + p[1];
+    return NaN;
+  }
+
+  function jumpToTime(timeStr) {
+    var target = _tsToSecs(timeStr);
+    if (isNaN(target)) return;
+    var container = document.querySelector('.qc-text-display');
+    if (!container) return;
+    var markers = Array.from(container.querySelectorAll('[data-ts]'));
+    if (!markers.length) return;
+
+    var best = markers[0], bestDiff = Infinity;
+    markers.forEach(function(m) {
+      var diff = Math.abs(_tsToSecs(m.dataset.ts) - target);
+      if (diff < bestDiff) { bestDiff = diff; best = m; }
+    });
+
+    best.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    best.classList.remove('qc-ts-jump-flash');
+    void best.offsetWidth; // reflow to restart animation
+    best.classList.add('qc-ts-jump-flash');
+    setTimeout(function() { best.classList.remove('qc-ts-jump-flash'); }, 1000);
+  }
+
   // ── Namespace setup ────────────────────────────────────────────────────────
   Shiny.addCustomMessageHandler('qc_set_ns', function (msg) {
     window._qc_ns = msg.ns_prefix;
@@ -943,6 +973,23 @@
     }
     return count;
   }
+
+  // ── Wire up the timestamp jump input ───────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.target && e.target.id === 'qc_ts_jump' && e.key === 'Enter') {
+      e.preventDefault();
+      jumpToTime(e.target.value);
+    }
+  });
+
+  // Clicking any timestamp marker scrolls to it (useful when not in line-numbers mode)
+  document.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-ts]');
+    if (!el) return;
+    if (el.classList.contains('qc-ts-marker') || el.classList.contains('qc-line-num')) {
+      jumpToTime(el.dataset.ts);
+    }
+  });
 
   window.addEventListener('beforeunload', _cancelTts);
   $(document).ready(function () { setTimeout(_syncTtsControls, 0); });

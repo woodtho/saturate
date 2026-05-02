@@ -230,11 +230,12 @@ saturate_server <- function(input, output, session, project) {
         settings   = settings
       )
     })
-    # Most recently used profile — JS will auto-select it
+    # Most recently used profile - JS will auto-select it
     most_recent <- tryCatch({
-      df_sorted <- profiles_df[order(
-        profiles_df$last_used_at, decreasing = TRUE, na.last = TRUE), ]
-      if (!is.na(df_sorted$last_used_at[[1L]])) df_sorted$name[[1L]] else NULL
+      times     <- ifelse(!is.na(profiles_df$last_used_at),
+                          as.numeric(profiles_df$last_used_at),
+                          as.numeric(profiles_df$created_at))
+      profiles_df$name[[which.max(times)]]
     }, error = function(e) NULL)
 
     session$sendCustomMessage("qc_load_profiles",

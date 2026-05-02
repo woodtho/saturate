@@ -763,43 +763,44 @@ build_highlighted_html <- function(content, codings,
 # like line-number gutters. The container must carry class qc-timestamps-on.
 .wrap_timestamps <- function(html) {
   gsub(
-    "(\\[)(\\d{2}:\\d{2}:\\d{2})(\\])",
-    '<span class="qc-ts-marker" aria-hidden="true">\\1\\2\\3</span>',
+    "\\[(\\d{2}:\\d{2}:\\d{2})\\]",
+    '<span class="qc-ts-marker" data-ts="\\1" aria-hidden="true">[\\1]</span>',
     html,
     perl = TRUE
   )
 }
 
 # Wrap each newline-delimited line in a flex row with a gutter number column.
-# merge_timestamps: when TRUE, any qc-ts-marker at the very start of a line is
-# pulled into the gutter (below the line number) instead of staying inline.
+# merge_timestamps: when TRUE, lines that start with a timestamp use the time
+# value as the gutter label instead of a line number.
 .add_line_numbers <- function(html, merge_timestamps = FALSE) {
   lines    <- strsplit(html, "\n", fixed = TRUE)[[1L]]
   n_digits <- nchar(as.character(length(lines)))
 
-  # Pattern that matches a leading timestamp marker span (produced by .wrap_timestamps)
-  ts_pattern <- '^<span class="qc-ts-marker" aria-hidden="true">(\\[\\d{2}:\\d{2}:\\d{2}\\])</span>'
+  ts_pattern <- '^<span class="qc-ts-marker" data-ts="(\\d{2}:\\d{2}:\\d{2})"[^>]*>\\[\\d{2}:\\d{2}:\\d{2}\\]</span>'
 
   rows <- vapply(seq_along(lines), function(i) {
     line_html <- lines[[i]]
     num       <- formatC(i, width = n_digits, flag = " ")
 
-    gutter <- num
     if (merge_timestamps) {
       m <- regmatches(line_html, regexpr(ts_pattern, line_html, perl = TRUE))
       if (length(m) == 1L && nchar(m) > 0L) {
-        ts_text <- regmatches(m, regexpr("\\[\\d{2}:\\d{2}:\\d{2}\\]", m))
-        gutter  <- paste0(
-          num,
-          '<span class="qc-ln-ts" aria-hidden="true">', ts_text, '</span>'
-        )
+        ts_val    <- sub('.*data-ts="(\\d{2}:\\d{2}:\\d{2})".*', "\\1", m)
         line_html <- sub(ts_pattern, "", line_html, perl = TRUE)
+        return(paste0(
+          '<div class="qc-line">',
+          '<span class="qc-line-num" data-ts="', ts_val, '"',
+          ' aria-hidden="true" title="Jump to ', ts_val, '">[', ts_val, ']</span>',
+          '<span class="qc-line-text">', line_html, '</span>',
+          '</div>'
+        ))
       }
     }
 
     paste0(
       '<div class="qc-line">',
-      '<span class="qc-line-num" aria-hidden="true">', gutter, '</span>',
+      '<span class="qc-line-num" aria-hidden="true">', num, '</span>',
       '<span class="qc-line-text">', line_html, '</span>',
       '</div>'
     )

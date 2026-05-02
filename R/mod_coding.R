@@ -59,6 +59,17 @@ mod_coding_ui <- function(id) {
                   "Timestamps"
                 )
               ),
+              shiny::div(
+                class = "d-flex align-items-center gap-1",
+                shiny::tags$input(
+                  id          = "qc_ts_jump",
+                  class       = "form-control form-control-sm qc-ts-jump-input font-monospace",
+                  type        = "text",
+                  placeholder = "00:00:00",
+                  title       = "Jump to timestamp -- press Enter",
+                  style       = "width:6.5rem;"
+                )
+              ),
               shiny::actionButton(ns("btn_nav_prev"), "\u2190 Prev",
                 class = "btn-sm btn-outline-secondary",
                 title = "Previous uncoded segment  (p)"),
