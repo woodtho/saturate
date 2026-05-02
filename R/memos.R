@@ -153,6 +153,53 @@ qc_list_project_memos <- function(project, type = NULL) {
   path
 }
 
+#' Export the project analytical journal
+#'
+#' Writes all journal entries to a file. Supported formats: `"docx"` (Word),
+#' `"html"`, `"txt"` (plain text), and `"csv"`.
+#'
+#' @param project A `qc_project` object.
+#' @param path Character. Output file path. If `NULL`, a temp file is created
+#'   and its path returned.
+#' @param format Character. One of `"docx"`, `"html"`, `"txt"`, `"csv"`.
+#'
+#' @return The output file path, invisibly.
+#' @export
+qc_export_journal <- function(project, path = NULL, format = "docx") {
+  assert_class(project, "qc_project")
+  assert_con(project$con)
+  format <- match.arg(format, c("docx", "html", "txt", "csv"))
+
+  tmp <- switch(format,
+    docx = .export_memos_docx(project),
+    html = .export_memos_html(project),
+    txt  = {
+      df  <- qc_list_project_memos(project)
+      out <- tempfile(fileext = ".txt")
+      lines <- character(0)
+      for (i in seq_len(nrow(df))) {
+        row   <- df[i, , drop = FALSE]
+        ts    <- format(as.POSIXct(row$created_at), "%d %b %Y %H:%M")
+        lines <- c(lines,
+          paste0("[", toupper(row$memo_type), "] ", ts, " -- ", row$created_by),
+          as.character(row$content), "")
+      }
+      writeLines(lines, out)
+      out
+    },
+    csv  = {
+      df  <- qc_list_project_memos(project)
+      out <- tempfile(fileext = ".csv")
+      utils::write.csv(df, out, row.names = FALSE)
+      out
+    }
+  )
+
+  if (is.null(path)) return(invisible(tmp))
+  file.copy(tmp, path, overwrite = TRUE)
+  invisible(path)
+}
+
 #' Delete a project journal entry (soft delete)
 #'
 #' @param project A `qc_project` object.

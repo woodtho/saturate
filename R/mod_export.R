@@ -13,6 +13,7 @@ mod_export_ui <- function(id) {
           choices = c(
             "Analytical Report"  = "report",
             "Codebook"           = "codebook",
+            "Journal"            = "journal",
             "Raw Project Data"   = "table"
           ),
           selected = "report"
@@ -67,6 +68,8 @@ mod_export_server <- function(id, rv) {
                                 value = 2L, min = 1L, max = 10L)
           )
         ),
+
+        journal = NULL,
 
         table = shiny::tagList(
           shiny::selectInput(ns("tbl_name"), "Table",
@@ -139,6 +142,7 @@ mod_export_server <- function(id, rv) {
       switch(input$export_type,
         report   = .export_report_panel(ns),
         codebook = .export_codebook_panel(ns),
+        journal  = .export_journal_panel(ns),
         table    = .export_table_panel(ns)
       )
     })
@@ -259,6 +263,60 @@ mod_export_server <- function(id, rv) {
     output$dl_cb_html <- shiny::downloadHandler(
       filename = function() paste0("codebook_", Sys.Date(), ".html"),
       content  = .cb_content("html")
+    )
+
+    # -- Summary stats -- Journal -----------------------------------------------
+
+    output$jnl_stats <- shiny::renderUI({
+      n <- tryCatch(
+        .query(rv$project$con,
+          "SELECT COUNT(*) FROM project_memos WHERE status=1")[[1]],
+        error = function(e) 0L)
+      shiny::div(
+        class = "d-flex gap-3 flex-wrap mb-3",
+        .stat_pill(n, "entries")
+      )
+    })
+
+    # -- Download handlers -- Journal -------------------------------------------
+
+    output$dl_jnl_docx <- shiny::downloadHandler(
+      filename = function() paste0("journal_", Sys.Date(), ".docx"),
+      content  = function(file) {
+        tryCatch(file.copy(.export_memos_docx(rv$project), file),
+          error = function(e) shiny::showNotification(conditionMessage(e), type = "error"))
+      }
+    )
+    output$dl_jnl_html <- shiny::downloadHandler(
+      filename = function() paste0("journal_", Sys.Date(), ".html"),
+      content  = function(file) {
+        tryCatch(file.copy(.export_memos_html(rv$project), file),
+          error = function(e) shiny::showNotification(conditionMessage(e), type = "error"))
+      }
+    )
+    output$dl_jnl_txt <- shiny::downloadHandler(
+      filename = function() paste0("journal_", Sys.Date(), ".txt"),
+      content  = function(file) {
+        df <- tryCatch(qc_list_project_memos(rv$project),
+                       error = function(e) tibble::tibble())
+        lines <- character(0)
+        for (i in seq_len(nrow(df))) {
+          row   <- df[i, , drop = FALSE]
+          ts    <- format(as.POSIXct(row$created_at), "%d %b %Y %H:%M")
+          lines <- c(lines,
+            paste0("[", toupper(row$memo_type), "] ", ts, " -- ", row$created_by),
+            as.character(row$content), "")
+        }
+        writeLines(lines, file)
+      }
+    )
+    output$dl_jnl_csv <- shiny::downloadHandler(
+      filename = function() paste0("journal_", Sys.Date(), ".csv"),
+      content  = function(file) {
+        df <- tryCatch(qc_list_project_memos(rv$project),
+                       error = function(e) tibble::tibble())
+        utils::write.csv(df, file, row.names = FALSE)
+      }
     )
 
     # -- Download handlers -- Raw Table -----------------------------------------
@@ -428,6 +486,50 @@ mod_export_server <- function(id, rv) {
             shiny::downloadButton(ns("dl_cb_html"),
               shiny::tagList(shiny::tags$i(class = "fa fa-globe",
                 `aria-hidden` = "true"), " HTML"),
+              class = "btn btn-outline-secondary"))
+        )
+      )
+    )
+  )
+}
+
+.export_journal_panel <- function(ns) {
+  bslib::card(
+    bslib::card_header(
+      shiny::tags$span(
+        shiny::tags$i(class = "fa fa-book", `aria-hidden` = "true"),
+        " Research Journal"
+      )
+    ),
+    bslib::card_body(
+      shiny::uiOutput(ns("jnl_stats")),
+      qc_help_note(
+        "Exports all journal entries with type, timestamp, author, and content.",
+        " Word and HTML formats include styled headers per entry."
+      ),
+      shiny::tags$fieldset(
+        shiny::tags$legend(class = "h6", "Download as"),
+        shiny::div(
+          class = "d-flex flex-wrap gap-2",
+          shiny::div(class = "d-grid",
+            shiny::downloadButton(ns("dl_jnl_docx"),
+              shiny::tagList(shiny::tags$i(class = "fa fa-file-word-o",
+                `aria-hidden` = "true"), " Word"),
+              class = "btn btn-primary")),
+          shiny::div(class = "d-grid",
+            shiny::downloadButton(ns("dl_jnl_html"),
+              shiny::tagList(shiny::tags$i(class = "fa fa-globe",
+                `aria-hidden` = "true"), " HTML"),
+              class = "btn btn-outline-secondary")),
+          shiny::div(class = "d-grid",
+            shiny::downloadButton(ns("dl_jnl_txt"),
+              shiny::tagList(shiny::tags$i(class = "fa fa-file-text-o",
+                `aria-hidden` = "true"), " Text"),
+              class = "btn btn-outline-secondary")),
+          shiny::div(class = "d-grid",
+            shiny::downloadButton(ns("dl_jnl_csv"),
+              shiny::tagList(shiny::tags$i(class = "fa fa-table",
+                `aria-hidden` = "true"), " CSV"),
               class = "btn btn-outline-secondary"))
         )
       )
