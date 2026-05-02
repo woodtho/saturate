@@ -152,7 +152,7 @@
   function _getDocumentSpeechText(container) {
     if (!container) return '';
     var clone = container.cloneNode(true);
-    clone.querySelectorAll('.qc-line-num, .qc-memo-icon').forEach(function (node) {
+    clone.querySelectorAll('.qc-line-num, .qc-ts-gutter, .qc-memo-icon').forEach(function (node) {
       node.remove();
     });
     if (clone.classList.contains('qc-line-numbers-on')) {
@@ -986,7 +986,7 @@
   document.addEventListener('click', function(e) {
     var el = e.target.closest('[data-ts]');
     if (!el) return;
-    if (el.classList.contains('qc-ts-marker') || el.classList.contains('qc-line-num')) {
+    if (el.classList.contains('qc-ts-marker') || el.classList.contains('qc-ts-gutter')) {
       jumpToTime(el.dataset.ts);
     }
   });

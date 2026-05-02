@@ -771,8 +771,9 @@ build_highlighted_html <- function(content, codings,
 }
 
 # Wrap each newline-delimited line in a flex row with a gutter number column.
-# merge_timestamps: when TRUE, lines that start with a timestamp use the time
-# value as the gutter label instead of a line number.
+# merge_timestamps: when TRUE, adds a separate timestamp gutter column to the
+# LEFT of the line-number column. Lines that start with a timestamp show it
+# there; other lines get an empty placeholder so the number column stays aligned.
 .add_line_numbers <- function(html, merge_timestamps = FALSE) {
   lines    <- strsplit(html, "\n", fixed = TRUE)[[1L]]
   n_digits <- nchar(as.character(length(lines)))
@@ -788,14 +789,20 @@ build_highlighted_html <- function(content, codings,
       if (length(m) == 1L && nchar(m) > 0L) {
         ts_val    <- sub('.*data-ts="(\\d{2}:\\d{2}:\\d{2})".*', "\\1", m)
         line_html <- sub(ts_pattern, "", line_html, perl = TRUE)
-        return(paste0(
-          '<div class="qc-line">',
-          '<span class="qc-line-num" data-ts="', ts_val, '"',
-          ' aria-hidden="true" title="Jump to ', ts_val, '">[', ts_val, ']</span>',
-          '<span class="qc-line-text">', line_html, '</span>',
-          '</div>'
-        ))
+        ts_span   <- paste0(
+          '<span class="qc-ts-gutter" data-ts="', ts_val,
+          '" aria-hidden="true" title="Jump to ', ts_val, '">[', ts_val, ']</span>'
+        )
+      } else {
+        ts_span <- '<span class="qc-ts-gutter qc-ts-empty" aria-hidden="true"></span>'
       }
+      return(paste0(
+        '<div class="qc-line">',
+        ts_span,
+        '<span class="qc-line-num" aria-hidden="true">', num, '</span>',
+        '<span class="qc-line-text">', line_html, '</span>',
+        '</div>'
+      ))
     }
 
     paste0(

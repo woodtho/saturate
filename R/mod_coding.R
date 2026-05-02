@@ -42,32 +42,35 @@ mod_coding_ui <- function(id) {
                   "Lines"
                 )
               ),
-              shiny::div(
-                class = "qc-doc-ts-toggle form-check form-switch d-flex align-items-center gap-1 me-1",
-                style = "margin-bottom:0;",
-                shiny::tags$input(
-                  id      = ns("show_timestamps"),
-                  class   = "form-check-input",
-                  type    = "checkbox",
-                  role    = "switch",
-                  checked = NA
-                ),
-                shiny::tags$label(
-                  `for` = ns("show_timestamps"),
-                  class = "form-check-label text-muted",
-                  style = "font-size:0.75rem;white-space:nowrap;",
-                  "Timestamps"
-                )
-              ),
-              shiny::div(
-                class = "d-flex align-items-center gap-1",
-                shiny::tags$input(
-                  id          = "qc_ts_jump",
-                  class       = "form-control form-control-sm qc-ts-jump-input font-monospace",
-                  type        = "text",
-                  placeholder = "00:00:00",
-                  title       = "Jump to timestamp -- press Enter",
-                  style       = "width:6.5rem;"
+              shinyjs::hidden(
+                shiny::div(
+                  id    = ns("ts_controls"),
+                  class = "d-flex align-items-center gap-1",
+                  shiny::div(
+                    class = "qc-doc-ts-toggle form-check form-switch d-flex align-items-center gap-1 me-1",
+                    style = "margin-bottom:0;",
+                    shiny::tags$input(
+                      id      = ns("show_timestamps"),
+                      class   = "form-check-input",
+                      type    = "checkbox",
+                      role    = "switch",
+                      checked = NA
+                    ),
+                    shiny::tags$label(
+                      `for` = ns("show_timestamps"),
+                      class = "form-check-label text-muted",
+                      style = "font-size:0.75rem;white-space:nowrap;",
+                      "Timestamps"
+                    )
+                  ),
+                  shiny::tags$input(
+                    id          = "qc_ts_jump",
+                    class       = "form-control form-control-sm qc-ts-jump-input font-monospace",
+                    type        = "text",
+                    placeholder = "00:00:00",
+                    title       = "Jump to timestamp -- press Enter",
+                    style       = "width:6.5rem;"
+                  )
                 )
               ),
               shiny::actionButton(ns("btn_nav_prev"), "\u2190 Prev",
@@ -274,6 +277,14 @@ mod_coding_server <- function(id, rv, parent_session) {
       shiny::updateCheckboxInput(session, "show_timestamps",
         value = !isFALSE(settings$showTimestamps))
     }, ignoreInit = FALSE, ignoreNULL = FALSE)
+
+    # Show timestamp controls only when the document contains timestamps
+    shiny::observe({
+      doc <- doc_rv()
+      has_ts <- !is.null(doc) &&
+                isTRUE(grepl("\\[\\d{2}:\\d{2}:\\d{2}\\]", doc$content, perl = TRUE))
+      shinyjs::toggle(id = "ts_controls", condition = has_ts)
+    })
 
     # -- Core reactives ---------------------------------------------------------
 

@@ -1580,21 +1580,31 @@ html[data-sat-theme="contrast-dark"] .qc-line:hover {
   opacity: .75;
 }
 
-/* When both are on, give all gutter cells enough room for a timestamp */
-.qc-timestamps-on.qc-line-numbers-on .qc-line-num {
+/* Timestamp gutter column — sits LEFT of line numbers when both are on */
+.qc-ts-gutter {
+  flex: 0 0 auto;
   min-width: 5.5rem;
-}
-
-/* Gutter cell that IS a timestamp (replaces line number on that line) */
-.qc-line-num[data-ts] {
+  padding: 0 .6rem;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .72em;
+  line-height: inherit;
   color: var(--sat-accent);
+  background: var(--sat-surface-card);
+  border-right: 1px solid var(--sat-border);
+  user-select: none;
+  cursor: pointer;
+  transition: color .12s, background .12s;
   letter-spacing: .01em;
 }
-.qc-line-num[data-ts]:hover {
-  color: var(--sat-accent);
-  background: color-mix(in srgb, var(--sat-accent) 12%, var(--sat-surface-card));
+.qc-ts-gutter:hover {
+  background: color-mix(in srgb, var(--sat-accent) 10%, var(--sat-surface-card));
 }
-.qc-line-num[data-ts]:hover::after { content: none; }
+.qc-ts-gutter.qc-ts-empty {
+  cursor: default;
+  pointer-events: none;
+}
+.qc-ts-gutter.qc-ts-empty:hover { background: var(--sat-surface-card); }
 
 /* Flash when jump-to-time lands on a marker */
 @keyframes qc-ts-flash {
