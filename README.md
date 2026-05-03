@@ -1,11 +1,10 @@
-# saturate <img src="man/figures/logo.png" align="right" height="120" alt="" />
+# [saturate](https://woodtho.github.io/saturate/) <img src="man/figures/logo.png" align="right" height="120" alt="" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/woodtho/saturate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/woodtho/saturate/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Codecov test coverage](https://codecov.io/gh/woodtho/saturate/graph/badge.svg)](https://app.codecov.io/gh/woodtho/saturate)
-<a href="https://www.aihonestybadge.com" target="_blank" rel="noopener"><img src="https://www.aihonestybadge.com/badges/ai-assisted.svg" alt="AI Assisted Badge" style="max-width: 190px; height: 20px;" /></a>
+[![Codecov test coverage](https://codecov.io/gh/woodtho/Qual-Codes/graph/badge.svg)](https://app.codecov.io/gh/woodtho/Qual-Codes)
 <!-- badges: end -->
 
 **saturate** is a modern R replacement for the [RQDA](https://github.com/RQDA/RQDA) package. It provides a full qualitative data analysis (CAQDAS) workflow backed by [DuckDB](https://duckdb.org/) — one portable `.satdb`/`.duckdb` file per project — with an interactive Shiny GUI for text coding, codebook management, and multi-coder collaboration.
@@ -16,7 +15,7 @@
 - **Rich coding UI** — select passages, assign codes, add confidence levels and memos
 - **Codebook management** — hierarchical categories, code relations, weights, and full history
 - **Multi-coder workflows** — split a project for independent coders, merge results back
-- **Audio recording & transcription** — record directly in the browser or upload audio, transcribe with local [whisper](https://github.com/cornball-ai/whisper), import with optional timestamps
+- **Audio recording & transcription** — record directly in the browser or upload audio, transcribe with local [whisper](https://github.com/bnosac/whisper), import with optional timestamps
 - **Saturation analysis** — plot theoretical saturation curves and triangulation grids
 - **Inter-rater reliability** — Cohen's kappa, Krippendorff's alpha, and agreement matrices
 - **Member checking** — generate and track participant feedback on interpreted themes

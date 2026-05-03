@@ -1,60 +1,58 @@
-test_that("qc_add_coding snapshots seltext correctly", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc  <- qc_import_document(proj, content = "Hello world", name = "d")
-  code <- qc_add_code(proj, "greet")
+# ── Shared project (file scope) ──────────────────────────────────────────────
+proj <- make_test_project()
+withr::defer(qc_close(proj), envir = testthat::teardown_env())
 
+doc  <- qc_import_document(proj, content = "Hello world this is a test.", name = "doc1")
+code <- qc_add_code(proj, "greet", color = "#4E79A7")
+
+# ── DB-backed coding tests ────────────────────────────────────────────────────
+
+test_that("qc_add_coding snapshots seltext correctly", {
   cod <- qc_add_coding(proj, doc$id, code$id, selfirst = 1L, selast = 5L)
   expect_equal(cod$seltext, "Hello")
 })
 
 test_that("qc_list_codings ordered by selfirst", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc  <- qc_import_document(proj, content = "ABCDEFGH", name = "d")
-  c1   <- qc_add_code(proj, "code1")
-  c2   <- qc_add_code(proj, "code2")
+  doc2 <- qc_import_document(proj, content = "ABCDEFGH", name = "order-doc")
+  c1   <- qc_add_code(proj, "order-code1")
+  c2   <- qc_add_code(proj, "order-code2")
 
-  qc_add_coding(proj, doc$id, c2$id, 5L, 8L)
-  qc_add_coding(proj, doc$id, c1$id, 1L, 3L)
+  qc_add_coding(proj, doc2$id, c2$id, 5L, 8L)
+  qc_add_coding(proj, doc2$id, c1$id, 1L, 3L)
 
-  codings <- qc_list_codings(proj, doc$id)
+  codings <- qc_list_codings(proj, doc2$id)
   expect_equal(codings$selfirst, c(1L, 5L))
 })
 
 test_that("qc_list_codings includes code_name and code_color", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc  <- qc_import_document(proj, content = "text", name = "d")
-  code <- qc_add_code(proj, "theme", color = "#F00000")
-  qc_add_coding(proj, doc$id, code$id, 1L, 4L)
+  doc2 <- qc_import_document(proj, content = "text", name = "col-doc")
+  code2 <- qc_add_code(proj, "theme-col", color = "#F00000")
+  qc_add_coding(proj, doc2$id, code2$id, 1L, 4L)
 
-  codings <- qc_list_codings(proj, doc$id)
-  expect_equal(codings$code_name[[1L]],  "theme")
+  codings <- qc_list_codings(proj, doc2$id)
+  expect_equal(codings$code_name[[1L]],  "theme-col")
   expect_equal(codings$code_color[[1L]], "#F00000")
 })
 
 test_that("qc_delete_coding removes it from list", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc  <- qc_import_document(proj, content = "text", name = "d")
-  code <- qc_add_code(proj, "c1")
-  cod  <- qc_add_coding(proj, doc$id, code$id, 1L, 4L)
+  doc2  <- qc_import_document(proj, content = "text", name = "del-cod-doc")
+  code2 <- qc_add_code(proj, "del-cod-code")
+  cod   <- qc_add_coding(proj, doc2$id, code2$id, 1L, 4L)
 
   qc_delete_coding(proj, cod$id)
-  expect_equal(nrow(qc_list_codings(proj, doc$id)), 0L)
+  expect_false(cod$id %in% qc_list_codings(proj, doc2$id)$id)
 })
 
 test_that("qc_add_coding errors when selfirst < 1", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc  <- qc_import_document(proj, content = "text", name = "d")
-  code <- qc_add_code(proj, "c1")
-  expect_error(qc_add_coding(proj, doc$id, code$id, 0L, 3L), "selfirst")
+  doc2  <- qc_import_document(proj, content = "text", name = "err-doc")
+  code2 <- qc_add_code(proj, "err-code")
+  expect_error(qc_add_coding(proj, doc2$id, code2$id, 0L, 3L), "selfirst")
 })
 
+# ── Pure-function tests (no project needed) ───────────────────────────────────
+
 test_that("build_highlighted_html returns an htmltools tag", {
-  doc   <- "Hello world this is a test."
+  doc_text <- "Hello world this is a test."
   codings <- tibble::tibble(
     selfirst   = c(1L, 7L),
     selast     = c(5L, 11L),
@@ -63,7 +61,7 @@ test_that("build_highlighted_html returns an htmltools tag", {
     id         = c(1L, 2L),
     memo       = c("", "")
   )
-  html <- build_highlighted_html(doc, codings)
+  html <- build_highlighted_html(doc_text, codings)
   expect_s3_class(html, "shiny.tag")
 })
 

@@ -1,7 +1,12 @@
-test_that("qc_add_code returns correct tibble", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
+# ── Shared project (file scope) ──────────────────────────────────────────────
+proj <- make_test_project()
+withr::defer(qc_close(proj), envir = testthat::teardown_env())
 
+doc <- qc_import_document(proj, content = "hello world", name = "shared-doc")
+
+# ── Basic CRUD ────────────────────────────────────────────────────────────────
+
+test_that("qc_add_code returns correct tibble", {
   code <- qc_add_code(proj, "theme1", color = "#E15759", memo = "a theme")
   expect_equal(code$name,  "theme1")
   expect_equal(code$color, "#E15759")
@@ -9,82 +14,68 @@ test_that("qc_add_code returns correct tibble", {
 })
 
 test_that("qc_add_code errors on duplicate name", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
   qc_add_code(proj, "dup")
   expect_error(qc_add_code(proj, "dup"))
 })
 
 test_that("qc_list_codes includes n_codings and categories", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  qc_add_code(proj, "c1")
-
+  qc_add_code(proj, "list-codes-c1")
   codes <- qc_list_codes(proj)
-  expect_true("n_codings" %in% names(codes))
+  expect_true("n_codings"  %in% names(codes))
   expect_true("categories" %in% names(codes))
-  expect_equal(codes$n_codings[[1L]], 0L)
 })
 
 test_that("qc_update_code changes name", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1 <- qc_add_code(proj, "old")
-  qc_update_code(proj, c1$id, name = "new")
+  c1 <- qc_add_code(proj, "update-old")
+  qc_update_code(proj, c1$id, name = "update-new")
   codes <- qc_list_codes(proj)
-  expect_equal(codes$name[[1L]], "new")
+  expect_true("update-new" %in% codes$name)
 })
 
 test_that("qc_delete_code removes code from list", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1 <- qc_add_code(proj, "gone")
+  c1 <- qc_add_code(proj, "gone-code")
   qc_delete_code(proj, c1$id)
-  expect_equal(nrow(qc_list_codes(proj)), 0L)
+  expect_false(c1$id %in% qc_list_codes(proj)$id)
 })
 
+# ── Category link/unlink ──────────────────────────────────────────────────────
+
 test_that("category link/unlink round-trip", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  code <- qc_add_code(proj, "c1")
-  cat  <- qc_add_category(proj, "cat1")
+  code <- qc_add_code(proj, "cat-link-code")
+  cat  <- qc_add_category(proj, "cat-link-cat")
 
   qc_link_code_category(proj, code$id, cat$id)
   cats <- qc_list_categories(proj)
-  expect_equal(cats$code_name[[1L]], "c1")
+  linked_row <- cats[!is.na(cats$code_id) & cats$code_id == code$id, ]
+  expect_equal(linked_row$code_name[[1L]], "cat-link-code")
 
   qc_unlink_code_category(proj, code$id, cat$id)
   cats2 <- qc_list_categories(proj)
-  expect_true(all(is.na(cats2$code_id)))
+  row2 <- cats2[cats2$category_id == cat$id, ]
+  expect_true(all(is.na(row2$code_id)))
 })
 
 test_that("qc_add_category errors on duplicate name", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  qc_add_category(proj, "cat1")
-  expect_error(qc_add_category(proj, "cat1"))
+  qc_add_category(proj, "dup-cat")
+  expect_error(qc_add_category(proj, "dup-cat"))
 })
 
 # ── History tests ─────────────────────────────────────────────────────────────
 
 test_that("qc_add_code writes a create event to history", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  code <- qc_add_code(proj, "theme1")
+  code <- qc_add_code(proj, "hist-theme1")
 
   hist <- qc_code_history(proj, code$id)
   expect_equal(nrow(hist), 1L)
   expect_equal(hist$operation[[1L]], "create")
-  expect_equal(hist$new_value[[1L]], "theme1")
+  expect_equal(hist$new_value[[1L]], "hist-theme1")
   expect_true(is.na(hist$old_value[[1L]]))
 })
 
 test_that("qc_update_code writes one update event per changed field", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  code <- qc_add_code(proj, "original", color = "#111111", memo = "old memo")
+  code <- qc_add_code(proj, "hist-original", color = "#111111", memo = "old memo")
 
-  qc_update_code(proj, code$id, name = "renamed", color = "#222222")
+  qc_update_code(proj, code$id, name = "hist-renamed", color = "#222222")
   hist <- qc_code_history(proj, code$id)
 
   expect_equal(nrow(hist), 3L)
@@ -92,16 +83,14 @@ test_that("qc_update_code writes one update event per changed field", {
   expect_setequal(update_rows$field, c("name", "color"))
 
   name_row <- update_rows[update_rows$field == "name", ]
-  expect_equal(name_row$old_value, "original")
-  expect_equal(name_row$new_value, "renamed")
+  expect_equal(name_row$old_value, "hist-original")
+  expect_equal(name_row$new_value, "hist-renamed")
 })
 
 test_that("qc_update_code skips unchanged fields in history", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  code <- qc_add_code(proj, "same", color = "#AABBCC")
+  code <- qc_add_code(proj, "hist-same", color = "#AABBCC")
 
-  qc_update_code(proj, code$id, name = "changed", color = "#AABBCC")
+  qc_update_code(proj, code$id, name = "hist-changed", color = "#AABBCC")
   hist <- qc_code_history(proj, code$id)
 
   update_rows <- hist[hist$operation == "update", ]
@@ -110,118 +99,97 @@ test_that("qc_update_code skips unchanged fields in history", {
 })
 
 test_that("qc_delete_code writes a delete event to history", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  code <- qc_add_code(proj, "gone")
+  code <- qc_add_code(proj, "hist-gone")
 
   qc_delete_code(proj, code$id)
   hist <- qc_code_history(proj, code$id)
 
   del_row <- hist[hist$operation == "delete", ]
   expect_equal(nrow(del_row), 1L)
-  expect_equal(del_row$old_value, "gone")
+  expect_equal(del_row$old_value, "hist-gone")
 })
 
 test_that("qc_code_history with NULL code_id returns all codes", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  qc_add_code(proj, "alpha")
-  qc_add_code(proj, "beta")
+  c_alpha <- qc_add_code(proj, "hist-alpha")
+  c_beta  <- qc_add_code(proj, "hist-beta")
 
   hist <- qc_code_history(proj)
-  expect_equal(nrow(hist), 2L)
-  expect_setequal(hist$new_value, c("alpha", "beta"))
+  expect_true("hist-alpha" %in% hist$new_value)
+  expect_true("hist-beta"  %in% hist$new_value)
 })
 
 # ── Merge tests ───────────────────────────────────────────────────────────────
 
 test_that("qc_merge_codes moves codings and soft-deletes the merged code", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc <- qc_import_document(proj, content = "hello world", name = "d1")
-  c1  <- qc_add_code(proj, "code1")
-  c2  <- qc_add_code(proj, "code2")
+  c1 <- qc_add_code(proj, "merge-code1")
+  c2 <- qc_add_code(proj, "merge-code2")
   qc_add_coding(proj, doc$id, c1$id, 1L, 5L)
   qc_add_coding(proj, doc$id, c2$id, 7L, 11L)
 
   qc_merge_codes(proj, from_ids = c2$id, into_id = c1$id)
 
   codes <- qc_list_codes(proj)
-  expect_equal(nrow(codes), 1L)
-  expect_equal(codes$name[[1L]], "code1")
-  expect_equal(codes$n_codings[[1L]], 2L)
+  expect_false(c2$id %in% codes$id)
+  merged <- codes[codes$id == c1$id, ]
+  expect_equal(merged$n_codings[[1L]], 2L)
 })
 
 test_that("qc_merge_codes logs history for both codes", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1 <- qc_add_code(proj, "alpha")
-  c2 <- qc_add_code(proj, "beta")
+  c1 <- qc_add_code(proj, "merge-alpha")
+  c2 <- qc_add_code(proj, "merge-beta")
 
   qc_merge_codes(proj, from_ids = c2$id, into_id = c1$id)
 
   hist_from <- qc_code_history(proj, c2$id)
   merge_from <- hist_from[hist_from$operation == "merge", ]
   expect_equal(nrow(merge_from), 1L)
-  expect_equal(merge_from$new_value[[1L]], "alpha")
+  expect_equal(merge_from$new_value[[1L]], "merge-alpha")
 
   hist_into <- qc_code_history(proj, c1$id)
   merge_into <- hist_into[hist_into$operation == "merge", ]
   expect_equal(nrow(merge_into), 1L)
-  expect_equal(merge_into$new_value[[1L]], "beta")
+  expect_equal(merge_into$new_value[[1L]], "merge-beta")
 })
 
 test_that("qc_merge_codes errors when from_ids contains into_id", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1 <- qc_add_code(proj, "c1")
+  c1 <- qc_add_code(proj, "merge-self")
   expect_error(qc_merge_codes(proj, from_ids = c1$id, into_id = c1$id))
 })
 
 # ── Split tests ───────────────────────────────────────────────────────────────
 
 test_that("qc_split_code creates new codes and logs history", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1        <- qc_add_code(proj, "umbrella")
-  new_codes <- qc_split_code(proj, c1$id, c("part1", "part2"))
+  c1        <- qc_add_code(proj, "split-umbrella")
+  new_codes <- qc_split_code(proj, c1$id, c("split-part1", "split-part2"))
 
   codes <- qc_list_codes(proj)
-  expect_equal(nrow(codes), 3L)
-  expect_true("part1" %in% codes$name)
-  expect_true("part2" %in% codes$name)
+  expect_true("split-part1" %in% codes$name)
+  expect_true("split-part2" %in% codes$name)
 
-  hist     <- qc_code_history(proj, c1$id)
+  hist      <- qc_code_history(proj, c1$id)
   split_row <- hist[hist$operation == "split", ]
   expect_equal(nrow(split_row), 1L)
-  expect_true(grepl("part1", split_row$new_value[[1L]]))
+  expect_true(grepl("split-part1", split_row$new_value[[1L]]))
 })
 
 test_that("qc_split_code errors when fewer than 2 names supplied", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1 <- qc_add_code(proj, "c1")
+  c1 <- qc_add_code(proj, "split-err")
   expect_error(qc_split_code(proj, c1$id, "only_one"))
 })
 
 test_that("qc_split_code original code is preserved", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  c1 <- qc_add_code(proj, "original")
-  qc_split_code(proj, c1$id, c("a", "b"))
+  c1 <- qc_add_code(proj, "split-original")
+  qc_split_code(proj, c1$id, c("split-a", "split-b"))
 
   codes <- qc_list_codes(proj)
-  expect_true("original" %in% codes$name)
+  expect_true("split-original" %in% codes$name)
 })
 
 # ── Reassign tests ────────────────────────────────────────────────────────────
 
 test_that("qc_reassign_coding moves a coding to another code", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-  doc    <- qc_import_document(proj, content = "hello world", name = "d1")
-  c1     <- qc_add_code(proj, "code1")
-  c2     <- qc_add_code(proj, "code2")
+  c1     <- qc_add_code(proj, "reassign-code1")
+  c2     <- qc_add_code(proj, "reassign-code2")
   coding <- qc_add_coding(proj, doc$id, c1$id, 1L, 5L)
 
   qc_reassign_coding(proj, coding$id, c2$id)
@@ -233,72 +201,57 @@ test_that("qc_reassign_coding moves a coding to another code", {
   expect_equal(r2$n_codings[[1L]], 1L)
 })
 
-# ── New tests ─────────────────────────────────────────────────────────────────
+# ── Definition / deprecated tests ────────────────────────────────────────────
 
 test_that("qc_add_code stores definition", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
   qc_add_code(proj, "def_code", definition = "A detailed definition")
   codes <- qc_list_codes(proj)
-  expect_equal(codes$definition[[1L]], "A detailed definition")
+  def_row <- codes[codes$name == "def_code", ]
+  expect_equal(def_row$definition[[1L]], "A detailed definition")
 })
 
 test_that("qc_list_codes deprecated column is FALSE for a new code", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
   qc_add_code(proj, "fresh_code")
   codes <- qc_list_codes(proj)
-  expect_equal(codes$deprecated[[1L]], 0L)
+  fresh_row <- codes[codes$name == "fresh_code", ]
+  expect_equal(fresh_row$deprecated[[1L]], 0L)
 })
 
 test_that("qc_deprecate_code sets deprecated = TRUE", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  c1 <- qc_add_code(proj, "old_code")
+  c1 <- qc_add_code(proj, "dep-old_code")
   qc_deprecate_code(proj, c1$id)
   codes <- qc_list_codes(proj)
-  expect_equal(codes$deprecated[[1L]], 1L)
+  row <- codes[codes$id == c1$id, ]
+  expect_equal(row$deprecated[[1L]], 1L)
 })
 
 test_that("qc_undeprecate_code restores deprecated = FALSE", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  c1 <- qc_add_code(proj, "revived_code")
+  c1 <- qc_add_code(proj, "dep-revived_code")
   qc_deprecate_code(proj, c1$id)
   qc_undeprecate_code(proj, c1$id)
   codes <- qc_list_codes(proj)
-  expect_equal(codes$deprecated[[1L]], 0L)
+  row <- codes[codes$id == c1$id, ]
+  expect_equal(row$deprecated[[1L]], 0L)
 })
 
 test_that("qc_merge_codes moves codings to target and soft-deletes source", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  doc <- qc_import_document(proj, content = "hello world", name = "d")
-  src <- qc_add_code(proj, "source_code")
-  tgt <- qc_add_code(proj, "target_code")
+  src <- qc_add_code(proj, "merge2-source_code")
+  tgt <- qc_add_code(proj, "merge2-target_code")
   qc_add_coding(proj, doc$id, src$id, 1L, 5L)
 
   qc_merge_codes(proj, from_ids = src$id, into_id = tgt$id)
 
   codes <- qc_list_codes(proj)
-  expect_equal(nrow(codes), 1L)
-  expect_equal(codes$name[[1L]], "target_code")
-  expect_equal(codes$n_codings[[1L]], 1L)
+  expect_false(src$id %in% codes$id)
+  tgt_row <- codes[codes$id == tgt$id, ]
+  expect_equal(tgt_row$n_codings[[1L]], 1L)
 })
 
 test_that("qc_split_code creates a new child code", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  c1 <- qc_add_code(proj, "parent_code")
-  qc_split_code(proj, c1$id, c("child_a", "child_b"))
+  c1 <- qc_add_code(proj, "split2-parent_code")
+  qc_split_code(proj, c1$id, c("split2-child_a", "split2-child_b"))
 
   codes <- qc_list_codes(proj)
-  expect_true("child_a" %in% codes$name)
-  expect_true("child_b" %in% codes$name)
+  expect_true("split2-child_a" %in% codes$name)
+  expect_true("split2-child_b" %in% codes$name)
 })

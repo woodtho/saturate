@@ -1,3 +1,11 @@
+# ── Shared project (file scope) ──────────────────────────────────────────────
+proj <- make_test_project()
+withr::defer(qc_close(proj), envir = testthat::teardown_env())
+
+doc <- qc_import_document(proj, content = "text here", name = "utils-doc")
+c1  <- qc_add_code(proj, "utils-c1")
+cod <- qc_add_coding(proj, doc$id, c1$id, 1L, 4L)
+
 # ── qc_cb_palette ─────────────────────────────────────────────────────────────
 
 test_that("qc_cb_palette returns n colours", {
@@ -34,97 +42,73 @@ test_that("qc_cb_palette errors on negative n", {
 # ── qc_set_code_key ───────────────────────────────────────────────────────────
 
 test_that("qc_set_code_key persists key to the code", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  c1 <- qc_add_code(proj, "my_theme")
-  qc_set_code_key(proj, c1$id, "t01")
+  ck <- qc_add_code(proj, "utils-my_theme")
+  qc_set_code_key(proj, ck$id, "t01")
   codes <- qc_list_codes(proj)
-  expect_equal(codes$code_key[[1L]], "t01")
+  row <- codes[codes$id == ck$id, ]
+  expect_equal(row$code_key[[1L]], "t01")
 })
 
 # ── qc_deprecate_code / qc_undeprecate_code ───────────────────────────────────
 
 test_that("qc_deprecate_code marks code as deprecated", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  c1 <- qc_add_code(proj, "old_code")
-  qc_deprecate_code(proj, c1$id, reason = "no longer needed")
+  ck <- qc_add_code(proj, "utils-old_code")
+  qc_deprecate_code(proj, ck$id, reason = "no longer needed")
   codes <- qc_list_codes(proj)
-  expect_equal(codes$deprecated[[1L]], 1L)
+  row <- codes[codes$id == ck$id, ]
+  expect_equal(row$deprecated[[1L]], 1L)
 })
 
 test_that("qc_undeprecate_code restores deprecated = FALSE", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  c1 <- qc_add_code(proj, "revived")
-  qc_deprecate_code(proj, c1$id)
-  qc_undeprecate_code(proj, c1$id)
+  ck <- qc_add_code(proj, "utils-revived")
+  qc_deprecate_code(proj, ck$id)
+  qc_undeprecate_code(proj, ck$id)
   codes <- qc_list_codes(proj)
-  expect_equal(codes$deprecated[[1L]], 0L)
+  row <- codes[codes$id == ck$id, ]
+  expect_equal(row$deprecated[[1L]], 0L)
 })
 
 # ── qc_update_coding_memo ─────────────────────────────────────────────────────
 
 test_that("qc_update_coding_memo persists memo text", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  doc <- qc_import_document(proj, content = "text here", name = "d")
-  c1  <- qc_add_code(proj, "c1")
-  cod <- qc_add_coding(proj, doc$id, c1$id, 1L, 4L)
-
   qc_update_coding_memo(proj, cod$id, "new memo text")
   codings <- qc_list_codings(proj, doc$id)
-  expect_equal(codings$memo[[1L]], "new memo text")
+  row <- codings[codings$id == cod$id, ]
+  expect_equal(row$memo[[1L]], "new memo text")
 })
 
 # ── qc_update_coding_confidence ───────────────────────────────────────────────
 
 test_that("qc_update_coding_confidence persists confidence value", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  doc <- qc_import_document(proj, content = "text here", name = "d")
-  c1  <- qc_add_code(proj, "c1")
-  cod <- qc_add_coding(proj, doc$id, c1$id, 1L, 4L)
-
   qc_update_coding_confidence(proj, cod$id, 80L)
   codings <- qc_list_codings(proj, doc$id)
-  expect_equal(codings$confidence[[1L]], 80L)
+  row <- codings[codings$id == cod$id, ]
+  expect_equal(row$confidence[[1L]], 80L)
 })
 
 # ── qc_merge_codings ──────────────────────────────────────────────────────────
 
 test_that("qc_merge_codings merges two codings into one", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
+  doc2 <- qc_import_document(proj, content = "ABCDEFGHIJ", name = "merge-cod-d")
+  cm1  <- qc_add_code(proj, "merge-cod-code1")
+  cd1  <- qc_add_coding(proj, doc2$id, cm1$id, 1L, 3L)
+  cd2  <- qc_add_coding(proj, doc2$id, cm1$id, 6L, 9L)
 
-  doc  <- qc_import_document(proj, content = "ABCDEFGHIJ", name = "d")
-  c1   <- qc_add_code(proj, "code1")
-  cod1 <- qc_add_coding(proj, doc$id, c1$id, 1L, 3L)
-  cod2 <- qc_add_coding(proj, doc$id, c1$id, 6L, 9L)
-
-  merged <- qc_merge_codings(proj, c(cod1$id, cod2$id))
+  merged <- qc_merge_codings(proj, c(cd1$id, cd2$id))
   expect_equal(merged$selfirst, 1L)
   expect_equal(merged$selast,   9L)
-  expect_equal(nrow(qc_list_codings(proj, doc$id)), 1L)
+  expect_equal(nrow(qc_list_codings(proj, doc2$id)), 1L)
 })
 
 # ── qc_split_coding ───────────────────────────────────────────────────────────
 
 test_that("qc_split_coding produces two codings from one", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
+  doc2 <- qc_import_document(proj, content = "ABCDEFGHIJ", name = "split-cod-d")
+  cs1  <- qc_add_code(proj, "split-cod-code")
+  cds  <- qc_add_coding(proj, doc2$id, cs1$id, 1L, 10L)
 
-  doc <- qc_import_document(proj, content = "ABCDEFGHIJ", name = "d")
-  c1  <- qc_add_code(proj, "code")
-  cod <- qc_add_coding(proj, doc$id, c1$id, 1L, 10L)
-
-  qc_split_coding(proj, cod$id, split_at = 5L)
-  codings <- qc_list_codings(proj, doc$id)
+  qc_split_coding(proj, cds$id, split_at = 5L)
+  codings <- qc_list_codings(proj, doc2$id)
   expect_equal(nrow(codings), 2L)
   expect_equal(codings$selfirst[[1L]], 1L)
   expect_equal(codings$selast[[1L]],  5L)
@@ -135,12 +119,9 @@ test_that("qc_split_coding produces two codings from one", {
 # ── qc_set_source_type ────────────────────────────────────────────────────────
 
 test_that("qc_set_source_type persists source type", {
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  doc <- qc_import_document(proj, content = "interview text", name = "int1")
-  qc_set_source_type(proj, doc$id, "interview")
-  d <- qc_get_document(proj, doc$id)
+  doc2 <- qc_import_document(proj, content = "interview text", name = "stype-int1")
+  qc_set_source_type(proj, doc2$id, "interview")
+  d <- qc_get_document(proj, doc2$id)
   expect_equal(d$source_type, "interview")
 })
 
@@ -148,13 +129,6 @@ test_that("qc_set_source_type persists source type", {
 
 test_that("qc_export writes a CSV file when format=csv", {
   skip_on_cran()
-  proj <- make_test_project()
-  on.exit(qc_close(proj))
-
-  doc <- qc_import_document(proj, content = "text here", name = "d")
-  c1  <- qc_add_code(proj, "c1")
-  qc_add_coding(proj, doc$id, c1$id, 1L, 4L)
-
   out <- withr::local_tempfile(fileext = ".csv")
   qc_export(proj, out, format = "csv")
   expect_true(file.exists(out))

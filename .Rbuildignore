@@ -9,3 +9,5 @@
 ^test2\.satdb$
 ^test_study\.duckdb$
 ^codecov\.yml$
+_\.new\.png$
+^pkgdown
