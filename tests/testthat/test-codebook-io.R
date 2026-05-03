@@ -1,4 +1,5 @@
 test_that("qc_export_codebook writes CSV with correct columns", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   qc_add_code(proj, "alpha", color = "#FF0000", memo = "first theme")
@@ -14,6 +15,7 @@ test_that("qc_export_codebook writes CSV with correct columns", {
 })
 
 test_that("qc_import_codebook creates codes from CSV", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
 
@@ -34,6 +36,7 @@ test_that("qc_import_codebook creates codes from CSV", {
 })
 
 test_that("qc_import_codebook skips existing codes when skip_existing = TRUE", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   qc_add_code(proj, "existing")
@@ -48,6 +51,7 @@ test_that("qc_import_codebook skips existing codes when skip_existing = TRUE", {
 })
 
 test_that("qc_import_codebook creates categories and links them", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
 
@@ -64,6 +68,7 @@ test_that("qc_import_codebook creates categories and links them", {
 })
 
 test_that("export then import round-trips the codebook", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   qc_add_code(proj, "c1", color = "#111111", memo = "memo one")
@@ -84,6 +89,7 @@ test_that("export then import round-trips the codebook", {
 })
 
 test_that("qc_export_codebook errors on non-existent format", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   tmp <- withr::local_tempfile(fileext = ".txt")
@@ -91,6 +97,7 @@ test_that("qc_export_codebook errors on non-existent format", {
 })
 
 test_that("qc_import_codebook errors on missing file", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   expect_error(qc_import_codebook(proj, "/no/such/file.csv"))

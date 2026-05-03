@@ -72,6 +72,7 @@ test_that("qc_code_summary counts match manual count", {
 })
 
 test_that("qc_export writes a CSV file", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   doc  <- qc_import_document(proj, content = "Hello world", name = "d")

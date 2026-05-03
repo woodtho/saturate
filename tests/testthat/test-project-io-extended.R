@@ -1,6 +1,7 @@
 # ── Lock / unlock ───────────────────────────────────────────────────────────────
 
 test_that("qc_lock_project makes project locked", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
 
@@ -9,6 +10,7 @@ test_that("qc_lock_project makes project locked", {
 })
 
 test_that("qc_unlock_project restores unlocked state", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
 
@@ -18,12 +20,14 @@ test_that("qc_unlock_project restores unlocked state", {
 })
 
 test_that("qc_is_locked returns FALSE for a new project", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   expect_false(qc_is_locked(proj))
 })
 
 test_that("write operations error on a locked project", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit({ qc_unlock_project(proj); qc_close(proj) })
 
@@ -34,6 +38,7 @@ test_that("write operations error on a locked project", {
 # ── qc_split_project ────────────────────────────────────────────────────────────
 
 test_that("qc_split_project copies codes to the new file", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   qc_add_code(proj, "shared_theme")
@@ -49,6 +54,7 @@ test_that("qc_split_project copies codes to the new file", {
 })
 
 test_that("qc_split_project copies documents", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   qc_import_document(proj, content = "doc content", name = "d1")
@@ -62,6 +68,7 @@ test_that("qc_split_project copies documents", {
 })
 
 test_that("qc_split_project excludes codings by default", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   doc  <- qc_import_document(proj, content = "text here", name = "d")
@@ -76,6 +83,7 @@ test_that("qc_split_project excludes codings by default", {
 })
 
 test_that("qc_split_project include_codings=TRUE copies codings", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
   doc  <- qc_import_document(proj, content = "text here", name = "d")
@@ -90,6 +98,7 @@ test_that("qc_split_project include_codings=TRUE copies codings", {
 })
 
 test_that("qc_split_project errors when path already exists and overwrite=FALSE", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
 
@@ -103,6 +112,7 @@ test_that("qc_split_project errors when path already exists and overwrite=FALSE"
 # ── qc_merge_project ────────────────────────────────────────────────────────────
 
 test_that("qc_merge_project imports codings from contributor", {
+  skip_on_cran()
   master <- make_test_project()
   on.exit(qc_close(master))
   qc_add_code(master, "shared")
@@ -122,6 +132,7 @@ test_that("qc_merge_project imports codings from contributor", {
 })
 
 test_that("qc_merge_project skips duplicate codings by default", {
+  skip_on_cran()
   master <- make_test_project()
   on.exit(qc_close(master))
   qc_add_code(master, "existing")
@@ -138,6 +149,7 @@ test_that("qc_merge_project skips duplicate codings by default", {
 })
 
 test_that("qc_merge_project errors when contributor file not found", {
+  skip_on_cran()
   master <- make_test_project()
   on.exit(qc_close(master))
   expect_error(qc_merge_project(master, "/no/such/file.duckdb"), "not found")

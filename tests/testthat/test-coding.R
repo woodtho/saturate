@@ -66,3 +66,79 @@ test_that("build_highlighted_html returns an htmltools tag", {
   html <- build_highlighted_html(doc, codings)
   expect_s3_class(html, "shiny.tag")
 })
+
+test_that("build_highlighted_html with show_line_numbers=TRUE produces qc-line-num", {
+  codings <- tibble::tibble(
+    selfirst = integer(), selast = integer(),
+    code_name = character(), code_color = character(),
+    id = integer(), memo = character()
+  )
+  html <- build_highlighted_html("line one\nline two", codings,
+                                  show_line_numbers = TRUE)
+  expect_true(grepl("qc-line-num", as.character(html), fixed = TRUE))
+})
+
+test_that("build_highlighted_html with show_timestamps=TRUE wraps timestamps", {
+  codings <- tibble::tibble(
+    selfirst = integer(), selast = integer(),
+    code_name = character(), code_color = character(),
+    id = integer(), memo = character()
+  )
+  html <- build_highlighted_html("[00:01:30] Some text", codings,
+                                  show_timestamps = TRUE)
+  expect_true(grepl("qc-ts-marker", as.character(html), fixed = TRUE))
+})
+
+test_that("build_highlighted_html with show_timestamps=TRUE and show_line_numbers=TRUE on timestamp line produces qc-ts-gutter and qc-line-num", {
+  codings <- tibble::tibble(
+    selfirst = integer(), selast = integer(),
+    code_name = character(), code_color = character(),
+    id = integer(), memo = character()
+  )
+  html <- build_highlighted_html("[00:00:05] Hello world", codings,
+                                  show_timestamps   = TRUE,
+                                  show_line_numbers = TRUE)
+  html_str <- as.character(html)
+  expect_true(grepl("qc-ts-gutter", html_str, fixed = TRUE))
+  expect_true(grepl("qc-line-num",  html_str, fixed = TRUE))
+})
+
+test_that("build_highlighted_html with show_timestamps=FALSE produces no qc-ts-marker spans", {
+  codings <- tibble::tibble(
+    selfirst = integer(), selast = integer(),
+    code_name = character(), code_color = character(),
+    id = integer(), memo = character()
+  )
+  html <- build_highlighted_html("[00:01:30] Some text", codings,
+                                  show_timestamps = FALSE)
+  expect_false(grepl("qc-ts-marker", as.character(html), fixed = TRUE))
+})
+
+test_that(".format_ms(0L) returns [00:00:00]", {
+  expect_equal(saturate:::.format_ms(0L), "[00:00:00]")
+})
+
+test_that(".format_ms(3661000L) returns [01:01:01]", {
+  expect_equal(saturate:::.format_ms(3661000L), "[01:01:01]")
+})
+
+test_that(".wrap_timestamps wraps [00:01:30] in a span with data-ts", {
+  result <- saturate:::.wrap_timestamps("[00:01:30] hello")
+  expect_true(grepl('data-ts="00:01:30"', result, fixed = TRUE))
+  expect_true(grepl("qc-ts-marker", result, fixed = TRUE))
+})
+
+test_that(".add_line_numbers wraps lines in qc-line divs with count matching newlines", {
+  text   <- "line one\nline two\nline three"
+  result <- saturate:::.add_line_numbers(text, merge_timestamps = FALSE)
+  n_divs <- length(gregexpr('<div class="qc-line">', result, fixed = TRUE)[[1L]])
+  n_lines <- length(strsplit(text, "\n", fixed = TRUE)[[1L]])
+  expect_equal(n_divs, n_lines)
+  expect_true(grepl("qc-line-num", result, fixed = TRUE))
+})
+
+test_that(".add_line_numbers merge_timestamps=TRUE on timestamp line produces qc-ts-gutter", {
+  html_line <- saturate:::.wrap_timestamps("[00:00:05] Hello")
+  result    <- saturate:::.add_line_numbers(html_line, merge_timestamps = TRUE)
+  expect_true(grepl("qc-ts-gutter", result, fixed = TRUE))
+})

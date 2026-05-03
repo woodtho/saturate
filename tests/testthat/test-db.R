@@ -7,7 +7,7 @@ test_that("qc_new creates a valid project", {
   expect_true(DBI::dbExistsTable(proj$con, "project_meta"))
 })
 
-test_that("qc_project_info returns correct defaults", {
+test_that("qc_project_info returns correct name and owner", {
   proj <- make_test_project()
   on.exit(qc_close(proj))
 
@@ -27,7 +27,25 @@ test_that("qc_project_info updates fields", {
   expect_equal(info$memo, "notes here")
 })
 
-test_that("qc_new errors if file exists and overwrite = FALSE", {
+test_that("qc_open on a closed project file reopens successfully", {
+  proj <- make_test_project()
+  path <- proj$path
+  qc_close(proj)
+
+  proj2 <- qc_open(path)
+  on.exit(qc_close(proj2))
+  expect_s3_class(proj2, "qc_project")
+  expect_true(DBI::dbIsValid(proj2$con))
+})
+
+test_that("assert_con errors after qc_close", {
+  proj <- make_test_project()
+  con  <- proj$con
+  qc_close(proj)
+  expect_error(assert_con(con), "closed")
+})
+
+test_that("qc_new errors if file already exists without overwrite=TRUE", {
   proj <- make_test_project()
   path <- proj$path
   qc_close(proj)
@@ -36,8 +54,8 @@ test_that("qc_new errors if file exists and overwrite = FALSE", {
 })
 
 test_that("qc_new overwrites when overwrite = TRUE", {
-  proj  <- make_test_project()
-  path  <- proj$path
+  proj <- make_test_project()
+  path <- proj$path
   qc_close(proj)
 
   proj2 <- qc_new(path, name = "fresh", overwrite = TRUE)

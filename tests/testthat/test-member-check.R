@@ -1,4 +1,5 @@
 test_that("qc_export_member_check handles return instructions without duplicate columns", {
+  skip_on_cran()
   proj <- make_test_project()
   on.exit(qc_close(proj))
 

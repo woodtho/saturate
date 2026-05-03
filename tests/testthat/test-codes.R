@@ -87,7 +87,6 @@ test_that("qc_update_code writes one update event per changed field", {
   qc_update_code(proj, code$id, name = "renamed", color = "#222222")
   hist <- qc_code_history(proj, code$id)
 
-  # create + 2 update events
   expect_equal(nrow(hist), 3L)
   update_rows <- hist[hist$operation == "update", ]
   expect_setequal(update_rows$field, c("name", "color"))
@@ -102,7 +101,6 @@ test_that("qc_update_code skips unchanged fields in history", {
   on.exit(qc_close(proj))
   code <- qc_add_code(proj, "same", color = "#AABBCC")
 
-  # Update with the same color — should not log an event for color
   qc_update_code(proj, code$id, name = "changed", color = "#AABBCC")
   hist <- qc_code_history(proj, code$id)
 
@@ -233,4 +231,74 @@ test_that("qc_reassign_coding moves a coding to another code", {
   r2    <- codes[codes$id == c2$id, ]
   expect_equal(r1$n_codings[[1L]], 0L)
   expect_equal(r2$n_codings[[1L]], 1L)
+})
+
+# ── New tests ─────────────────────────────────────────────────────────────────
+
+test_that("qc_add_code stores definition", {
+  proj <- make_test_project()
+  on.exit(qc_close(proj))
+
+  qc_add_code(proj, "def_code", definition = "A detailed definition")
+  codes <- qc_list_codes(proj)
+  expect_equal(codes$definition[[1L]], "A detailed definition")
+})
+
+test_that("qc_list_codes deprecated column is FALSE for a new code", {
+  proj <- make_test_project()
+  on.exit(qc_close(proj))
+
+  qc_add_code(proj, "fresh_code")
+  codes <- qc_list_codes(proj)
+  expect_equal(codes$deprecated[[1L]], 0L)
+})
+
+test_that("qc_deprecate_code sets deprecated = TRUE", {
+  proj <- make_test_project()
+  on.exit(qc_close(proj))
+
+  c1 <- qc_add_code(proj, "old_code")
+  qc_deprecate_code(proj, c1$id)
+  codes <- qc_list_codes(proj)
+  expect_equal(codes$deprecated[[1L]], 1L)
+})
+
+test_that("qc_undeprecate_code restores deprecated = FALSE", {
+  proj <- make_test_project()
+  on.exit(qc_close(proj))
+
+  c1 <- qc_add_code(proj, "revived_code")
+  qc_deprecate_code(proj, c1$id)
+  qc_undeprecate_code(proj, c1$id)
+  codes <- qc_list_codes(proj)
+  expect_equal(codes$deprecated[[1L]], 0L)
+})
+
+test_that("qc_merge_codes moves codings to target and soft-deletes source", {
+  proj <- make_test_project()
+  on.exit(qc_close(proj))
+
+  doc <- qc_import_document(proj, content = "hello world", name = "d")
+  src <- qc_add_code(proj, "source_code")
+  tgt <- qc_add_code(proj, "target_code")
+  qc_add_coding(proj, doc$id, src$id, 1L, 5L)
+
+  qc_merge_codes(proj, from_ids = src$id, into_id = tgt$id)
+
+  codes <- qc_list_codes(proj)
+  expect_equal(nrow(codes), 1L)
+  expect_equal(codes$name[[1L]], "target_code")
+  expect_equal(codes$n_codings[[1L]], 1L)
+})
+
+test_that("qc_split_code creates a new child code", {
+  proj <- make_test_project()
+  on.exit(qc_close(proj))
+
+  c1 <- qc_add_code(proj, "parent_code")
+  qc_split_code(proj, c1$id, c("child_a", "child_b"))
+
+  codes <- qc_list_codes(proj)
+  expect_true("child_a" %in% codes$name)
+  expect_true("child_b" %in% codes$name)
 })
