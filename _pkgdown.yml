@@ -199,6 +199,7 @@ reference:
     desc: "Project memos, reflexive journal entries, and passage annotations."
     contents:
       - qc_add_project_memo
+      - qc_export_journal
       - qc_get_memos
       - qc_list_project_memos
       - qc_delete_project_memo
