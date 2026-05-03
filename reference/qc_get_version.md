@@ -21,7 +21,7 @@ qc_get_version(project, source_id, version)
 - version:
 
   Integer. Version number (as returned by
-  [`qc_list_versions()`](https://thomaswood.github.io/saturate/reference/qc_list_versions.md)).
+  [`qc_list_versions()`](https://woodtho.github.io/saturate/reference/qc_list_versions.md)).
 
 ## Value
 

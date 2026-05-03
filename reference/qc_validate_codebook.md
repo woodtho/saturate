@@ -32,7 +32,7 @@ success message) when no issues are found.
 - `circular_hierarchy` (error): parent chain loops back to itself.
 
 - `missing_code_key` (warning): no stable key assigned; call
-  [`qc_set_code_key()`](https://thomaswood.github.io/saturate/reference/qc_set_code_key.md).
+  [`qc_set_code_key()`](https://woodtho.github.io/saturate/reference/qc_set_code_key.md).
 
 - `missing_definition` (warning): code has no definition text.
 

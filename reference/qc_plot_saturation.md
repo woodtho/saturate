@@ -17,7 +17,7 @@ qc_plot_saturation(project, ..., dark = FALSE)
 - ...:
 
   Additional arguments passed to
-  [`qc_saturation_curve()`](https://thomaswood.github.io/saturate/reference/qc_saturation_curve.md).
+  [`qc_saturation_curve()`](https://woodtho.github.io/saturate/reference/qc_saturation_curve.md).
 
 - dark:
 

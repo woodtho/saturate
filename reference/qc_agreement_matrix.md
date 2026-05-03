@@ -1,7 +1,7 @@
 # Agreement matrix across all coder pairs and codes
 
 Calls
-[`qc_agreement()`](https://thomaswood.github.io/saturate/reference/qc_agreement.md)
+[`qc_agreement()`](https://woodtho.github.io/saturate/reference/qc_agreement.md)
 for every combination of coders and codes that appear in the project.
 
 ## Usage

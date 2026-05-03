@@ -3,7 +3,7 @@
 Source type categorises documents by data-collection method, e.g.
 `"interview"`, `"focus_group"`, `"survey"`, `"observation"`. This label
 is used by
-[`qc_triangulate()`](https://thomaswood.github.io/saturate/reference/qc_triangulate.md)
+[`qc_triangulate()`](https://woodtho.github.io/saturate/reference/qc_triangulate.md)
 to compare code coverage across methods.
 
 ## Usage

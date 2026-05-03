@@ -25,4 +25,4 @@ qc_update_document_memo(project, id, memo)
 ## Value
 
 The updated one-row tibble (same shape as
-[`qc_get_document()`](https://thomaswood.github.io/saturate/reference/qc_get_document.md)).
+[`qc_get_document()`](https://woodtho.github.io/saturate/reference/qc_get_document.md)).

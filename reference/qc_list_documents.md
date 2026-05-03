@@ -22,7 +22,7 @@ qc_list_documents(project, include_content = FALSE, segments = TRUE)
 
   Logical. When `FALSE`, only root documents (`parent_id IS NULL`) are
   returned, hiding segments created by
-  [`qc_segment_document()`](https://thomaswood.github.io/saturate/reference/qc_segment_document.md).
+  [`qc_segment_document()`](https://woodtho.github.io/saturate/reference/qc_segment_document.md).
 
 ## Value
 

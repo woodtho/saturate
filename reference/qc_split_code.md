@@ -2,7 +2,7 @@
 
 Creates `length(new_names)` new codes and logs the split in
 `code_history`. The original code is left intact – use
-[`qc_reassign_coding()`](https://thomaswood.github.io/saturate/reference/qc_reassign_coding.md)
+[`qc_reassign_coding()`](https://woodtho.github.io/saturate/reference/qc_reassign_coding.md)
 or the Codebook "Review Codings" panel to move passages to the new
 codes, then delete the original when done.
 

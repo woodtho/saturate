@@ -44,7 +44,7 @@ segment or document counts. Includes a `total` column. Rows ordered by
 ## Details
 
 Documents must have a `source_type` set via
-[`qc_set_source_type()`](https://thomaswood.github.io/saturate/reference/qc_set_source_type.md)
+[`qc_set_source_type()`](https://woodtho.github.io/saturate/reference/qc_set_source_type.md)
 or the `source_type` argument in
-[`qc_import_document()`](https://thomaswood.github.io/saturate/reference/qc_import_document.md).
+[`qc_import_document()`](https://woodtho.github.io/saturate/reference/qc_import_document.md).
 Documents without a type are grouped under `"unspecified"`.

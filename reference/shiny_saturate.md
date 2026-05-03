@@ -15,9 +15,9 @@ shiny_saturate(project = NULL, brand = NULL, max_upload_mb = 500L, ...)
 - project:
 
   A `qc_project` object created by
-  [`qc_new()`](https://thomaswood.github.io/saturate/reference/qc_new.md)
+  [`qc_new()`](https://woodtho.github.io/saturate/reference/qc_new.md)
   or
-  [`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md).
+  [`qc_open()`](https://woodtho.github.io/saturate/reference/qc_open.md).
   If `NULL` (the default), a project picker is shown before the main
   interface launches – letting the user open an existing `.duckdb` file
   or create a new one.

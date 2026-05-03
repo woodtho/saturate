@@ -2,7 +2,7 @@
 
 Returns an append-only record of every coding operation (create, delete,
 update, reassign) across the project. Combined with
-[`qc_code_history()`](https://thomaswood.github.io/saturate/reference/qc_code_history.md)
+[`qc_code_history()`](https://woodtho.github.io/saturate/reference/qc_code_history.md)
 this gives a complete audit trail of all analytical decisions.
 
 ## Usage

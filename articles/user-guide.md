@@ -69,7 +69,7 @@ Or install the development version from GitHub:
 ``` r
 
 # install.packages("pak")
-pak::pak("thomaswood/saturate")
+pak::pak("woodtho/saturate")
 ```
 
 After installation, load the package in your R session:
@@ -103,7 +103,7 @@ it.
 #### Creating a new project
 
 In R, create a new project with
-[`qc_new()`](https://thomaswood.github.io/saturate/reference/qc_new.md):
+[`qc_new()`](https://woodtho.github.io/saturate/reference/qc_new.md):
 
 ``` r
 
@@ -121,10 +121,10 @@ metadata and displayed in the interface. Both default to sensible values
 omitted.
 
 After running
-[`qc_new()`](https://thomaswood.github.io/saturate/reference/qc_new.md),
+[`qc_new()`](https://woodtho.github.io/saturate/reference/qc_new.md),
 the variable `proj` holds an open connection to the project. You can
 pass it directly to
-[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+[`shiny_saturate()`](https://woodtho.github.io/saturate/reference/shiny_saturate.md)
 to launch the interface, or use it with the API functions described in
 Part 6.
 
@@ -144,10 +144,10 @@ error.
 proj <- qc_open("~/research/remote_work/remote_wellbeing.satdb")
 ```
 
-[`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md)
+[`qc_open()`](https://woodtho.github.io/saturate/reference/qc_open.md)
 checks that the file exists and is a valid saturate project. If another
 R session already has the file open,
-[`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md)
+[`qc_open()`](https://woodtho.github.io/saturate/reference/qc_open.md)
 will return an error – only one session can write to a project at a
 time.
 
@@ -175,13 +175,13 @@ running on your own computer. Your data never leaves your machine.
 To stop the app cleanly, click the **Quit** button in the top-right of
 the navbar and confirm. This releases the project file and closes the
 database connection gracefully. Pressing **Ctrl+C** in the R console
-also works but may trigger a Fortran runtime warning on Windows — use
+also works but may trigger a Fortran runtime warning on Windows – use
 the Quit button when possible.
 
 #### Launching without a project (the project launcher)
 
 You can also call
-[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+[`shiny_saturate()`](https://woodtho.github.io/saturate/reference/shiny_saturate.md)
 without a project argument:
 
 ``` r
@@ -206,24 +206,35 @@ colleague open or create a project without writing R code.
 
 When you launch `shiny_saturate(proj)`, the browser window opens to the
 **Documents** tab. Across the top of the screen is the navigation bar
-(navbar) which gives you access to every section of the application.
+(navbar).
 
 #### The navbar
 
-| Tab | Purpose |
-|----|----|
-| **Documents** | Import, view, and manage your source documents |
-| **Coding** | Read documents and attach codes to passages |
-| **Compare** | Compare two coders’ work side by side |
-| **Codebook** | Create and manage codes, categories, and codebook snapshots |
-| **Themes** | Organise codes into higher-level themes |
-| **Query** | Search documents, explore co-occurrence, triangulate, visualise, word clouds |
-| **Cases** | Manage participants or sites; set attributes; link documents |
-| **Journal** | Write reflexive and analytical memos |
-| **Members** | Member checking: generate summaries for participants to review |
-| **Export** | Download data in various formats |
-| **Audit** | View the full code change history and coding audit log |
-| **Help** | Built-in reference documentation |
+The navbar is organised into four workspaces, one standalone coding tab,
+and a help tab:
+
+| Item | Type | Description |
+|----|----|----|
+| **Prep** | Workspace menu | Data preparation – documents, codebook, cases, and journal |
+| **Coding** | Standalone tab | Read documents and apply codes to passages |
+| **Analysis** | Workspace menu | Analytical tools – compare coders, build themes, query data |
+| **Review** | Workspace menu | Quality and output – member checks, audit log, and export |
+| **Help** | Standalone tab | Built-in reference documentation |
+
+Each workspace menu expands to reveal its sub-tabs:
+
+| Workspace | Sub-tab | Purpose |
+|----|----|----|
+| **Prep** | Documents | Import, view, and manage your source documents |
+| **Prep** | Codebook | Create and manage codes, categories, and codebook snapshots |
+| **Prep** | Cases | Manage participants or sites; set attributes; link documents |
+| **Prep** | Journal | Write reflexive and analytical memos |
+| **Analysis** | Compare | Compare two coders’ work side by side; calculate inter-rater reliability |
+| **Analysis** | Themes | Organise codes into higher-level themes; view theme excerpts |
+| **Analysis** | Query | Search documents, explore co-occurrence, triangulate, visualise, word clouds |
+| **Review** | Member Checks | Generate and track participant member checks |
+| **Review** | Audit | View the full code change history and coding audit log |
+| **Review** | Export | Download data in various formats |
 
 #### The session area (top right)
 
@@ -274,6 +285,13 @@ Click the **Settings** button in the navbar. In the **Profile** section:
 - **Deleting a profile**: Choose a profile and click **Delete**. This
   does not delete any codings or memos created under that name.
 
+#### Where settings are stored
+
+Profile names and display settings are stored directly in the project
+database. Your preferences travel with the `.satdb` file – opening the
+same project on a different machine or browser restores your profile and
+settings automatically.
+
 #### Display settings
 
 | Setting | Description |
@@ -299,7 +317,7 @@ Click the **Settings** button in the navbar. In the **Profile** section:
 
 ------------------------------------------------------------------------
 
-## Part 2 – Building Your Dataset
+## Part 2 – The Prep Workspace
 
 ### Chapter 6: The Documents Tab
 
@@ -315,8 +333,8 @@ with the participant’s pseudonym and organisation.
 
 #### Importing documents
 
-Navigate to the **Documents** tab and click **Import**. Select one or
-more files. Supported file types:
+Navigate to the **Prep** menu and click **Documents**. Click **Import**.
+Select one or more files. Supported file types:
 
 - Plain text (`.txt`)
 - Microsoft Word documents (`.docx`)
@@ -390,7 +408,7 @@ Click **Choose…** to upload an existing audio file. Accepted formats:
 
 | Setting | Purpose |
 |----|----|
-| **Model** | Whisper model size: `tiny` (74 MB), `base` (142 MB), `small` (466 MB), `medium` (1.5 GB) |
+| **Model** | Whisper model size: `tiny` (74 MB), `base` (142 MB), `small` (466 MB), `medium` (1.5 GB). Defaults to the largest already-downloaded model, or `tiny` if none are cached |
 | **Language** | BCP-47 tag (e.g. `en`, `fr`, `de`). Leave blank for automatic detection |
 | **Timestamps** | Include `[HH:MM:SS]` segment markers in the output. On by default |
 
@@ -434,64 +452,7 @@ soft-deleted.
 
 ------------------------------------------------------------------------
 
-### Chapter 7: The Cases Tab
-
-#### What a case is
-
-A **case** is the unit of analysis in your study – typically a
-participant, but it could be a site, an organisation, or any other
-bounded entity you are comparing. Cases allow you to group documents
-together and attach structured descriptive attributes that you can later
-use for triangulation.
-
-In Researcher A’s study, each case is one participant. They record
-attributes including organisation, role level, age group, working
-arrangement, and months remote.
-
-#### Creating a case
-
-Navigate to the **Cases** tab. In the sidebar, type a name in the
-**Name** field (e.g., “P01”), optionally add a **Memo**, and click **Add
-case**.
-
-#### Attributes sub-panel
-
-Click a case row to open its detail panel. In the **Attributes**
-sub-panel, type a variable name (e.g., `working_arrangement`) and a
-value (e.g., `fully remote`), then click **Set attribute**.
-
-Researcher A adds:
-
-    organisation        = Organisation A
-    role_level          = senior
-    age_group           = 40s+
-    working_arrangement = fully remote
-    months_remote       = 24
-
-Use consistent variable names across all cases. Inconsistent naming
-(e.g., `organisation` for P01 but `org` for P02) breaks the
-triangulation analysis.
-
-To delete an attribute, click the attribute row in the table and
-confirm.
-
-#### Documents sub-panel
-
-In the **Documents** sub-panel, choose a document from the dropdown and
-click **Link**. Click a linked document row to unlink it. A document can
-be linked to multiple cases.
-
-#### Exporting case attributes
-
-Click **Attributes CSV** at the top of the Cases tab. saturate generates
-a wide-format CSV where each row is a case and each column is an
-attribute.
-
-------------------------------------------------------------------------
-
-## Part 3 – Coding
-
-### Chapter 8: The Codebook Tab
+### Chapter 7: The Codebook Tab
 
 #### What codes are
 
@@ -578,12 +539,109 @@ fold it into another. Two operations support this:
 - **Merge into**: Reassigns all codings from one or more source codes to
   a target code, then soft-deletes the sources. Use the **Merge into…**
   button in the codebook form, or
-  [`qc_merge_codes()`](https://thomaswood.github.io/saturate/reference/qc_merge_codes.md)
+  [`qc_merge_codes()`](https://woodtho.github.io/saturate/reference/qc_merge_codes.md)
   in the API.
 
 ------------------------------------------------------------------------
 
-### Chapter 9: The Coding Tab
+### Chapter 8: The Cases Tab
+
+#### What a case is
+
+A **case** is the unit of analysis in your study – typically a
+participant, but it could be a site, an organisation, or any other
+bounded entity you are comparing. Cases allow you to group documents
+together and attach structured descriptive attributes that you can later
+use for triangulation.
+
+In Researcher A’s study, each case is one participant. They record
+attributes including organisation, role level, age group, working
+arrangement, and months remote.
+
+#### Creating a case
+
+Navigate to the **Cases** tab. In the sidebar, type a name in the
+**Name** field (e.g., “P01”), optionally add a **Memo**, and click **Add
+case**.
+
+#### Attributes sub-panel
+
+Click a case row to open its detail panel. In the **Attributes**
+sub-panel, type a variable name (e.g., `working_arrangement`) and a
+value (e.g., `fully remote`), then click **Set attribute**.
+
+Researcher A adds:
+
+    organisation        = Organisation A
+    role_level          = senior
+    age_group           = 40s+
+    working_arrangement = fully remote
+    months_remote       = 24
+
+Use consistent variable names across all cases. Inconsistent naming
+(e.g., `organisation` for P01 but `org` for P02) breaks the
+triangulation analysis.
+
+To delete an attribute, click the attribute row in the table and
+confirm.
+
+#### Documents sub-panel
+
+In the **Documents** sub-panel, choose a document from the dropdown and
+click **Link**. Click a linked document row to unlink it. A document can
+be linked to multiple cases.
+
+#### Exporting case attributes
+
+Click **Attributes CSV** at the top of the Cases tab. saturate generates
+a wide-format CSV where each row is a case and each column is an
+attribute.
+
+------------------------------------------------------------------------
+
+### Chapter 9: The Journal Tab
+
+#### Why the journal matters
+
+Reflexivity – examining how your own perspective affects the research –
+is not optional in rigorous qualitative work. The **Journal** tab
+provides a dedicated, integrated space for this writing. Entries are
+date-stamped, attributed to the active coder, categorised by type,
+searchable, and exportable.
+
+#### The five entry types
+
+| Type | When to use it |
+|----|----|
+| **Analytical** | Interpretive insights, emerging ideas, code development reasoning |
+| **Reflexivity** | How your position or experiences may be shaping the analysis |
+| **Decision** | A specific analytical or methodological choice and why you made it |
+| **Methodological** | Notes on procedures, protocol adaptations, sampling decisions |
+| **Other** | Anything that does not fit the above |
+
+#### Writing an entry
+
+Navigate to the **Journal** tab. Select an entry type from the sidebar
+dropdown, write your entry in the text area, and click **Save entry**.
+
+#### Filtering and searching
+
+Use the type filter dropdown and the search box in the card header to
+find specific entries – useful when writing your methods section and
+retrieving all decisions about a particular code.
+
+#### Exporting
+
+- **Export DOCX/HTML/TXT**: A readable formatted document, suitable for
+  a reflexive appendix.
+- **Export CSV**: One row per entry with date, type, content, and
+  author.
+
+------------------------------------------------------------------------
+
+## Part 3 – The Coding Workspace
+
+### Chapter 10: The Coding Tab
 
 #### Opening a document for coding
 
@@ -656,7 +714,7 @@ operating system and browser.
 
 ------------------------------------------------------------------------
 
-### Chapter 10: Auto-Coding (R API)
+### Chapter 11: Auto-Coding (R API)
 
 Auto-coding is available through the R API only. It applies a code
 automatically to every passage that matches a regular expression.
@@ -678,7 +736,7 @@ auto-codings in the GUI.
 
 ------------------------------------------------------------------------
 
-### Chapter 11: Multi-Coder Workflows: Split and Merge
+### Chapter 12: Multi-Coder Workflows: Split and Merge
 
 #### Overview
 
@@ -823,9 +881,9 @@ qc_merge_project(
 
 ------------------------------------------------------------------------
 
-## Part 4 – Analysis
+## Part 4 – The Analysis Workspace
 
-### Chapter 12: The Compare Tab
+### Chapter 13: The Compare Tab
 
 #### What the Compare tab is for
 
@@ -835,8 +893,9 @@ inter-rater reliability statistics.
 
 #### Selecting document and coders
 
-Navigate to the **Compare** tab. Choose the **Document**, **Coder A**,
-and **Coder B** from the selectors at the top.
+Navigate to the **Analysis** menu and click **Compare**. Choose the
+**Document**, **Coder A**, and **Coder B** from the selectors at the
+top.
 
 #### The differences card
 
@@ -869,7 +928,7 @@ definition.
 
 ------------------------------------------------------------------------
 
-### Chapter 13: The Themes Tab
+### Chapter 14: The Themes Tab
 
 #### What a theme is
 
@@ -908,7 +967,7 @@ and all associated excerpts with source documents and coder names.
 
 ------------------------------------------------------------------------
 
-### Chapter 14: The Query Tab
+### Chapter 15: The Query Tab
 
 The **Query** tab consolidates eight analytical panels in one place.
 
@@ -945,7 +1004,7 @@ consistently travel together and may belong in the same theme.
 Plots the cumulative number of distinct codes introduced as documents
 are processed in order. A curve that flattens provides empirical
 evidence of theoretical saturation. See also
-[`qc_saturation_curve()`](https://thomaswood.github.io/saturate/reference/qc_saturation_curve.md)
+[`qc_saturation_curve()`](https://woodtho.github.io/saturate/reference/qc_saturation_curve.md)
 in the R API.
 
 #### Triangulation panel
@@ -996,7 +1055,7 @@ it.
 
 ------------------------------------------------------------------------
 
-### Chapter 15: Saturation Analysis (R API)
+### Chapter 16: Saturation Analysis (R API)
 
 Theoretical saturation is the point at which new data stops producing
 new codes. Demonstrating saturation is increasingly expected in
@@ -1019,9 +1078,9 @@ judgement and reflexive writing.
 
 ------------------------------------------------------------------------
 
-## Part 5 – Quality and Output
+## Part 5 – The Review Workspace
 
-### Chapter 16: The Members Tab
+### Chapter 17: The Member Checks Tab
 
 #### What member checking is
 
@@ -1032,8 +1091,9 @@ people who provided the data.
 
 #### Creating a member check
 
-Navigate to the **Members** tab and click **New member check**. Select a
-document and a participant label. Optionally restrict to specific codes.
+Navigate to the **Review** menu and click **Member Checks**. Click **New
+member check**. Select a document and a participant label. Optionally
+restrict to specific codes.
 
 #### The check workflow
 
@@ -1060,61 +1120,7 @@ the participant.
 
 ------------------------------------------------------------------------
 
-### Chapter 17: The Journal Tab
-
-#### Why the journal matters
-
-Reflexivity – examining how your own perspective affects the research –
-is not optional in rigorous qualitative work. The **Journal** tab
-provides a dedicated, integrated space for this writing. Entries are
-date-stamped, attributed to the active coder, categorised by type,
-searchable, and exportable.
-
-#### The five entry types
-
-| Type | When to use it |
-|----|----|
-| **Analytical** | Interpretive insights, emerging ideas, code development reasoning |
-| **Reflexivity** | How your position or experiences may be shaping the analysis |
-| **Decision** | A specific analytical or methodological choice and why you made it |
-| **Methodological** | Notes on procedures, protocol adaptations, sampling decisions |
-| **Other** | Anything that does not fit the above |
-
-#### Writing an entry
-
-Navigate to the **Journal** tab. Select an entry type from the sidebar
-dropdown, write your entry in the text area, and click **Save entry**.
-
-#### Filtering and searching
-
-Use the type filter dropdown and the search box in the card header to
-find specific entries – useful when writing your methods section and
-retrieving all decisions about a particular code.
-
-#### Exporting
-
-- **Export DOCX/HTML/TXT**: A readable formatted document, suitable for
-  a reflexive appendix.
-- **Export CSV**: One row per entry with date, type, content, and
-  author.
-
-------------------------------------------------------------------------
-
-### Chapter 18: The Export Tab
-
-Navigate to the **Export** tab for structured data export:
-
-- **Analytical themes report**: One section per theme with description,
-  linked codes, and all associated excerpts. Available as DOCX, HTML,
-  TXT, or JSON.
-- **Full codebook export**: All codes with definitions, criteria, memos,
-  hierarchy, and colours. Available as DOCX, XLSX, CSV, HTML, or JSON.
-- **Raw table export**: Any internal table (codings, codes, sources,
-  cases, etc.) as CSV, JSON, or XLSX.
-
-------------------------------------------------------------------------
-
-### Chapter 19: The Audit Tab
+### Chapter 18: The Audit Tab
 
 #### What the audit log is
 
@@ -1138,6 +1144,24 @@ The audit log allows you to:
 
 Both tables are sortable and filterable by timestamp, coder, and
 operation type.
+
+------------------------------------------------------------------------
+
+### Chapter 19: The Export Tab
+
+Navigate to the **Review** menu and click **Export** for structured data
+export:
+
+- **Analytical themes report**: One section per theme with description,
+  linked codes, and all associated excerpts. Available as DOCX, HTML,
+  TXT, or JSON.
+- **Full codebook export**: All codes with definitions, criteria, memos,
+  hierarchy, and colours. Available as DOCX, XLSX, CSV, HTML, or JSON.
+- **Journal export**: All research journal entries with date, type,
+  content, and author. Available as Word (styled headers per entry),
+  HTML, TXT, or CSV.
+- **Raw table export**: Any internal table (codings, codes, sources,
+  cases, etc.) as CSV, JSON, or XLSX.
 
 ------------------------------------------------------------------------
 
@@ -1847,6 +1871,21 @@ qc_export_codebook(
 
 Formats: `"docx"`, `"xlsx"`, `"csv"`, `"json"`, `"html"`.
 
+#### `qc_export_journal()` – Export research journal
+
+``` r
+
+qc_export_journal(
+  proj,
+  path   = "~/exports/journal.docx",
+  format = "docx"   # also "html", "txt", "csv"
+)
+```
+
+The `"docx"` format uses styled headers per entry. The `"csv"` format
+produces one row per entry with columns for date, type, content, and
+author.
+
 #### `qc_export_project_data()` – Export raw tables
 
 ``` r
@@ -1901,7 +1940,7 @@ corrected for chance. Values: below 0.40 = poor; 0.41-0.60 = moderate;
 0.61-0.80 = good; above 0.80 = very good.
 
 **Contributor file**: A copy of a project created with
-[`qc_split_project()`](https://thomaswood.github.io/saturate/reference/qc_split_project.md)
+[`qc_split_project()`](https://woodtho.github.io/saturate/reference/qc_split_project.md)
 and sent to a coder for independent analysis.
 
 **Excerpt**: A labelled passage retained for its illustrative value,
@@ -2043,7 +2082,7 @@ coding is normal. The Validate button identifies unused and orphan
 codes.
 
 **Run
-[`qc_validate_codebook()`](https://thomaswood.github.io/saturate/reference/qc_validate_codebook.md)
+[`qc_validate_codebook()`](https://woodtho.github.io/saturate/reference/qc_validate_codebook.md)
 before reliability coding begins.** Missing definitions and circular
 hierarchies are sources of coder confusion – fix them first.
 
@@ -2063,7 +2102,7 @@ in the master while a contributor has a copy can cause name conflicts on
 merge.
 
 **Lock the project after finalising a dataset.**
-[`qc_lock_project()`](https://thomaswood.github.io/saturate/reference/qc_lock_project.md)
+[`qc_lock_project()`](https://woodtho.github.io/saturate/reference/qc_lock_project.md)
 prevents accidental writes during analysis or writing-up.
 
 ------------------------------------------------------------------------
@@ -2095,7 +2134,7 @@ DBI::dbDisconnect(con)
 ```
 
 Then reconnect with
-[`qc_open()`](https://thomaswood.github.io/saturate/reference/qc_open.md).
+[`qc_open()`](https://woodtho.github.io/saturate/reference/qc_open.md).
 Codings attached to the code can be restored similarly by updating the
 `codings` table.
 
@@ -2146,7 +2185,7 @@ sample.
 
 The default Shiny upload limit is 5 MB. Raise it by passing
 `max_upload_mb` to
-[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md):
+[`shiny_saturate()`](https://woodtho.github.io/saturate/reference/shiny_saturate.md):
 
 ``` r
 
@@ -2154,7 +2193,7 @@ shiny_saturate(proj, max_upload_mb = 500L)
 ```
 
 The default when launching with
-[`shiny_saturate()`](https://thomaswood.github.io/saturate/reference/shiny_saturate.md)
+[`shiny_saturate()`](https://woodtho.github.io/saturate/reference/shiny_saturate.md)
 is already 500 MB, so this error should not appear unless your project
 file is unusually large.
 

@@ -23,7 +23,7 @@ qc_export_member_check(
 - check_id:
 
   Integer. Member check id (from
-  [`qc_list_member_checks()`](https://thomaswood.github.io/saturate/reference/qc_list_member_checks.md)).
+  [`qc_list_member_checks()`](https://woodtho.github.io/saturate/reference/qc_list_member_checks.md)).
 
 - path:
 

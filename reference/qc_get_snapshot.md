@@ -17,7 +17,7 @@ qc_get_snapshot(project, snapshot_id)
 - snapshot_id:
 
   Integer. The snapshot id from
-  [`qc_list_snapshots()`](https://thomaswood.github.io/saturate/reference/qc_list_snapshots.md).
+  [`qc_list_snapshots()`](https://woodtho.github.io/saturate/reference/qc_list_snapshots.md).
 
 ## Value
 

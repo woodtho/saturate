@@ -1,7 +1,7 @@
 # Export a rich codebook
 
 Extends
-[`qc_export_codebook()`](https://thomaswood.github.io/saturate/reference/qc_export_codebook.md)
+[`qc_export_codebook()`](https://woodtho.github.io/saturate/reference/qc_export_codebook.md)
 with optional example excerpts and more output formats including Word
 and Excel.
 

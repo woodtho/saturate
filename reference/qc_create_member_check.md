@@ -2,9 +2,9 @@
 
 Records that a set of coded segments has been prepared for participant
 review. Use
-[`qc_export_member_check()`](https://thomaswood.github.io/saturate/reference/qc_export_member_check.md)
+[`qc_export_member_check()`](https://woodtho.github.io/saturate/reference/qc_export_member_check.md)
 to generate the shareable document and
-[`qc_record_member_response()`](https://thomaswood.github.io/saturate/reference/qc_record_member_response.md)
+[`qc_record_member_response()`](https://woodtho.github.io/saturate/reference/qc_record_member_response.md)
 to log the participant's feedback.
 
 ## Usage

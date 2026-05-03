@@ -43,4 +43,4 @@ qc_split_project(
 ## Value
 
 The new `qc_project` (invisibly). Caller must call
-[`qc_close()`](https://thomaswood.github.io/saturate/reference/qc_close.md).
+[`qc_close()`](https://woodtho.github.io/saturate/reference/qc_close.md).

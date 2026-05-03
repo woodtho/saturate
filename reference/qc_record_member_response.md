@@ -42,4 +42,4 @@ qc_record_member_response(
 ## Value
 
 Invisibly, the updated check list (from
-[`qc_list_member_checks()`](https://thomaswood.github.io/saturate/reference/qc_list_member_checks.md)).
+[`qc_list_member_checks()`](https://woodtho.github.io/saturate/reference/qc_list_member_checks.md)).

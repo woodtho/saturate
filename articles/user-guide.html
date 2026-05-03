@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>saturate: A Complete User Guide • saturate</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -18,7 +18,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">saturate</a>
 
@@ -31,17 +31,20 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="active nav-item"><a class="nav-link" href="../articles/user-guide.html">User Guide</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/user-guide.html">saturate: A Complete User Guide</a></li>
-  </ul>
-</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/thomaswood/saturate" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/woodtho/saturate" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -57,7 +60,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>saturate: A Complete User Guide</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/thomaswood/saturate/blob/main/vignettes/user-guide.Rmd" class="external-link"><code>vignettes/user-guide.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/woodtho/saturate/blob/main/vignettes/user-guide.Rmd" class="external-link"><code>vignettes/user-guide.Rmd</code></a></small>
       <div class="d-none name"><code>user-guide.Rmd</code></div>
     </div>
 
@@ -129,10 +132,10 @@ handled by R’s package manager.</p>
 <p>Or install the development version from GitHub:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
-<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"thomaswood/saturate"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"woodtho/saturate"</span><span class="op">)</span></span></code></pre></div>
 <p>After installation, load the package in your R session:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://thomaswood.github.io/saturate">saturate</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://woodtho.github.io/saturate">saturate</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="a-note-on-updates">A note on updates<a class="anchor" aria-label="anchor" href="#a-note-on-updates"></a>
@@ -220,7 +223,7 @@ machine.</p>
 the top-right of the navbar and confirm. This releases the project file
 and closes the database connection gracefully. Pressing
 <strong>Ctrl+C</strong> in the R console also works but may trigger a
-Fortran runtime warning on Windows — use the Quit button when
+Fortran runtime warning on Windows – use the Quit button when
 possible.</p>
 </div>
 <div class="section level4">
@@ -250,69 +253,115 @@ colleague open or create a project without writing R code.</p>
 </h3>
 <p>When you launch <code>shiny_saturate(proj)</code>, the browser window
 opens to the <strong>Documents</strong> tab. Across the top of the
-screen is the navigation bar (navbar) which gives you access to every
-section of the application.</p>
+screen is the navigation bar (navbar).</p>
 <div class="section level4">
 <h4 id="the-navbar">The navbar<a class="anchor" aria-label="anchor" href="#the-navbar"></a>
 </h4>
+<p>The navbar is organised into four workspaces, one standalone coding
+tab, and a help tab:</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="33%">
+<col width="33%">
+<col width="33%">
 </colgroup>
 <thead><tr class="header">
-<th>Tab</th>
+<th>Item</th>
+<th>Type</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>Prep</strong></td>
+<td>Workspace menu</td>
+<td>Data preparation – documents, codebook, cases, and journal</td>
+</tr>
+<tr class="even">
+<td><strong>Coding</strong></td>
+<td>Standalone tab</td>
+<td>Read documents and apply codes to passages</td>
+</tr>
+<tr class="odd">
+<td><strong>Analysis</strong></td>
+<td>Workspace menu</td>
+<td>Analytical tools – compare coders, build themes, query data</td>
+</tr>
+<tr class="even">
+<td><strong>Review</strong></td>
+<td>Workspace menu</td>
+<td>Quality and output – member checks, audit log, and export</td>
+</tr>
+<tr class="odd">
+<td><strong>Help</strong></td>
+<td>Standalone tab</td>
+<td>Built-in reference documentation</td>
+</tr>
+</tbody>
+</table>
+<p>Each workspace menu expands to reveal its sub-tabs:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Workspace</th>
+<th>Sub-tab</th>
 <th>Purpose</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><strong>Documents</strong></td>
+<td><strong>Prep</strong></td>
+<td>Documents</td>
 <td>Import, view, and manage your source documents</td>
 </tr>
 <tr class="even">
-<td><strong>Coding</strong></td>
-<td>Read documents and attach codes to passages</td>
-</tr>
-<tr class="odd">
-<td><strong>Compare</strong></td>
-<td>Compare two coders’ work side by side</td>
-</tr>
-<tr class="even">
-<td><strong>Codebook</strong></td>
+<td><strong>Prep</strong></td>
+<td>Codebook</td>
 <td>Create and manage codes, categories, and codebook snapshots</td>
 </tr>
 <tr class="odd">
-<td><strong>Themes</strong></td>
-<td>Organise codes into higher-level themes</td>
-</tr>
-<tr class="even">
-<td><strong>Query</strong></td>
-<td>Search documents, explore co-occurrence, triangulate, visualise,
-word clouds</td>
-</tr>
-<tr class="odd">
-<td><strong>Cases</strong></td>
+<td><strong>Prep</strong></td>
+<td>Cases</td>
 <td>Manage participants or sites; set attributes; link documents</td>
 </tr>
 <tr class="even">
-<td><strong>Journal</strong></td>
+<td><strong>Prep</strong></td>
+<td>Journal</td>
 <td>Write reflexive and analytical memos</td>
 </tr>
 <tr class="odd">
-<td><strong>Members</strong></td>
-<td>Member checking: generate summaries for participants to review</td>
+<td><strong>Analysis</strong></td>
+<td>Compare</td>
+<td>Compare two coders’ work side by side; calculate inter-rater
+reliability</td>
 </tr>
 <tr class="even">
-<td><strong>Export</strong></td>
-<td>Download data in various formats</td>
+<td><strong>Analysis</strong></td>
+<td>Themes</td>
+<td>Organise codes into higher-level themes; view theme excerpts</td>
 </tr>
 <tr class="odd">
-<td><strong>Audit</strong></td>
+<td><strong>Analysis</strong></td>
+<td>Query</td>
+<td>Search documents, explore co-occurrence, triangulate, visualise,
+word clouds</td>
+</tr>
+<tr class="even">
+<td><strong>Review</strong></td>
+<td>Member Checks</td>
+<td>Generate and track participant member checks</td>
+</tr>
+<tr class="odd">
+<td><strong>Review</strong></td>
+<td>Audit</td>
 <td>View the full code change history and coding audit log</td>
 </tr>
 <tr class="even">
-<td><strong>Help</strong></td>
-<td>Built-in reference documentation</td>
+<td><strong>Review</strong></td>
+<td>Export</td>
+<td>Download data in various formats</td>
 </tr>
 </tbody>
 </table>
@@ -374,6 +423,14 @@ and click <strong>Switch</strong>.</li>
 <strong>Delete</strong>. This does not delete any codings or memos
 created under that name.</li>
 </ul>
+</div>
+<div class="section level4">
+<h4 id="where-settings-are-stored">Where settings are stored<a class="anchor" aria-label="anchor" href="#where-settings-are-stored"></a>
+</h4>
+<p>Profile names and display settings are stored directly in the project
+database. Your preferences travel with the <code>.satdb</code> file –
+opening the same project on a different machine or browser restores your
+profile and settings automatically.</p>
 </div>
 <div class="section level4">
 <h4 id="display-settings">Display settings<a class="anchor" aria-label="anchor" href="#display-settings"></a>
@@ -464,7 +521,7 @@ default)</td>
 </div>
 </div>
 <div class="section level2">
-<h2 id="part-2-building-your-dataset">Part 2 – Building Your Dataset<a class="anchor" aria-label="anchor" href="#part-2-building-your-dataset"></a>
+<h2 id="part-2-the-prep-workspace">Part 2 – The Prep Workspace<a class="anchor" aria-label="anchor" href="#part-2-the-prep-workspace"></a>
 </h2>
 <div class="section level3">
 <h3 id="chapter-6-the-documents-tab">Chapter 6: The Documents Tab<a class="anchor" aria-label="anchor" href="#chapter-6-the-documents-tab"></a>
@@ -483,9 +540,9 @@ named with the participant’s pseudonym and organisation.</p>
 <div class="section level4">
 <h4 id="importing-documents">Importing documents<a class="anchor" aria-label="anchor" href="#importing-documents"></a>
 </h4>
-<p>Navigate to the <strong>Documents</strong> tab and click
-<strong>Import</strong>. Select one or more files. Supported file
-types:</p>
+<p>Navigate to the <strong>Prep</strong> menu and click
+<strong>Documents</strong>. Click <strong>Import</strong>. Select one or
+more files. Supported file types:</p>
 <ul>
 <li>Plain text (<code>.txt</code>)</li>
 <li>Microsoft Word documents (<code>.docx</code>)</li>
@@ -627,7 +684,9 @@ Accepted formats: <code>.webm</code>, <code>.ogg</code>,
 <tr class="odd">
 <td><strong>Model</strong></td>
 <td>Whisper model size: <code>tiny</code> (74 MB), <code>base</code>
-(142 MB), <code>small</code> (466 MB), <code>medium</code> (1.5 GB)</td>
+(142 MB), <code>small</code> (466 MB), <code>medium</code> (1.5 GB).
+Defaults to the largest already-downloaded model, or <code>tiny</code>
+if none are cached</td>
 </tr>
 <tr class="even">
 <td><strong>Language</strong></td>
@@ -691,69 +750,7 @@ also soft-deleted.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-7-the-cases-tab">Chapter 7: The Cases Tab<a class="anchor" aria-label="anchor" href="#chapter-7-the-cases-tab"></a>
-</h3>
-<div class="section level4">
-<h4 id="what-a-case-is">What a case is<a class="anchor" aria-label="anchor" href="#what-a-case-is"></a>
-</h4>
-<p>A <strong>case</strong> is the unit of analysis in your study –
-typically a participant, but it could be a site, an organisation, or any
-other bounded entity you are comparing. Cases allow you to group
-documents together and attach structured descriptive attributes that you
-can later use for triangulation.</p>
-<p>In Researcher A’s study, each case is one participant. They record
-attributes including organisation, role level, age group, working
-arrangement, and months remote.</p>
-</div>
-<div class="section level4">
-<h4 id="creating-a-case">Creating a case<a class="anchor" aria-label="anchor" href="#creating-a-case"></a>
-</h4>
-<p>Navigate to the <strong>Cases</strong> tab. In the sidebar, type a
-name in the <strong>Name</strong> field (e.g., “P01”), optionally add a
-<strong>Memo</strong>, and click <strong>Add case</strong>.</p>
-</div>
-<div class="section level4">
-<h4 id="attributes-sub-panel">Attributes sub-panel<a class="anchor" aria-label="anchor" href="#attributes-sub-panel"></a>
-</h4>
-<p>Click a case row to open its detail panel. In the
-<strong>Attributes</strong> sub-panel, type a variable name (e.g.,
-<code>working_arrangement</code>) and a value (e.g.,
-<code>fully remote</code>), then click <strong>Set
-attribute</strong>.</p>
-<p>Researcher A adds:</p>
-<pre><code>organisation        = Organisation A
-role_level          = senior
-age_group           = 40s+
-working_arrangement = fully remote
-months_remote       = 24</code></pre>
-<p>Use consistent variable names across all cases. Inconsistent naming
-(e.g., <code>organisation</code> for P01 but <code>org</code> for P02)
-breaks the triangulation analysis.</p>
-<p>To delete an attribute, click the attribute row in the table and
-confirm.</p>
-</div>
-<div class="section level4">
-<h4 id="documents-sub-panel">Documents sub-panel<a class="anchor" aria-label="anchor" href="#documents-sub-panel"></a>
-</h4>
-<p>In the <strong>Documents</strong> sub-panel, choose a document from
-the dropdown and click <strong>Link</strong>. Click a linked document
-row to unlink it. A document can be linked to multiple cases.</p>
-</div>
-<div class="section level4">
-<h4 id="exporting-case-attributes">Exporting case attributes<a class="anchor" aria-label="anchor" href="#exporting-case-attributes"></a>
-</h4>
-<p>Click <strong>Attributes CSV</strong> at the top of the Cases tab.
-saturate generates a wide-format CSV where each row is a case and each
-column is an attribute.</p>
-<hr>
-</div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="part-3-coding">Part 3 – Coding<a class="anchor" aria-label="anchor" href="#part-3-coding"></a>
-</h2>
-<div class="section level3">
-<h3 id="chapter-8-the-codebook-tab">Chapter 8: The Codebook Tab<a class="anchor" aria-label="anchor" href="#chapter-8-the-codebook-tab"></a>
+<h3 id="chapter-7-the-codebook-tab">Chapter 7: The Codebook Tab<a class="anchor" aria-label="anchor" href="#chapter-7-the-codebook-tab"></a>
 </h3>
 <div class="section level4">
 <h4 id="what-codes-are">What codes are<a class="anchor" aria-label="anchor" href="#what-codes-are"></a>
@@ -884,7 +881,147 @@ source codes to a target code, then soft-deletes the sources. Use the
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-9-the-coding-tab">Chapter 9: The Coding Tab<a class="anchor" aria-label="anchor" href="#chapter-9-the-coding-tab"></a>
+<h3 id="chapter-8-the-cases-tab">Chapter 8: The Cases Tab<a class="anchor" aria-label="anchor" href="#chapter-8-the-cases-tab"></a>
+</h3>
+<div class="section level4">
+<h4 id="what-a-case-is">What a case is<a class="anchor" aria-label="anchor" href="#what-a-case-is"></a>
+</h4>
+<p>A <strong>case</strong> is the unit of analysis in your study –
+typically a participant, but it could be a site, an organisation, or any
+other bounded entity you are comparing. Cases allow you to group
+documents together and attach structured descriptive attributes that you
+can later use for triangulation.</p>
+<p>In Researcher A’s study, each case is one participant. They record
+attributes including organisation, role level, age group, working
+arrangement, and months remote.</p>
+</div>
+<div class="section level4">
+<h4 id="creating-a-case">Creating a case<a class="anchor" aria-label="anchor" href="#creating-a-case"></a>
+</h4>
+<p>Navigate to the <strong>Cases</strong> tab. In the sidebar, type a
+name in the <strong>Name</strong> field (e.g., “P01”), optionally add a
+<strong>Memo</strong>, and click <strong>Add case</strong>.</p>
+</div>
+<div class="section level4">
+<h4 id="attributes-sub-panel">Attributes sub-panel<a class="anchor" aria-label="anchor" href="#attributes-sub-panel"></a>
+</h4>
+<p>Click a case row to open its detail panel. In the
+<strong>Attributes</strong> sub-panel, type a variable name (e.g.,
+<code>working_arrangement</code>) and a value (e.g.,
+<code>fully remote</code>), then click <strong>Set
+attribute</strong>.</p>
+<p>Researcher A adds:</p>
+<pre><code>organisation        = Organisation A
+role_level          = senior
+age_group           = 40s+
+working_arrangement = fully remote
+months_remote       = 24</code></pre>
+<p>Use consistent variable names across all cases. Inconsistent naming
+(e.g., <code>organisation</code> for P01 but <code>org</code> for P02)
+breaks the triangulation analysis.</p>
+<p>To delete an attribute, click the attribute row in the table and
+confirm.</p>
+</div>
+<div class="section level4">
+<h4 id="documents-sub-panel">Documents sub-panel<a class="anchor" aria-label="anchor" href="#documents-sub-panel"></a>
+</h4>
+<p>In the <strong>Documents</strong> sub-panel, choose a document from
+the dropdown and click <strong>Link</strong>. Click a linked document
+row to unlink it. A document can be linked to multiple cases.</p>
+</div>
+<div class="section level4">
+<h4 id="exporting-case-attributes">Exporting case attributes<a class="anchor" aria-label="anchor" href="#exporting-case-attributes"></a>
+</h4>
+<p>Click <strong>Attributes CSV</strong> at the top of the Cases tab.
+saturate generates a wide-format CSV where each row is a case and each
+column is an attribute.</p>
+<hr>
+</div>
+</div>
+<div class="section level3">
+<h3 id="chapter-9-the-journal-tab">Chapter 9: The Journal Tab<a class="anchor" aria-label="anchor" href="#chapter-9-the-journal-tab"></a>
+</h3>
+<div class="section level4">
+<h4 id="why-the-journal-matters">Why the journal matters<a class="anchor" aria-label="anchor" href="#why-the-journal-matters"></a>
+</h4>
+<p>Reflexivity – examining how your own perspective affects the research
+– is not optional in rigorous qualitative work. The
+<strong>Journal</strong> tab provides a dedicated, integrated space for
+this writing. Entries are date-stamped, attributed to the active coder,
+categorised by type, searchable, and exportable.</p>
+</div>
+<div class="section level4">
+<h4 id="the-five-entry-types">The five entry types<a class="anchor" aria-label="anchor" href="#the-five-entry-types"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Type</th>
+<th>When to use it</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>Analytical</strong></td>
+<td>Interpretive insights, emerging ideas, code development
+reasoning</td>
+</tr>
+<tr class="even">
+<td><strong>Reflexivity</strong></td>
+<td>How your position or experiences may be shaping the analysis</td>
+</tr>
+<tr class="odd">
+<td><strong>Decision</strong></td>
+<td>A specific analytical or methodological choice and why you made
+it</td>
+</tr>
+<tr class="even">
+<td><strong>Methodological</strong></td>
+<td>Notes on procedures, protocol adaptations, sampling decisions</td>
+</tr>
+<tr class="odd">
+<td><strong>Other</strong></td>
+<td>Anything that does not fit the above</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="writing-an-entry">Writing an entry<a class="anchor" aria-label="anchor" href="#writing-an-entry"></a>
+</h4>
+<p>Navigate to the <strong>Journal</strong> tab. Select an entry type
+from the sidebar dropdown, write your entry in the text area, and click
+<strong>Save entry</strong>.</p>
+</div>
+<div class="section level4">
+<h4 id="filtering-and-searching">Filtering and searching<a class="anchor" aria-label="anchor" href="#filtering-and-searching"></a>
+</h4>
+<p>Use the type filter dropdown and the search box in the card header to
+find specific entries – useful when writing your methods section and
+retrieving all decisions about a particular code.</p>
+</div>
+<div class="section level4">
+<h4 id="exporting">Exporting<a class="anchor" aria-label="anchor" href="#exporting"></a>
+</h4>
+<ul>
+<li>
+<strong>Export DOCX/HTML/TXT</strong>: A readable formatted
+document, suitable for a reflexive appendix.</li>
+<li>
+<strong>Export CSV</strong>: One row per entry with date, type,
+content, and author.</li>
+</ul>
+<hr>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="part-3-the-coding-workspace">Part 3 – The Coding Workspace<a class="anchor" aria-label="anchor" href="#part-3-the-coding-workspace"></a>
+</h2>
+<div class="section level3">
+<h3 id="chapter-10-the-coding-tab">Chapter 10: The Coding Tab<a class="anchor" aria-label="anchor" href="#chapter-10-the-coding-tab"></a>
 </h3>
 <div class="section level4">
 <h4 id="opening-a-document-for-coding">Opening a document for coding<a class="anchor" aria-label="anchor" href="#opening-a-document-for-coding"></a>
@@ -963,7 +1100,7 @@ depend on your operating system and browser.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-10-auto-coding-r-api">Chapter 10: Auto-Coding (R API)<a class="anchor" aria-label="anchor" href="#chapter-10-auto-coding-r-api"></a>
+<h3 id="chapter-11-auto-coding-r-api">Chapter 11: Auto-Coding (R API)<a class="anchor" aria-label="anchor" href="#chapter-11-auto-coding-r-api"></a>
 </h3>
 <p>Auto-coding is available through the R API only. It applies a code
 automatically to every passage that matches a regular expression.</p>
@@ -981,7 +1118,7 @@ auto-codings in the GUI.</p>
 <hr>
 </div>
 <div class="section level3">
-<h3 id="chapter-11-multi-coder-workflows-split-and-merge">Chapter 11: Multi-Coder Workflows: Split and Merge<a class="anchor" aria-label="anchor" href="#chapter-11-multi-coder-workflows-split-and-merge"></a>
+<h3 id="chapter-12-multi-coder-workflows-split-and-merge">Chapter 12: Multi-Coder Workflows: Split and Merge<a class="anchor" aria-label="anchor" href="#chapter-12-multi-coder-workflows-split-and-merge"></a>
 </h3>
 <div class="section level4">
 <h4 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
@@ -1173,10 +1310,10 @@ second.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="part-4-analysis">Part 4 – Analysis<a class="anchor" aria-label="anchor" href="#part-4-analysis"></a>
+<h2 id="part-4-the-analysis-workspace">Part 4 – The Analysis Workspace<a class="anchor" aria-label="anchor" href="#part-4-the-analysis-workspace"></a>
 </h2>
 <div class="section level3">
-<h3 id="chapter-12-the-compare-tab">Chapter 12: The Compare Tab<a class="anchor" aria-label="anchor" href="#chapter-12-the-compare-tab"></a>
+<h3 id="chapter-13-the-compare-tab">Chapter 13: The Compare Tab<a class="anchor" aria-label="anchor" href="#chapter-13-the-compare-tab"></a>
 </h3>
 <div class="section level4">
 <h4 id="what-the-compare-tab-is-for">What the Compare tab is for<a class="anchor" aria-label="anchor" href="#what-the-compare-tab-is-for"></a>
@@ -1188,9 +1325,10 @@ calculates inter-rater reliability statistics.</p>
 <div class="section level4">
 <h4 id="selecting-document-and-coders">Selecting document and coders<a class="anchor" aria-label="anchor" href="#selecting-document-and-coders"></a>
 </h4>
-<p>Navigate to the <strong>Compare</strong> tab. Choose the
-<strong>Document</strong>, <strong>Coder A</strong>, and <strong>Coder
-B</strong> from the selectors at the top.</p>
+<p>Navigate to the <strong>Analysis</strong> menu and click
+<strong>Compare</strong>. Choose the <strong>Document</strong>,
+<strong>Coder A</strong>, and <strong>Coder B</strong> from the
+selectors at the top.</p>
 </div>
 <div class="section level4">
 <h4 id="the-differences-card">The differences card<a class="anchor" aria-label="anchor" href="#the-differences-card"></a>
@@ -1232,7 +1370,7 @@ definition.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-13-the-themes-tab">Chapter 13: The Themes Tab<a class="anchor" aria-label="anchor" href="#chapter-13-the-themes-tab"></a>
+<h3 id="chapter-14-the-themes-tab">Chapter 14: The Themes Tab<a class="anchor" aria-label="anchor" href="#chapter-14-the-themes-tab"></a>
 </h3>
 <div class="section level4">
 <h4 id="what-a-theme-is">What a theme is<a class="anchor" aria-label="anchor" href="#what-a-theme-is"></a>
@@ -1280,7 +1418,7 @@ documents and coder names.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-14-the-query-tab">Chapter 14: The Query Tab<a class="anchor" aria-label="anchor" href="#chapter-14-the-query-tab"></a>
+<h3 id="chapter-15-the-query-tab">Chapter 15: The Query Tab<a class="anchor" aria-label="anchor" href="#chapter-15-the-query-tab"></a>
 </h3>
 <p>The <strong>Query</strong> tab consolidates eight analytical panels
 in one place.</p>
@@ -1384,7 +1522,7 @@ frequent words found within all passages tagged with a chosen code.</li>
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-15-saturation-analysis-r-api">Chapter 15: Saturation Analysis (R API)<a class="anchor" aria-label="anchor" href="#chapter-15-saturation-analysis-r-api"></a>
+<h3 id="chapter-16-saturation-analysis-r-api">Chapter 16: Saturation Analysis (R API)<a class="anchor" aria-label="anchor" href="#chapter-16-saturation-analysis-r-api"></a>
 </h3>
 <p>Theoretical saturation is the point at which new data stops producing
 new codes. Demonstrating saturation is increasingly expected in
@@ -1404,10 +1542,10 @@ judgement and reflexive writing.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="part-5-quality-and-output">Part 5 – Quality and Output<a class="anchor" aria-label="anchor" href="#part-5-quality-and-output"></a>
+<h2 id="part-5-the-review-workspace">Part 5 – The Review Workspace<a class="anchor" aria-label="anchor" href="#part-5-the-review-workspace"></a>
 </h2>
 <div class="section level3">
-<h3 id="chapter-16-the-members-tab">Chapter 16: The Members Tab<a class="anchor" aria-label="anchor" href="#chapter-16-the-members-tab"></a>
+<h3 id="chapter-17-the-member-checks-tab">Chapter 17: The Member Checks Tab<a class="anchor" aria-label="anchor" href="#chapter-17-the-member-checks-tab"></a>
 </h3>
 <div class="section level4">
 <h4 id="what-member-checking-is">What member checking is<a class="anchor" aria-label="anchor" href="#what-member-checking-is"></a>
@@ -1420,9 +1558,10 @@ the people who provided the data.</p>
 <div class="section level4">
 <h4 id="creating-a-member-check">Creating a member check<a class="anchor" aria-label="anchor" href="#creating-a-member-check"></a>
 </h4>
-<p>Navigate to the <strong>Members</strong> tab and click <strong>New
-member check</strong>. Select a document and a participant label.
-Optionally restrict to specific codes.</p>
+<p>Navigate to the <strong>Review</strong> menu and click <strong>Member
+Checks</strong>. Click <strong>New member check</strong>. Select a
+document and a participant label. Optionally restrict to specific
+codes.</p>
 </div>
 <div class="section level4">
 <h4 id="the-check-workflow">The check workflow<a class="anchor" aria-label="anchor" href="#the-check-workflow"></a>
@@ -1471,105 +1610,7 @@ document to the participant.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="chapter-17-the-journal-tab">Chapter 17: The Journal Tab<a class="anchor" aria-label="anchor" href="#chapter-17-the-journal-tab"></a>
-</h3>
-<div class="section level4">
-<h4 id="why-the-journal-matters">Why the journal matters<a class="anchor" aria-label="anchor" href="#why-the-journal-matters"></a>
-</h4>
-<p>Reflexivity – examining how your own perspective affects the research
-– is not optional in rigorous qualitative work. The
-<strong>Journal</strong> tab provides a dedicated, integrated space for
-this writing. Entries are date-stamped, attributed to the active coder,
-categorised by type, searchable, and exportable.</p>
-</div>
-<div class="section level4">
-<h4 id="the-five-entry-types">The five entry types<a class="anchor" aria-label="anchor" href="#the-five-entry-types"></a>
-</h4>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr class="header">
-<th>Type</th>
-<th>When to use it</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><strong>Analytical</strong></td>
-<td>Interpretive insights, emerging ideas, code development
-reasoning</td>
-</tr>
-<tr class="even">
-<td><strong>Reflexivity</strong></td>
-<td>How your position or experiences may be shaping the analysis</td>
-</tr>
-<tr class="odd">
-<td><strong>Decision</strong></td>
-<td>A specific analytical or methodological choice and why you made
-it</td>
-</tr>
-<tr class="even">
-<td><strong>Methodological</strong></td>
-<td>Notes on procedures, protocol adaptations, sampling decisions</td>
-</tr>
-<tr class="odd">
-<td><strong>Other</strong></td>
-<td>Anything that does not fit the above</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level4">
-<h4 id="writing-an-entry">Writing an entry<a class="anchor" aria-label="anchor" href="#writing-an-entry"></a>
-</h4>
-<p>Navigate to the <strong>Journal</strong> tab. Select an entry type
-from the sidebar dropdown, write your entry in the text area, and click
-<strong>Save entry</strong>.</p>
-</div>
-<div class="section level4">
-<h4 id="filtering-and-searching">Filtering and searching<a class="anchor" aria-label="anchor" href="#filtering-and-searching"></a>
-</h4>
-<p>Use the type filter dropdown and the search box in the card header to
-find specific entries – useful when writing your methods section and
-retrieving all decisions about a particular code.</p>
-</div>
-<div class="section level4">
-<h4 id="exporting">Exporting<a class="anchor" aria-label="anchor" href="#exporting"></a>
-</h4>
-<ul>
-<li>
-<strong>Export DOCX/HTML/TXT</strong>: A readable formatted
-document, suitable for a reflexive appendix.</li>
-<li>
-<strong>Export CSV</strong>: One row per entry with date, type,
-content, and author.</li>
-</ul>
-<hr>
-</div>
-</div>
-<div class="section level3">
-<h3 id="chapter-18-the-export-tab">Chapter 18: The Export Tab<a class="anchor" aria-label="anchor" href="#chapter-18-the-export-tab"></a>
-</h3>
-<p>Navigate to the <strong>Export</strong> tab for structured data
-export:</p>
-<ul>
-<li>
-<strong>Analytical themes report</strong>: One section per theme
-with description, linked codes, and all associated excerpts. Available
-as DOCX, HTML, TXT, or JSON.</li>
-<li>
-<strong>Full codebook export</strong>: All codes with definitions,
-criteria, memos, hierarchy, and colours. Available as DOCX, XLSX, CSV,
-HTML, or JSON.</li>
-<li>
-<strong>Raw table export</strong>: Any internal table (codings,
-codes, sources, cases, etc.) as CSV, JSON, or XLSX.</li>
-</ul>
-<hr>
-</div>
-<div class="section level3">
-<h3 id="chapter-19-the-audit-tab">Chapter 19: The Audit Tab<a class="anchor" aria-label="anchor" href="#chapter-19-the-audit-tab"></a>
+<h3 id="chapter-18-the-audit-tab">Chapter 18: The Audit Tab<a class="anchor" aria-label="anchor" href="#chapter-18-the-audit-tab"></a>
 </h3>
 <div class="section level4">
 <h4 id="what-the-audit-log-is">What the audit log is<a class="anchor" aria-label="anchor" href="#what-the-audit-log-is"></a>
@@ -1602,6 +1643,30 @@ was completed.</li>
 operation type.</p>
 <hr>
 </div>
+</div>
+<div class="section level3">
+<h3 id="chapter-19-the-export-tab">Chapter 19: The Export Tab<a class="anchor" aria-label="anchor" href="#chapter-19-the-export-tab"></a>
+</h3>
+<p>Navigate to the <strong>Review</strong> menu and click
+<strong>Export</strong> for structured data export:</p>
+<ul>
+<li>
+<strong>Analytical themes report</strong>: One section per theme
+with description, linked codes, and all associated excerpts. Available
+as DOCX, HTML, TXT, or JSON.</li>
+<li>
+<strong>Full codebook export</strong>: All codes with definitions,
+criteria, memos, hierarchy, and colours. Available as DOCX, XLSX, CSV,
+HTML, or JSON.</li>
+<li>
+<strong>Journal export</strong>: All research journal entries with
+date, type, content, and author. Available as Word (styled headers per
+entry), HTML, TXT, or CSV.</li>
+<li>
+<strong>Raw table export</strong>: Any internal table (codings,
+codes, sources, cases, etc.) as CSV, JSON, or XLSX.</li>
+</ul>
+<hr>
 </div>
 <div class="section level3">
 <h3 id="chapter-20-the-help-tab">Chapter 20: The Help Tab<a class="anchor" aria-label="anchor" href="#chapter-20-the-help-tab"></a>
@@ -2306,10 +2371,24 @@ report<a class="anchor" aria-label="anchor" href="#qc_export_themes_report-expor
 <code>"csv"</code>, <code>"json"</code>, <code>"html"</code>.</p>
 </div>
 <div class="section level4">
+<h4 id="qc_export_journal-export-research-journal">
+<code>qc_export_journal()</code> – Export research journal<a class="anchor" aria-label="anchor" href="#qc_export_journal-export-research-journal"></a>
+</h4>
+<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/qc_export_journal.html">qc_export_journal</a></span><span class="op">(</span></span>
+<span>  <span class="va">proj</span>,</span>
+<span>  path   <span class="op">=</span> <span class="st">"~/exports/journal.docx"</span>,</span>
+<span>  format <span class="op">=</span> <span class="st">"docx"</span>   <span class="co"># also "html", "txt", "csv"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The <code>"docx"</code> format uses styled headers per entry. The
+<code>"csv"</code> format produces one row per entry with columns for
+date, type, content, and author.</p>
+</div>
+<div class="section level4">
 <h4 id="qc_export_project_data-export-raw-tables">
 <code>qc_export_project_data()</code> – Export raw tables<a class="anchor" aria-label="anchor" href="#qc_export_project_data-export-raw-tables"></a>
 </h4>
-<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/qc_export_project_data.html">qc_export_project_data</a></span><span class="op">(</span></span>
 <span>  <span class="va">proj</span>,</span>
 <span>  table_name  <span class="op">=</span> <span class="st">"codings"</span>,</span>
@@ -2321,7 +2400,7 @@ report<a class="anchor" aria-label="anchor" href="#qc_export_themes_report-expor
 <h4 id="qc_summary_report-generate-a-summary-report">
 <code>qc_summary_report()</code> – Generate a summary report<a class="anchor" aria-label="anchor" href="#qc_summary_report-generate-a-summary-report"></a>
 </h4>
-<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/qc_summary_report.html">qc_summary_report</a></span><span class="op">(</span></span>
 <span>  <span class="va">proj</span>,</span>
 <span>  path   <span class="op">=</span> <span class="st">"~/exports/project_summary.txt"</span>,</span>
@@ -2713,7 +2792,7 @@ the file from two machines simultaneously.</p>
 </h4>
 <p>Yes. saturate never physically deletes data. Restore the soft-deleted
 code via the R API:</p>
-<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">duckdb</span><span class="fu">::</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"path/to/study.satdb"</span><span class="op">)</span></span>
 <span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"UPDATE codes SET status = 1 WHERE name = 'your_code_name'"</span><span class="op">)</span></span>
 <span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbDisconnect.html" class="external-link">dbDisconnect</a></span><span class="op">(</span><span class="va">con</span><span class="op">)</span></span></code></pre></div>
@@ -2751,7 +2830,7 @@ problem persists.</p>
 </h4>
 <p>Your installed version of <code>whisper</code> does not recognise one
 of the arguments saturate is passing. Update to the latest version:</p>
-<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"whisper"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
@@ -2776,7 +2855,7 @@ speech pauses. Try a larger model (<code>base</code> or
 </h4>
 <p>The default Shiny upload limit is 5 MB. Raise it by passing
 <code>max_upload_mb</code> to <code><a href="../reference/shiny_saturate.html">shiny_saturate()</a></code>:</p>
-<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/shiny_saturate.html">shiny_saturate</a></span><span class="op">(</span><span class="va">proj</span>, max_upload_mb <span class="op">=</span> <span class="fl">500L</span><span class="op">)</span></span></code></pre></div>
 <p>The default when launching with <code><a href="../reference/shiny_saturate.html">shiny_saturate()</a></code> is
 already 500 MB, so this error should not appear unless your project file
@@ -2805,7 +2884,29 @@ is unusually large.</p>
 
 
 
-
-
-  </body>
+  <style>
+/* ── Dark mode overrides to match the app's dark theme ───────────────── */
+[data-bs-theme="dark"] {
+  --bs-body-bg: #1a1e22;
+  --bs-body-color: #d4d8dd;
+  --bs-border-color: #2e3540;
+  --bs-link-color: #4db399;
+  --bs-link-hover-color: #6dcbaf;
+  --bs-code-color: #a8c7fa;
+  --bs-card-bg: #20262e;
+}
+[data-bs-theme="dark"] .navbar {
+  background-color: #111618 !important;
+}
+[data-bs-theme="dark"] pre, [data-bs-theme="dark"] code {
+  background: #20262e;
+  border-color: #2e3540;
+}
+[data-bs-theme="dark"] .sidebar { background: #20262e; }
+/* ── Light mode navbar accent ─────────────────────────────────────────── */
+.navbar { background-color: #1D3D35 !important; }
+.navbar .navbar-brand, .navbar .nav-link { color: #fff !important; }
+.navbar .nav-link:hover { color: #a8d8cc !important; }
+</style>
+</body>
 </html>

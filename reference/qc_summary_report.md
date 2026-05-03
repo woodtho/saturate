@@ -21,7 +21,7 @@ qc_summary_report(project, include_metrics = TRUE, top_n = 15L)
 - include_metrics:
 
   Logical. When `TRUE` (default), calls
-  [`qc_code_metrics()`](https://thomaswood.github.io/saturate/reference/qc_code_metrics.md)
+  [`qc_code_metrics()`](https://woodtho.github.io/saturate/reference/qc_code_metrics.md)
   and includes prevalence, density, and dispersion.
 
 - top_n:

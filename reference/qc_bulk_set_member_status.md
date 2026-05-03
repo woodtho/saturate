@@ -1,7 +1,7 @@
 # Set all items in a member check to the same status
 
 Convenience helper for bulk confirm or dispute. Calls
-[`qc_record_member_response()`](https://thomaswood.github.io/saturate/reference/qc_record_member_response.md)
+[`qc_record_member_response()`](https://woodtho.github.io/saturate/reference/qc_record_member_response.md)
 for every item in the check.
 
 ## Usage

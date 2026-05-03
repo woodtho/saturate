@@ -19,8 +19,8 @@ management, and multi-coder collaboration.
   merge results back
 - **Audio recording & transcription** — record directly in the browser
   or upload audio, transcribe with local
-  [whisper](https://github.com/bnosac/whisper), import with optional
-  timestamps
+  [whisper](https://github.com/cornball-ai/whisper), import with
+  optional timestamps
 - **Saturation analysis** — plot theoretical saturation curves and
   triangulation grids
 - **Inter-rater reliability** — Cohen’s kappa, Krippendorff’s alpha, and

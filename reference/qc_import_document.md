@@ -54,9 +54,9 @@ qc_import_document(
 
   Character. Data-collection method label, e.g. `"interview"`,
   `"focus_group"`, `"survey"`, `"observation"`. Used by
-  [`qc_triangulate()`](https://thomaswood.github.io/saturate/reference/qc_triangulate.md)
+  [`qc_triangulate()`](https://woodtho.github.io/saturate/reference/qc_triangulate.md)
   and
-  [`qc_saturation_curve()`](https://thomaswood.github.io/saturate/reference/qc_saturation_curve.md).
+  [`qc_saturation_curve()`](https://woodtho.github.io/saturate/reference/qc_saturation_curve.md).
 
 ## Value
 
