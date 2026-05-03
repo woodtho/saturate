@@ -27,19 +27,37 @@ mod_coding_ui <- function(id) {
             shiny::div(
               class = "qc-doc-actions d-flex gap-1 flex-shrink-0 align-items-center flex-wrap justify-content-end",
               shiny::div(
-                class = "qc-doc-lines-toggle form-check form-switch d-flex align-items-center gap-1 me-1",
-                style = "margin-bottom:0;",
-                shiny::tags$input(
-                  id    = ns("show_line_numbers"),
-                  class = "form-check-input",
-                  type  = "checkbox",
-                  role  = "switch"
+                class = "d-flex align-items-center gap-1",
+                shiny::div(
+                  class = "qc-doc-lines-toggle form-check form-switch d-flex align-items-center gap-1",
+                  style = "margin-bottom:0;",
+                  shiny::tags$input(
+                    id      = ns("show_line_numbers"),
+                    class   = "form-check-input",
+                    type    = "checkbox",
+                    role    = "switch",
+                    checked = NA
+                  ),
+                  shiny::tags$label(
+                    `for` = ns("show_line_numbers"),
+                    class = "form-check-label text-muted",
+                    style = "font-size:0.75rem;white-space:nowrap;",
+                    "Lines"
+                  )
                 ),
-                shiny::tags$label(
-                  `for` = ns("show_line_numbers"),
-                  class = "form-check-label text-muted",
-                  style = "font-size:0.75rem;white-space:nowrap;",
-                  "Lines"
+                shinyjs::hidden(
+                  shiny::div(
+                    id = ns("line_jump_wrap"),
+                    shiny::tags$input(
+                      id          = "qc_line_jump",
+                      class       = "form-control form-control-sm qc-ts-jump-input font-monospace",
+                      type        = "number",
+                      min         = "1",
+                      placeholder = "#",
+                      title       = "Jump to line -- press Enter",
+                      style       = "width:4rem;"
+                    )
+                  )
                 )
               ),
               shinyjs::hidden(
@@ -807,6 +825,11 @@ mod_coding_server <- function(id, rv, parent_session) {
     shiny::observeEvent(input$hotkey_lines_toggle, {
       shiny::updateCheckboxInput(session, "show_line_numbers",
         value = !isTRUE(input$show_line_numbers))
+    })
+
+    # Show line-jump input only when line numbers are visible
+    shiny::observe({
+      shinyjs::toggle("line_jump_wrap", condition = isTRUE(input$show_line_numbers))
     })
 
     # -- Display filter reactive updates ----------------------------------------

@@ -18,7 +18,7 @@
     documentHeight: 68,
     tableDensity: "comfortable",
     reduceMotion: false,
-    showLineNumbers: false,
+    showLineNumbers: true,
     highlightOpacity: 0.33,
     ttsVoice: "auto",
     ttsRate: 1,

@@ -60,6 +60,20 @@
     setTimeout(function() { best.classList.remove('qc-ts-jump-flash'); }, 1000);
   }
 
+  function jumpToLine(n) {
+    var container = document.querySelector('.qc-text-display');
+    if (!container) return;
+    var lines = container.querySelectorAll('.qc-line');
+    var idx = Math.max(1, Math.min(parseInt(n, 10), lines.length)) - 1;
+    if (isNaN(idx)) return;
+    var el = lines[idx];
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.remove('qc-ts-jump-flash');
+    void el.offsetWidth;
+    el.classList.add('qc-ts-jump-flash');
+    setTimeout(function() { el.classList.remove('qc-ts-jump-flash'); }, 1000);
+  }
+
   // ── Namespace setup ────────────────────────────────────────────────────────
   Shiny.addCustomMessageHandler('qc_set_ns', function (msg) {
     window._qc_ns = msg.ns_prefix;
@@ -974,12 +988,12 @@
     return count;
   }
 
-  // ── Wire up the timestamp jump input ───────────────────────────────────────
+  // ── Wire up jump inputs (timestamp and line number) ───────────────────────
   document.addEventListener('keydown', function(e) {
-    if (e.target && e.target.id === 'qc_ts_jump' && e.key === 'Enter') {
-      e.preventDefault();
-      jumpToTime(e.target.value);
-    }
+    if (!e.target || e.key !== 'Enter') return;
+    e.preventDefault();
+    if (e.target.id === 'qc_ts_jump')   jumpToTime(e.target.value);
+    if (e.target.id === 'qc_line_jump') jumpToLine(e.target.value);
   });
 
   // Clicking any timestamp marker scrolls to it (useful when not in line-numbers mode)

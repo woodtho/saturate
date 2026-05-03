@@ -54,21 +54,34 @@
               'Export the list as CSV, Excel, or JSON.'
     },
     {
-      title:  'Documents — Record & Transcribe',
+      title:  'Documents — Recording',
       navTo:  null,
       hlSel:  '[id$="-transcribe-btn_open"]',
-      body:   'Click <strong>Record &amp; transcribe…</strong> to open the audio ' +
-              'workflow. The <em>Record</em> tab captures audio from your microphone — ' +
-              'hit <strong>Record</strong>, <strong>Pause/Resume</strong>, and ' +
-              '<strong>Stop</strong>. The <em>Upload audio</em> tab accepts ' +
-              '.webm, .mp3, .wav, .m4a, and other formats. ' +
-              'Once you have audio, click <strong>Transcribe</strong> — ' +
-              'a local <a href="https://github.com/bnosac/whisper" target="_blank" rel="noopener">whisper</a> ' +
-              'model processes it on your machine (no data leaves). ' +
-              'With <strong>Timestamps</strong> ticked (the default), each segment ' +
-              'gets a <code>[HH:MM:SS]</code> marker. Edit the transcript, then ' +
-              'click <strong>Import transcript</strong> to save it as a document, ' +
-              'or download it as <strong>.txt</strong> or <strong>.docx</strong>.'
+      body:   'Click <strong>Record &amp; transcribe…</strong> to open the audio workflow. ' +
+              'The <em>Record</em> tab captures audio directly from your microphone — ' +
+              'hit <strong>Record</strong> to start, <strong>Pause / Resume</strong> ' +
+              'to suspend without losing audio, and <strong>Stop</strong> when done. ' +
+              'A live waveform shows the signal while recording. ' +
+              'Click <strong>Save audio</strong> at any time to download the raw file. ' +
+              'The <em>Upload audio</em> tab accepts .webm, .mp3, .wav, .m4a, .mp4, and .ogg. ' +
+              'A built-in player lets you review the recording before transcribing.'
+    },
+    {
+      title:  'Documents — Transcription',
+      navTo:  null,
+      hlSel:  '[id$="-transcribe-btn_transcribe"]',
+      body:   'Choose a <strong>Model</strong> — the default is the largest whisper model ' +
+              'already downloaded on your machine (or <em>tiny</em> if none are cached). ' +
+              'Larger models (base, small, medium) give better accuracy for accented speech ' +
+              'or non-English languages; they are downloaded once and cached locally. ' +
+              'Set <strong>Language</strong> to a BCP-47 tag (e.g. <code>en</code>, <code>fr</code>) ' +
+              'or leave blank for auto-detection. ' +
+              '<strong>Timestamps</strong> is on by default — each segment gets a ' +
+              '<code>[HH:MM:SS]</code> marker so you can navigate the transcript by time. ' +
+              'Click <strong>Transcribe</strong>; the model runs entirely on your machine — ' +
+              'no audio is sent anywhere. Edit the result, then click ' +
+              '<strong>Import transcript</strong> to save it as a document, or download ' +
+              'as <strong>.txt</strong> or <strong>.docx</strong>.'
     },
 
     // ── Prep: Codebook ───────────────────────────────────────────────────────
@@ -189,6 +202,20 @@
               'Click anywhere in the document to start from that point, or select ' +
               'a passage to read only that. Press <kbd>Space</kbd> to play/pause, ' +
               '<kbd>x</kbd> to stop. Voice and speed are set in Settings.'
+    },
+    {
+      title:  'Coding — line numbers and timestamps',
+      navTo:  null,
+      hlSel:  '[id$="-show_line_numbers"]',
+      body:   'The <strong>Lines</strong> toggle (on by default) shows line numbers in ' +
+              'a left gutter. Type a number in the <strong>#</strong> box and press ' +
+              '<kbd>Enter</kbd> to jump straight to that line. ' +
+              'When a transcript contains <code>[HH:MM:SS]</code> markers (added by the ' +
+              'transcription workflow), a <strong>Timestamps</strong> toggle and a time ' +
+              'input appear. With both toggles on, timestamps appear in their own gutter ' +
+              'column left of the line numbers — click any timestamp to scroll to it, ' +
+              'or type a time in the <code>00:00:00</code> box and press <kbd>Enter</kbd> ' +
+              'to jump to the nearest segment.'
     },
     {
       title:  'Coding — display filters and excerpts',
