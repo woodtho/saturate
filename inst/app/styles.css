@@ -1205,11 +1205,19 @@ html[data-sat-theme="contrast-dark"] .selectize-input.input-active {
   border-bottom-color: var(--sat-text-muted);
 }
 
+.card:has(.selectize-control),
+.card:has(.selectize-control) > .card-body,
+.card:has(.selectize-control) .html-fill-container,
+.card:has(.selectize-control) .html-fill-item {
+  overflow: visible !important;
+}
+
 .selectize-dropdown {
   margin-top: .3rem;
   border-radius: 8px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, .14);
   overflow: hidden;
+  z-index: 1080;
 }
 
 .selectize-dropdown .option,

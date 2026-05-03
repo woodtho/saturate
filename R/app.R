@@ -165,7 +165,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       shiny::p(
         class = "qc-profile-copy",
         "Profiles set the coder name used when saving codings, memos, ",
-        "member checks, and theme edits. They are remembered in this browser."
+        "member checks, and theme edits. They are remembered in this project."
       ),
       shiny::div(id = "qc-profile-list", class = "qc-profile-list"),
       shiny::div(
@@ -214,9 +214,9 @@ saturate_server <- function(input, output, session, project) {
   # -- Push DB profiles to JS on first flush ---------------------------------
   session$onFlushed(function() {
     profiles_df <- tryCatch(.db_list_profiles(rv$project), error = function(e) NULL)
-    if (is.null(profiles_df) || nrow(profiles_df) == 0L) return()
+    if (is.null(profiles_df)) profiles_df <- data.frame()
     has_json <- requireNamespace("jsonlite", quietly = TRUE)
-    profiles_list <- lapply(seq_len(nrow(profiles_df)), function(i) {
+    profiles_list <- if (nrow(profiles_df) > 0L) lapply(seq_len(nrow(profiles_df)), function(i) {
       row       <- profiles_df[i, , drop = FALSE]
       settings  <- if (has_json)
         tryCatch(jsonlite::fromJSON(row$settings_json %||% "{}", simplifyVector = FALSE),
@@ -229,14 +229,14 @@ saturate_server <- function(input, output, session, project) {
           format(row$last_used_at, "%Y-%m-%dT%H:%M:%SZ") else NULL,
         settings   = settings
       )
-    })
+    }) else list()
     # Most recently used profile - JS will auto-select it
-    most_recent <- tryCatch({
+    most_recent <- if (nrow(profiles_df) > 0L) tryCatch({
       times     <- ifelse(!is.na(profiles_df$last_used_at),
                           as.numeric(profiles_df$last_used_at),
                           as.numeric(profiles_df$created_at))
       profiles_df$name[[which.max(times)]]
-    }, error = function(e) NULL)
+    }, error = function(e) NULL) else NULL
 
     session$sendCustomMessage("qc_load_profiles",
       list(profiles = profiles_list, suggestedActive = most_recent))
@@ -354,6 +354,7 @@ saturate_server <- function(input, output, session, project) {
       tableDensity       = input$settings_table_density %||% "comfortable",
       reduceMotion       = isTRUE(input$settings_reduce_motion),
       showLineNumbers    = isTRUE(input$settings_show_line_numbers),
+      showTimestamps     = isTRUE(input$settings_show_timestamps),
       highlightOpacity   = as.numeric(input$settings_highlight_opacity %||% 0.33),
       ttsVoice           = tts_voice,
       ttsRate            = as.numeric(input$settings_tts_rate %||% 1)
@@ -368,8 +369,14 @@ saturate_server <- function(input, output, session, project) {
   })
 
   shiny::observeEvent(input$btn_settings_restore, {
+    profile <- rv$current_coder %||% "default"
+    settings <- .profile_default_settings()
     session$sendCustomMessage("qc_profile_action",
       list(action = "reset_settings"))
+    tryCatch(
+      .db_save_profile_settings(rv$project, profile, settings),
+      error = function(e) NULL
+    )
     shiny::removeModal()
     shiny::showNotification("Settings restored to defaults.", type = "message")
   })
@@ -829,26 +836,47 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
   if (nchar(active) > 0L) active else trimws(as.character(fallback %||% "default"))
 }
 
+.profile_default_settings <- function() {
+  list(
+    colorTheme = "light",
+    uiFont = "system",
+    uiScale = 100,
+    documentFont = "serif",
+    documentScale = 100,
+    documentLineHeight = 1.9,
+    documentHeight = 68,
+    tableDensity = "comfortable",
+    reduceMotion = FALSE,
+    showLineNumbers = TRUE,
+    showTimestamps = TRUE,
+    highlightOpacity = 0.33,
+    ttsVoice = "auto",
+    ttsRate = 1
+  )
+}
+
 .profile_state_settings <- function(state) {
+  defaults <- .profile_default_settings()
   settings <- if (!is.null(state)) state$settings %||% list() else list()
 
   list(
-    colorTheme = .profile_setting_chr(settings, "colorTheme", "light"),
-    uiFont = .profile_setting_chr(settings, "uiFont", "system"),
-    uiScale = .profile_setting_num(settings, "uiScale", 100, 90, 125),
-    documentFont = .profile_setting_chr(settings, "documentFont", "serif"),
-    documentScale = .profile_setting_num(settings, "documentScale", 100, 85, 150),
-    documentLineHeight = .profile_setting_num(settings, "documentLineHeight", 1.9, 1.4, 2.4),
-    documentHeight = .profile_setting_num(settings, "documentHeight", 68, 48, 86),
-    tableDensity = .profile_setting_chr(settings, "tableDensity", "comfortable"),
-    reduceMotion = .profile_setting_bool(settings, "reduceMotion", FALSE),
-    showLineNumbers = .profile_setting_bool(settings, "showLineNumbers", FALSE),
-    highlightOpacity = .profile_setting_num(settings, "highlightOpacity", 0.33, 0.15, 0.85),
+    colorTheme = .profile_setting_chr(settings, "colorTheme", defaults$colorTheme),
+    uiFont = .profile_setting_chr(settings, "uiFont", defaults$uiFont),
+    uiScale = .profile_setting_num(settings, "uiScale", defaults$uiScale, 90, 125),
+    documentFont = .profile_setting_chr(settings, "documentFont", defaults$documentFont),
+    documentScale = .profile_setting_num(settings, "documentScale", defaults$documentScale, 85, 150),
+    documentLineHeight = .profile_setting_num(settings, "documentLineHeight", defaults$documentLineHeight, 1.4, 2.4),
+    documentHeight = .profile_setting_num(settings, "documentHeight", defaults$documentHeight, 48, 86),
+    tableDensity = .profile_setting_chr(settings, "tableDensity", defaults$tableDensity),
+    reduceMotion = .profile_setting_bool(settings, "reduceMotion", defaults$reduceMotion),
+    showLineNumbers = .profile_setting_bool(settings, "showLineNumbers", defaults$showLineNumbers),
+    showTimestamps = .profile_setting_bool(settings, "showTimestamps", defaults$showTimestamps),
+    highlightOpacity = .profile_setting_num(settings, "highlightOpacity", defaults$highlightOpacity, 0.15, 0.85),
     ttsVoice = {
-      voice <- .profile_setting_chr(settings, "ttsVoice", "auto")
-      if (nzchar(voice)) voice else "auto"
+      voice <- .profile_setting_chr(settings, "ttsVoice", defaults$ttsVoice)
+      if (nzchar(voice)) voice else defaults$ttsVoice
     },
-    ttsRate = .profile_setting_num(settings, "ttsRate", 1, 0.6, 1.8)
+    ttsRate = .profile_setting_num(settings, "ttsRate", defaults$ttsRate, 0.6, 1.8)
   )
 }
 
@@ -981,13 +1009,16 @@ shiny_saturate <- function(project = NULL, brand = NULL, max_upload_mb = 500L, .
           step = 0.05, ticks = FALSE)
       ),
       bslib::layout_columns(
-        col_widths = c(4, 4, 4),
+        col_widths = c(3, 3, 3, 3),
         shiny::selectInput("settings_table_density", "Table density",
           choices = density_choices,
           selected = settings$tableDensity),
         shiny::checkboxInput("settings_show_line_numbers",
           "Show line numbers by default",
           value = isTRUE(settings$showLineNumbers)),
+        shiny::checkboxInput("settings_show_timestamps",
+          "Show timestamps by default",
+          value = isTRUE(settings$showTimestamps)),
         shiny::checkboxInput("settings_reduce_motion",
           "Reduce animation",
           value = isTRUE(settings$reduceMotion))

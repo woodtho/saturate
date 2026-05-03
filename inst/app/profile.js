@@ -211,6 +211,30 @@
     }
   }
 
+  function profileMatches(profile, name) {
+    return profile && cleanName(profile.name).toLowerCase() === name.toLowerCase();
+  }
+
+  function findProfile(name) {
+    name = cleanName(name);
+    if (!name) return null;
+    for (var i = 0; i < state.profiles.length; i += 1) {
+      if (profileMatches(state.profiles[i], name)) return state.profiles[i];
+    }
+    return null;
+  }
+
+  function applyProfileSettings(profile) {
+    var settings = Object.assign({}, defaultSettings, (profile && profile.settings) || {});
+    state.settings = settings;
+    applySettings(settings);
+  }
+
+  function updateActiveProfileSettings(settings) {
+    var profile = findProfile(state.activeProfile);
+    if (profile) profile.settings = Object.assign({}, settings || state.settings);
+  }
+
   function hideGate() {
     var gate = document.getElementById("qc-profile-gate");
     if (gate) gate.classList.add("qc-profile-gate-hidden");
@@ -228,17 +252,19 @@
     name = cleanName(name);
     if (!name) return;
     // Add to in-memory list if new
-    var exists = state.profiles.some(function(p) {
-      return p.name.toLowerCase() === name.toLowerCase();
-    });
-    if (!exists) {
-      state.profiles.push({
+    var profile = findProfile(name);
+    if (!profile) {
+      profile = {
         name: name,
         createdAt: new Date().toISOString(),
-        lastUsedAt: null
-      });
+        lastUsedAt: null,
+        settings: Object.assign({}, defaultSettings)
+      };
+      state.profiles.push(profile);
     }
     state.activeProfile = name;
+    profile.lastUsedAt = new Date().toISOString();
+    applyProfileSettings(profile);
     setCoderInput(name);
     hideGate();
     renderGate();
@@ -326,10 +352,12 @@
     } else if (action === "settings") {
       var settings = Object.assign({}, defaultSettings, message.settings || {});
       state.settings = settings;
+      updateActiveProfileSettings(settings);
       applySettings(settings);
       sendState("settings");
     } else if (action === "reset_settings") {
       state.settings = Object.assign({}, defaultSettings);
+      updateActiveProfileSettings(state.settings);
       applySettings(state.settings);
       sendState("reset_settings");
     } else if (action === "logout") {
@@ -348,7 +376,8 @@
       return {
         name:       cleanName(p.name),
         createdAt:  p.createdAt  || new Date().toISOString(),
-        lastUsedAt: p.lastUsedAt || null
+        lastUsedAt: p.lastUsedAt || null,
+        settings:   Object.assign({}, defaultSettings, p.settings || {})
       };
     });
 
@@ -369,10 +398,8 @@
     }
 
     if (target) {
-      var merged = Object.assign({}, defaultSettings, target.settings || {});
-      state.settings      = merged;
       state.activeProfile = cleanName(target.name);
-      applySettings(merged);
+      applyProfileSettings(findProfile(state.activeProfile) || target);
       setCoderInput(state.activeProfile);
       hideGate();
     }

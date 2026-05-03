@@ -406,7 +406,9 @@
       last_used_at  TIMESTAMPTZ,
       status        INTEGER NOT NULL DEFAULT 1
     )
-  "
+  ",
+  idx_profiles_name   = "CREATE INDEX IF NOT EXISTS idx_profiles_name ON profiles(name)",
+  idx_profiles_status = "CREATE INDEX IF NOT EXISTS idx_profiles_status ON profiles(status)"
 )
 
 .bootstrap_schema <- function(con) {
@@ -444,6 +446,11 @@
   .add_column_if_missing(con, "member_checks", "return_instructions",  "VARCHAR DEFAULT ''")
   .add_column_if_missing(con, "themes",        "definition",           "VARCHAR DEFAULT ''")
   .add_column_if_missing(con, "themes",        "scope",                "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "profiles",      "name",                 "VARCHAR DEFAULT ''")
+  .add_column_if_missing(con, "profiles",      "settings_json",        "VARCHAR DEFAULT '{}'")
+  .add_column_if_missing(con, "profiles",      "created_at",           "TIMESTAMPTZ DEFAULT now()")
+  .add_column_if_missing(con, "profiles",      "last_used_at",         "TIMESTAMPTZ")
+  .add_column_if_missing(con, "profiles",      "status",               "INTEGER DEFAULT 1")
 
   # Seed project_meta if empty
   existing <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM project_meta")$n

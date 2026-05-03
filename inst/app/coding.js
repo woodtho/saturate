@@ -31,8 +31,36 @@
   };
 
   // ── Timestamp jump ─────────────────────────────────────────────────────────
+  function _normalizeTimestampInput(str) {
+    var raw = (str || '').trim();
+    if (!raw) return '';
+
+    var digits = raw.replace(/\D/g, '');
+    if (digits && digits.length === raw.length) {
+      if (digits.length <= 2) {
+        return '00:00:' + digits.padStart(2, '0');
+      }
+      if (digits.length <= 4) {
+        digits = digits.padStart(4, '0');
+        return '00:' + digits.slice(0, 2) + ':' + digits.slice(2);
+      }
+      digits = digits.padStart(6, '0').slice(-6);
+      return digits.slice(0, 2) + ':' + digits.slice(2, 4) + ':' + digits.slice(4);
+    }
+
+    var parts = raw.split(':');
+    if (parts.length === 2 && parts.every(function (p) { return /^\d{1,2}$/.test(p); })) {
+      return '00:' + parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+    }
+    if (parts.length === 3 && parts.every(function (p) { return /^\d{1,2}$/.test(p); })) {
+      return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0') + ':' + parts[2].padStart(2, '0');
+    }
+
+    return raw;
+  }
+
   function _tsToSecs(str) {
-    var p = str.trim().split(':').map(Number);
+    var p = _normalizeTimestampInput(str).split(':').map(Number);
     if (p.some(isNaN)) return NaN;
     if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
     if (p.length === 2) return p[0] * 60 + p[1];
@@ -40,7 +68,8 @@
   }
 
   function jumpToTime(timeStr) {
-    var target = _tsToSecs(timeStr);
+    var normalized = _normalizeTimestampInput(timeStr);
+    var target = _tsToSecs(normalized);
     if (isNaN(target)) return;
     var container = document.querySelector('.qc-text-display');
     if (!container) return;
@@ -992,7 +1021,10 @@
   document.addEventListener('keydown', function(e) {
     if (!e.target || e.key !== 'Enter') return;
     e.preventDefault();
-    if (e.target.id === 'qc_ts_jump')   jumpToTime(e.target.value);
+    if (e.target.id === 'qc_ts_jump') {
+      e.target.value = _normalizeTimestampInput(e.target.value);
+      jumpToTime(e.target.value);
+    }
     if (e.target.id === 'qc_line_jump') jumpToLine(e.target.value);
   });
 

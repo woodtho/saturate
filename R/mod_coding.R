@@ -85,8 +85,8 @@ mod_coding_ui <- function(id) {
                     id          = "qc_ts_jump",
                     class       = "form-control form-control-sm qc-ts-jump-input font-monospace",
                     type        = "text",
-                    placeholder = "00:00:00",
-                    title       = "Jump to timestamp -- press Enter",
+                    placeholder = "000001 or 00:00:01",
+                    title       = "Jump to timestamp -- press Enter. Colons are optional.",
                     style       = "width:6.5rem;"
                   )
                 )
