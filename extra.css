@@ -1,0 +1,307 @@
+/* ============================================================================
+ * saturate pkgdown theme
+ * Mirrors the Shiny app's CSS custom properties and visual language.
+ * Light / dark mode both supported via Bootstrap 5 data-bs-theme.
+ * ============================================================================ */
+
+/* ── App design tokens (light) ──────────────────────────────────────────── */
+:root {
+  --sat-primary:        #1D3D35;
+  --sat-primary-hover:  #162d27;
+  --sat-accent:         #3E8C7A;
+  --sat-accent-hover:   #30705f;
+  --sat-text:           #1a1a1a;
+  --sat-text-label:     #374151;
+  --sat-text-muted:     #4b5563;
+  --sat-surface:        #fafbfc;
+  --sat-surface-card:   #f8f9fa;
+  --sat-border:         #dee2e6;
+  --sat-border-light:   #e9ecef;
+  --sat-hover-bg:       #e6f2ee;
+  --sat-selected-bg:    #bfd8d0;
+  --sat-code-bg:        #f0f7f4;
+}
+
+/* ── App design tokens (dark) ───────────────────────────────────────────── */
+[data-bs-theme="dark"] {
+  --sat-primary:        #0d2018;
+  --sat-accent:         #6db5a3;
+  --sat-accent-hover:   #8fcfbe;
+  --sat-text:           #e8f4f0;
+  --sat-text-label:     #c8ddd7;
+  --sat-text-muted:     #9bbdb4;
+  --sat-surface:        #0f1e18;
+  --sat-surface-card:   #152820;
+  --sat-border:         #2a4038;
+  --sat-border-light:   #1e3028;
+  --sat-hover-bg:       #1a3328;
+  --sat-selected-bg:    #1e4535;
+  --sat-code-bg:        #152820;
+}
+
+/* ── Bootstrap 5 variable overrides ────────────────────────────────────── */
+:root {
+  --bs-body-color:       #1a1a1a;
+  --bs-body-bg:          #ffffff;
+  --bs-link-color:       #3E8C7A;
+  --bs-link-hover-color: #30705f;
+  --bs-link-color-rgb:   62, 140, 122;
+  --bs-border-color:     #dee2e6;
+  --bs-border-radius:    4px;
+  --bs-border-radius-lg: 6px;
+  --bs-code-color:       #1D3D35;
+  --bs-card-bg:          #f8f9fa;
+  --bs-card-border-color: #dee2e6;
+}
+
+[data-bs-theme="dark"] {
+  --bs-body-bg:          #0f1e18;
+  --bs-body-color:       #e8f4f0;
+  --bs-link-color:       #6db5a3;
+  --bs-link-hover-color: #8fcfbe;
+  --bs-link-color-rgb:   109, 181, 163;
+  --bs-border-color:     #2a4038;
+  --bs-code-color:       #8fcfbe;
+  --bs-card-bg:          #152820;
+  --bs-card-border-color: #2a4038;
+  --bs-table-bg:         transparent;
+  --bs-table-striped-bg: #1a3328;
+  --bs-table-hover-bg:   #1e3a2e;
+}
+
+/* ── Base typography ────────────────────────────────────────────────────── */
+body {
+  color: var(--sat-text);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--sat-accent);
+  text-decoration: none;
+  transition: color .15s;
+}
+a:hover {
+  color: var(--sat-accent-hover);
+  text-decoration: underline;
+}
+
+/* ── Headings ───────────────────────────────────────────────────────────── */
+h1, h2, h3 {
+  color: var(--sat-primary);
+  font-weight: 700;
+}
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3 {
+  color: var(--sat-accent);
+}
+
+h1 {
+  padding-bottom: .5rem;
+  border-bottom: 2px solid var(--sat-border);
+  margin-bottom: 1.25rem;
+}
+h2 {
+  padding-bottom: .3rem;
+  border-bottom: 1px solid var(--sat-border-light);
+  margin-bottom: 1rem;
+  margin-top: 2rem;
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+.navbar {
+  background-color: #1D3D35 !important;
+  border-bottom: 1px solid #162d27;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .28);
+}
+.navbar .navbar-brand,
+.navbar .navbar-brand:hover { color: #ffffff !important; font-weight: 700; letter-spacing: -.01em; }
+.navbar .nav-link            { color: rgba(255,255,255,.85) !important; font-weight: 500; }
+.navbar .nav-link:hover,
+.navbar .nav-link:focus      { color: #a8d8cc !important; }
+.navbar .nav-link.active     {
+  color: #ffffff !important;
+  box-shadow: inset 0 -2px 0 #6db5a3;
+}
+.navbar .dropdown-menu {
+  background-color: #1D3D35;
+  border-color: #2a5548;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+}
+.navbar .dropdown-item       { color: rgba(255,255,255,.85); font-size: .9rem; }
+.navbar .dropdown-item:hover { color: #ffffff; background-color: #2a5548; }
+
+[data-bs-theme="dark"] .navbar { background-color: #081510 !important; border-bottom-color: #0d2018; }
+
+/* Light-switch toggle ─────────────────────────────────────────────────── */
+.light-switch       { color: rgba(255,255,255,.82) !important; }
+.light-switch:hover { color: #a8d8cc !important; }
+
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
+.sidebar {
+  background-color: var(--sat-surface-card);
+  border-right: 1px solid var(--sat-border);
+  font-size: .875rem;
+}
+.sidebar .nav-link {
+  color: var(--sat-text-muted);
+  padding: .22rem .8rem;
+  border-radius: 4px;
+  transition: color .12s, background .12s;
+}
+.sidebar .nav-link:hover { color: var(--sat-accent); background: var(--sat-hover-bg); }
+.sidebar .nav-link.active {
+  color: var(--sat-accent);
+  font-weight: 600;
+  background: var(--sat-hover-bg);
+}
+/* Section headers in the sidebar */
+.sidebar .nav-heading,
+.sidebar h2 {
+  color: var(--sat-primary);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: .9rem .8rem .25rem;
+  margin: 0;
+  border: none;
+}
+[data-bs-theme="dark"] .sidebar .nav-heading,
+[data-bs-theme="dark"] .sidebar h2 { color: var(--sat-accent); }
+
+/* ── Code and pre ───────────────────────────────────────────────────────── */
+pre {
+  background: var(--sat-code-bg);
+  border: 1px solid var(--sat-border);
+  border-left: 3px solid var(--sat-accent);
+  border-radius: 4px;
+  font-size: .875rem;
+  line-height: 1.6;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+}
+pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
+
+/* Inline code */
+:not(pre) > code {
+  color: var(--sat-primary);
+  background: color-mix(in srgb, var(--sat-accent) 10%, var(--sat-surface-card));
+  border: 1px solid color-mix(in srgb, var(--sat-accent) 22%, var(--sat-border));
+  border-radius: 3px;
+  padding: .12em .38em;
+  font-size: .85em;
+}
+[data-bs-theme="dark"] pre {
+  background: var(--sat-code-bg);
+  border-color: var(--sat-border);
+  border-left-color: var(--sat-accent);
+}
+[data-bs-theme="dark"] :not(pre) > code {
+  color: var(--sat-accent);
+  background: rgba(109, 181, 163, .1);
+  border-color: rgba(109, 181, 163, .22);
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+.table {
+  font-size: .9rem;
+  border-color: var(--sat-border);
+}
+.table thead th {
+  background: var(--sat-surface-card);
+  color: var(--sat-primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--sat-accent) !important;
+  white-space: nowrap;
+}
+[data-bs-theme="dark"] .table thead th { color: var(--sat-accent); }
+.table tbody tr:hover td { background: var(--sat-hover-bg); }
+[data-bs-theme="dark"] .table tbody tr:hover td { background: var(--sat-hover-bg); }
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+  border-color: var(--sat-border);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  transition: box-shadow .18s;
+}
+.card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.1); }
+.card-header {
+  background: var(--sat-surface-card);
+  border-bottom-color: var(--sat-border);
+  font-weight: 600;
+  color: var(--sat-primary);
+}
+[data-bs-theme="dark"] .card-header { color: var(--sat-accent); }
+
+/* ── Reference index ────────────────────────────────────────────────────── */
+.ref-index h2 {
+  color: var(--sat-primary);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-top: 2rem;
+  padding-bottom: .4rem;
+  border-bottom: 2px solid var(--sat-accent);
+}
+[data-bs-theme="dark"] .ref-index h2 { color: var(--sat-accent); border-bottom-color: var(--sat-accent); }
+.ref-index td:first-child code { font-weight: 700; color: var(--sat-primary); font-size: .88rem; }
+[data-bs-theme="dark"] .ref-index td:first-child code { color: var(--sat-accent); }
+.ref-index td { vertical-align: middle; border-color: var(--sat-border-light); }
+
+/* ── Function reference page ────────────────────────────────────────────── */
+.ref-arguments dt {
+  color: var(--sat-primary);
+  font-weight: 600;
+  font-family: var(--bs-font-monospace);
+  font-size: .88rem;
+}
+[data-bs-theme="dark"] .ref-arguments dt { color: var(--sat-accent); }
+.ref-arguments dd { border-left: 2px solid var(--sat-border); padding-left: .9rem; margin-bottom: .7rem; }
+[data-bs-theme="dark"] .ref-arguments dd { border-left-color: var(--sat-border); }
+
+/* Usage / source sections */
+.usage pre { border-left-color: var(--sat-primary); background: var(--sat-code-bg); }
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+.page-header {
+  border-bottom: 2px solid var(--sat-border);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+.page-header h1 { border: none; margin-bottom: .25rem; }
+
+/* ── Article / vignette ─────────────────────────────────────────────────── */
+.contents p { margin-bottom: 1.1rem; }
+.contents table { margin: 1.5rem 0; }
+.contents blockquote {
+  border-left: 4px solid var(--sat-accent);
+  padding: .5rem 1rem;
+  margin: 1.25rem 0;
+  background: var(--sat-hover-bg);
+  border-radius: 0 4px 4px 0;
+  color: var(--sat-text-label);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--sat-border);
+  color: var(--sat-text-muted);
+  font-size: .83rem;
+  padding-top: 1.25rem;
+  margin-top: 3rem;
+}
+footer a { color: var(--sat-accent); }
+footer a:hover { color: var(--sat-accent-hover); }
+
+/* ── Scrollbar (Webkit) ─────────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 7px; height: 7px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: #c4cdd7; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover  { background: #8fa3b3; }
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb       { background: #2a4038; }
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3d5e50; }
