@@ -26,8 +26,10 @@
   };
 
   var handlerRegistered = false;
+  var storageKey = "saturate.profileState.v1";
+  var loadedFromLocalStorage = false;
 
-  // In-memory state - DB is the sole persistent store.
+  // In-memory state, persisted in this browser with localStorage.
   var state = {
     profiles:      [],
     activeProfile: "",
@@ -192,7 +194,71 @@
     display.setAttribute("title", "Change profile from Settings");
   }
 
+  function normalizeStoredProfile(profile) {
+    if (!profile) return null;
+    var name = cleanName(profile.name);
+    if (!name) return null;
+    return {
+      name: name,
+      createdAt: profile.createdAt || new Date().toISOString(),
+      lastUsedAt: profile.lastUsedAt || null,
+      settings: Object.assign({}, defaultSettings, profile.settings || {})
+    };
+  }
+
+  function getLocalStorage() {
+    try {
+      return window.localStorage || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveLocalState() {
+    var storage = getLocalStorage();
+    if (!storage) return;
+    try {
+      storage.setItem(storageKey, JSON.stringify({
+        profiles: state.profiles,
+        activeProfile: state.activeProfile,
+        settings: state.settings
+      }));
+    } catch (error) {
+      // Private browsing and storage quotas can reject writes.
+    }
+  }
+
+  function loadLocalState() {
+    var storage = getLocalStorage();
+    if (!storage) return false;
+    try {
+      var raw = storage.getItem(storageKey);
+      if (!raw) return false;
+      var stored = JSON.parse(raw);
+      var profiles = Array.isArray(stored.profiles) ?
+        stored.profiles.map(normalizeStoredProfile).filter(Boolean) :
+        [];
+      var active = cleanName(stored.activeProfile || "");
+      var activeProfile = active ? profiles.find(function(profile) {
+        return profileMatches(profile, active);
+      }) : null;
+
+      state.profiles = profiles;
+      state.activeProfile = activeProfile ? activeProfile.name : "";
+      state.settings = Object.assign(
+        {},
+        defaultSettings,
+        activeProfile ? activeProfile.settings : stored.settings || {}
+      );
+      loadedFromLocalStorage = profiles.length > 0 || !!state.activeProfile;
+      return loadedFromLocalStorage;
+    } catch (error) {
+      return false;
+    }
+  }
+
   function sendState(reason) {
+    saveLocalState();
     if (!window.Shiny || !window.Shiny.setInputValue) return;
     var s = {
       profiles:      state.profiles,
@@ -369,10 +435,34 @@
     }
   }
 
-  function handleLoadProfiles(message) {
-    if (!message || !Array.isArray(message.profiles)) return;
+  function normalizeProfileList(message) {
+    if (!message) return [];
+    if (typeof message.profilesJson === "string" && message.profilesJson.length) {
+      try {
+        var parsed = JSON.parse(message.profilesJson);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (error) {
+        // Fall back to the Shiny object payload below.
+      }
+    }
+    if (Array.isArray(message.profiles)) return message.profiles;
+    if (message.profiles && typeof message.profiles === "object") {
+      return Object.keys(message.profiles).map(function(key) {
+        return message.profiles[key];
+      });
+    }
+    return [];
+  }
 
-    state.profiles = message.profiles.map(function(p) {
+  function handleLoadProfiles(message) {
+    if (!message) return;
+    if (loadedFromLocalStorage && state.profiles.length > 0) {
+      renderGate();
+      return;
+    }
+    var profilesPayload = normalizeProfileList(message);
+
+    state.profiles = profilesPayload.map(function(p) {
       return {
         name:       cleanName(p.name),
         createdAt:  p.createdAt  || new Date().toISOString(),
@@ -386,26 +476,25 @@
     var suggested = cleanName(message.suggestedActive || "");
     var target = null;
     if (suggested) {
-      target = message.profiles.find(function(p) {
+      target = profilesPayload.find(function(p) {
         return cleanName(p.name).toLowerCase() === suggested.toLowerCase();
       });
     }
     if (!target) {
-      var sorted = message.profiles.slice().sort(function(a, b) {
+      var sorted = profilesPayload.slice().sort(function(a, b) {
         return String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""));
       });
       if (sorted.length > 0) target = sorted[0];
     }
 
+    // Apply the most-recently-used profile's settings silently (correct theme
+    // before the user makes their selection) but do NOT auto-dismiss the gate.
     if (target) {
-      state.activeProfile = cleanName(target.name);
-      applyProfileSettings(findProfile(state.activeProfile) || target);
-      setCoderInput(state.activeProfile);
-      hideGate();
+      applyProfileSettings(target);
     }
 
+    saveLocalState();
     renderGate();
-    sendState("db_sync");
   }
 
   function initShinyBridge() {
@@ -423,12 +512,12 @@
     }
 
     registerHandler();
+    if (!handlerRegistered) window.setTimeout(registerHandler, 50);
     document.addEventListener("shiny:connected", function() {
       registerHandler();
       applySettings(state.settings);
       renderGate();
-      if (state.activeProfile) hideGate();
-      else showGate();
+      showGate();
       sendState("connected");
     });
   }
@@ -454,8 +543,10 @@
   }
 
   document.addEventListener("DOMContentLoaded", function() {
+    loadLocalState();
     applySettings(state.settings);
     initGate();
+    showGate();
     initTtsSettingsBridge();
     initShinyBridge();
   });

@@ -42,3 +42,30 @@ test_that("saving profile settings creates missing profiles", {
   )
   expect_identical(parsed$colorTheme, "ocean")
 })
+
+test_that("profiles and settings are restored after reopening a project", {
+  skip_if_not_installed("jsonlite")
+  proj <- make_test_project()
+  path <- proj$path
+
+  .db_save_profile_settings(proj, "Restart Coder", list(
+    colorTheme = "contrast",
+    showTimestamps = FALSE,
+    tableDensity = "compact"
+  ))
+  qc_close(proj)
+
+  reopened <- qc_open(path)
+  on.exit(qc_close(reopened), add = TRUE)
+
+  profiles <- .db_list_profiles(reopened)
+  expect_true("Restart Coder" %in% profiles$name)
+
+  parsed <- jsonlite::fromJSON(
+    profiles$settings_json[profiles$name == "Restart Coder"][[1L]],
+    simplifyVector = FALSE
+  )
+  expect_identical(parsed$colorTheme, "contrast")
+  expect_false(parsed$showTimestamps)
+  expect_identical(parsed$tableDensity, "compact")
+})
