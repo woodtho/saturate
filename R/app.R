@@ -165,7 +165,7 @@ saturate_ui <- function(app_name = "saturate", brand_css = "") {
       shiny::p(
         class = "qc-profile-copy",
         "Profiles set the coder name used when saving codings, memos, ",
-        "member checks, and theme edits. They are remembered in this project."
+        "member checks, and theme edits. They are remembered in this browser."
       ),
       shiny::div(id = "qc-profile-list", class = "qc-profile-list"),
       shiny::div(
@@ -207,12 +207,7 @@ saturate_server <- function(input, output, session, project) {
     colorblind_mode  = FALSE
   )
 
-  shiny::observeEvent(input$profile_state, {
-    rv$profile_state <- input$profile_state
-  }, ignoreInit = FALSE)
-
-  # -- Push DB profiles to JS on first flush ---------------------------------
-  session$onFlushed(function() {
+  send_profiles_to_client <- function() {
     profiles_df <- tryCatch(.db_list_profiles(rv$project), error = function(e) NULL)
     if (is.null(profiles_df)) profiles_df <- data.frame()
     has_json <- requireNamespace("jsonlite", quietly = TRUE)
@@ -238,8 +233,29 @@ saturate_server <- function(input, output, session, project) {
       profiles_df$name[[which.max(times)]]
     }, error = function(e) NULL) else NULL
 
+    profiles_json <- if (has_json) {
+      jsonlite::toJSON(profiles_list, auto_unbox = TRUE, null = "null")
+    } else {
+      "[]"
+    }
+
     session$sendCustomMessage("qc_load_profiles",
-      list(profiles = profiles_list, suggestedActive = most_recent))
+      list(
+        profiles = profiles_list,
+        profilesJson = as.character(profiles_json),
+        suggestedActive = most_recent
+      ))
+  }
+
+  shiny::observeEvent(input$profile_state, {
+    rv$profile_state <- input$profile_state
+    reason <- if (is.list(input$profile_state)) input$profile_state$reason %||% "" else ""
+    if (identical(reason, "connected")) send_profiles_to_client()
+  }, ignoreInit = FALSE)
+
+  # -- Push DB profiles to JS on first flush ---------------------------------
+  session$onFlushed(function() {
+    send_profiles_to_client()
   }, once = TRUE)
 
   # -- Auto-tutorial: show for brand-new projects (no docs and no codes) ------
